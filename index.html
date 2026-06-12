@@ -53,7 +53,8 @@
         .filter-row { display: flex; gap: 8px; width: 100%; }
         .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); table-layout: fixed; }
+        .rank-table-wrapper { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .rank-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
         .rank-table th { background: var(--primary); color: white; }
         
@@ -179,7 +180,7 @@
         .search-trigger-fab svg { width: 26px; height: 26px; fill: white; }
 
         /* Sticky table header */
-        .rank-table thead { position: sticky; top: 0; z-index: 2; }
+        .rank-table thead th { position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 0 rgba(255,255,255,0.1); }
 
         /* Alternating row stripes */
         .rank-table tbody tr:nth-child(even) { background: #f8fafc; }
@@ -290,6 +291,7 @@
             <div class="meet-section-title">Official Race Results Grid</div>
         </div>
         
+        <div class="rank-table-wrapper">
         <table class="rank-table" id="standardRankTable">
             <thead>
                 <tr>
@@ -301,6 +303,7 @@
             </thead>
             <tbody id="leaderboardBody"></tbody>
         </table>
+        </div>
 
         <div id="careerProgressiveView" class="career-list-view" style="display: none;"></div>
     </div>
@@ -678,6 +681,7 @@
                 let meetElementsHtml = "";
                 let seasonPR = null;
 
+                let meetRowIdx = 0;
                 for (let entry of meetEntries) {
                     let meetName = entry.meet;
                     let timeValue = entry.time;
@@ -688,9 +692,11 @@
                     let timeSecs = cleanTimeToSeconds(timeValue);
                     if (seasonPR === null || timeSecs < cleanTimeToSeconds(seasonPR)) seasonPR = timeValue;
 
+                    let rowBg = meetRowIdx % 2 === 0 ? '#ffffff' : '#f1f5f9';
+                    meetRowIdx++;
                     foundAnyData = true;
                     meetElementsHtml += `
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;border-bottom:1px dashed #e2e8f0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;border-bottom:1px dashed #e2e8f0;background:${rowBg};">
                             <span style="font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">${meetName}</span>
                             <span style="font-weight:800;color:#2563eb;white-space:nowrap;">${timeValue}</span>
                         </div>
