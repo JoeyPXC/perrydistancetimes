@@ -720,7 +720,9 @@
                 if (query && !athlete.name.toLowerCase().includes(query) && !gradDisplay.toLowerCase().includes(query)) continue;
                 
                 renderedCount++;
-                if (renderedCount > 60 && !query && athlete.name !== expandedAthleteName) break;
+                if (renderedCount > 60 && !query) {
+                    if (athlete.name !== expandedAthleteName) continue;
+                }
 
                 let card = document.createElement('div');
                 card.className = 'athlete-card';
