@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,11 +37,11 @@
             position: relative; 
         }
         
-        .logo-img { max-width: 200px; height: auto; display: block; margin-bottom: 0; }
-        header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; margin-top: 0; }
-        header p { color: #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .logo-img { max-width: 140px; height: auto; display: block; margin-bottom: -4px; }
+        header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; margin-top: 0; }
+        header p { color: #e2e8f0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         
-        .header-sync-btn { position: absolute; top: 12px; right: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .header-sync-btn { position: absolute; top: 12px; right: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; }
         .header-sync-btn:hover { background: rgba(255,255,255,0.2); }
         .header-sync-btn svg { width: 20px; height: 20px; fill: #ffffff; transition: transform 0.5s ease; }
         .header-sync-btn.spinning svg { transform: rotate(360deg); }
@@ -132,7 +131,6 @@
         .breakdown-row-item.displacer { color: var(--text-muted); font-weight: 500; }
 
         .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; }
-        .search-trigger-fab svg { width: 26px; height: 26px; fill: none; stroke: #ffffff; stroke-width: 2.5; stroke-linecap: round; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
@@ -203,7 +201,7 @@
     </div>
 
     <div class="search-trigger-fab" id="searchFab" onclick="toggleDrawer(true)" title="Search Athletes">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     </div>
 
     <div class="container">
@@ -279,41 +277,29 @@
         let xcHistoryFetchPromise = null;
 
         async function getXCHistoryData() {
-            // Return cached result immediately if already fetched
             if (xcHistoryCache) return xcHistoryCache;
-            // If a fetch is already in-flight, await it (don't return the Promise object directly)
-            if (xcHistoryFetchPromise) return await xcHistoryFetchPromise;
+            if (xcHistoryFetchPromise) return xcHistoryFetchPromise;
 
             xcHistoryFetchPromise = (async () => {
                 try {
                     let res = await fetch(XC_ALL_TIME_HISTORY_URL + '&cachebust=' + Math.floor(Date.now() / 60000));
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    if (!res.ok) throw new Error('fetch failed');
                     let text = await res.text();
                     let rows = parseCSVText(text);
-
-                    if (!rows || rows.length < 2) {
-                        console.error('XC History: CSV parsed to fewer than 2 rows. Raw text snippet:', text.substring(0, 300));
-                        return null;
-                    }
 
                     let parsed = {};
 
                     let headers = rows[0].map(h => String(h).toLowerCase().trim());
-                    console.log('XC History headers detected:', headers);
-
                     let yearIdx = headers.indexOf('year');
                     let nameIdx = headers.indexOf('runner name');
-                    if (nameIdx === -1) nameIdx = headers.indexOf('name');
+                    if (nameIdx === -1) nameIdx = headers.indexOf('name'); 
                     let meetIdx = headers.indexOf('meet');
                     let timeIdx = headers.indexOf('time');
 
-                    // Fallback to positional if header detection fails
                     if (yearIdx === -1) yearIdx = 0;
                     if (nameIdx === -1) nameIdx = 1;
                     if (meetIdx === -1) meetIdx = 3;
                     if (timeIdx === -1) timeIdx = 4;
-
-                    console.log(`XC History column indices — year:${yearIdx} name:${nameIdx} meet:${meetIdx} time:${timeIdx}`);
 
                     for (let r = 1; r < rows.length; r++) {
                         let row = rows[r];
@@ -326,16 +312,8 @@
 
                         if (!year || !athleteName || !meetName || year.toLowerCase() === 'year') continue;
 
-                        // Times are clean MM:SS strings from the sheet (e.g. 16:13)
-                        // Just skip empty, bare integers, and non-time values
-                        if (!rawTime || rawTime === '' || rawTime === '0' || rawTime === '-') continue;
-
-                        // Handle legacy HH:MM:SS format just in case (e.g. 16:13:00)
-                        let timeParts = rawTime.split(':');
-                        if (timeParts.length === 3) {
-                            let a = parseInt(timeParts[0], 10);
-                            let b = parseInt(timeParts[1], 10);
-                            rawTime = a === 0 ? (b + ':' + timeParts[2].padStart(2, '0')) : (a + ':' + (b < 10 ? '0' : '') + b);
+                        if (/:00$/.test(rawTime)) {
+                            rawTime = rawTime.substring(0, rawTime.length - 3);
                         }
 
                         let lookupKey = athleteName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -356,17 +334,15 @@
                         });
                     }
 
-                    console.log('XC History parsed successfully. Athletes found:', Object.keys(parsed).length);
                     xcHistoryCache = parsed;
                     return parsed;
                 } catch(e) {
                     console.error('XC History fetch error:', e);
-                    xcHistoryFetchPromise = null; // Allow retry on error
                     return null;
                 }
             })();
 
-            return await xcHistoryFetchPromise;
+            return xcHistoryFetchPromise;
         }
 
         let athletes = {};
@@ -393,8 +369,10 @@
 
         function toggleDrawer(open) {
             const overlay = document.getElementById('drawerOverlay');
+            const input = document.getElementById('searchInput');
             if (open) {
                 overlay.classList.add('active');
+                setTimeout(() => input.focus(), 150);
             } else {
                 overlay.classList.remove('active');
             }
@@ -406,14 +384,15 @@
             }
         }
 
-        function toggleAthleteCardElement(cardElement) {
+        function toggleAthleteCardElement(cardElement, runnerName) {
             cardElement.classList.toggle('expanded');
             
             if (cardElement.classList.contains('expanded')) {
-                let nameEl = cardElement.querySelector('.athlete-name');
-                if (nameEl) {
-                    let runnerName = nameEl.innerText;
-                    let targetGridId = `history-grid-${btoa(runnerName)}`;
+                let safeIdName = runnerName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                let targetGridId = `history-grid-${safeIdName}`;
+                
+                let gridBox = document.getElementById(targetGridId);
+                if (gridBox && gridBox.innerText.includes("Loading historical meet times…")) {
                     loadAthleteMeetHistory(runnerName, targetGridId);
                 }
             }
@@ -429,7 +408,6 @@
             
             let parts = clean.split(':');
             if (parts.length === 3) {
-                // Fixes Google Sheets timestamp exports parsing (HH:MM:SS -> MM:SS)
                 let hours = parseInt(parts[0], 10);
                 let minutes = parseInt(parts[1], 10);
                 let seconds = parseFloat(parts[2]);
@@ -727,8 +705,10 @@
                     }
                 });
 
+                let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
                 card.innerHTML = `
-                    <div class="card-toggle-header" onclick="toggleAthleteCardElement(this.parentElement)">
+                    <div class="card-toggle-header" onclick="toggleAthleteCardElement(this.parentElement, '${athlete.name.replace(/'/g, "\\'")}')">
                         <div class="athlete-meta-box">
                             <span class="athlete-name">${athlete.name}</span>
                             <span class="athlete-grad-text">${gradDisplay}</span>
@@ -740,7 +720,7 @@
                         
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                             <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet XC History</h4>
-                            <div class="meet-history-vertical-grid" id="history-grid-${btoa(athlete.name)}" style="max-height: 280px; overflow-y: auto; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
+                            <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="max-height: 280px; overflow-y: auto; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
                                 <p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px;">Loading historical meet times…</p>
                             </div>
                         </div>
@@ -971,7 +951,7 @@
                 return;
             }
 
-            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\n`;
+            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\npx`;
             output += ` Virtual Meet Simulator                                      HY-TEK's Meet Manager\n`;
             output += `                  All-Time Cross Country Championship Rankings                  \n`;
             output += `                               Perry High School                                \n`;
@@ -1290,7 +1270,7 @@
         
         window.addEventListener('DOMContentLoaded', () => {
             fetchLiveGoogleSheets(false);
-            getXCHistoryData(); // pre-fetch in background so it's ready when cards open
+            getXCHistoryData(); 
         });
     </script>
 </body>
