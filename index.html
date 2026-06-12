@@ -236,10 +236,15 @@
         
         <div id="virtualMeetDashboard" class="meet-dashboard" style="display: none;">
             <div class="meet-dashboard-header">
-                <h3>Select XC Seasons to Score</h3>
+                <h3 id="meetDashboardTitle">Select XC Seasons to Score</h3>
                 <span id="selectAllMeetYearsBtn" class="select-all-toggle-link" onclick="toggleSelectAllMeetYears()">Select All</span>
             </div>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <button id="modeSeasonBtn" class="action-btn" style="font-size:11px; padding:7px 10px; flex:1;" onclick="setMeetMode('season')">By Season</button>
+                <button id="modeEraBtn" class="action-btn" style="font-size:11px; padding:7px 10px; flex:1; background:var(--perry-gray); border-color:var(--perry-gray);" onclick="setMeetMode('era')">By Coach Era</button>
+            </div>
             <div id="meetSeasonCheckboxes" class="checkbox-grid"></div>
+            <div id="meetEraCheckboxes" class="checkbox-grid" style="display:none;"></div>
             <div class="meet-btn-group">
                 <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Meet</button>
                 <button class="export-btn" onclick="exportVirtualMeetToHytek()">Export 💾</button>
@@ -358,6 +363,57 @@
         let expandedAthleteName = null;
         let virtualMeetStandingsCache = [];
         let globalRaceEntriesCache = [];
+        let currentMeetMode = 'season';
+
+        const COACH_ERAS = [
+            { name: "Greenfelder Era", label: "Coach Greenfelder (1982–89)", start: 1982, end: 1989 },
+            { name: "Clarke Era",      label: "Coach Clarke (1990–97)",      start: 1990, end: 1997 },
+            { name: "Mizicko Era",     label: "Coach Mizicko (1998–2011)",   start: 1998, end: 2011 },
+            { name: "Beall Era",       label: "Coach Beall (2012–present)",  start: 2012, end: 9999 }
+        ];
+
+        function setMeetMode(mode) {
+            currentMeetMode = mode;
+            const seasonBox = document.getElementById('meetSeasonCheckboxes');
+            const eraBox = document.getElementById('meetEraCheckboxes');
+            const title = document.getElementById('meetDashboardTitle');
+            const selectAllBtn = document.getElementById('selectAllMeetYearsBtn');
+            const seasonBtn = document.getElementById('modeSeasonBtn');
+            const eraBtn = document.getElementById('modeEraBtn');
+
+            if (mode === 'era') {
+                seasonBox.style.display = 'none';
+                eraBox.style.display = 'grid';
+                title.textContent = 'Select Coach Eras to Score';
+                selectAllBtn.style.display = 'none';
+                eraBtn.style.background = 'var(--primary)';
+                eraBtn.style.borderColor = 'var(--accent)';
+                seasonBtn.style.background = 'var(--perry-gray)';
+                seasonBtn.style.borderColor = 'var(--perry-gray)';
+                populateEraCheckboxPanel();
+            } else {
+                eraBox.style.display = 'none';
+                seasonBox.style.display = 'grid';
+                title.textContent = 'Select XC Seasons to Score';
+                selectAllBtn.style.display = '';
+                seasonBtn.style.background = 'var(--primary)';
+                seasonBtn.style.borderColor = 'var(--accent)';
+                eraBtn.style.background = 'var(--perry-gray)';
+                eraBtn.style.borderColor = 'var(--perry-gray)';
+            }
+        }
+
+        function populateEraCheckboxPanel() {
+            const container = document.getElementById('meetEraCheckboxes');
+            container.innerHTML = '';
+            COACH_ERAS.forEach(era => {
+                let lbl = document.createElement('label');
+                lbl.className = 'checkbox-label';
+                lbl.style.minWidth = '100%';
+                lbl.innerHTML = `<input type="checkbox" class="meet-era-checkbox" value="${era.name}" checked> ${era.label}`;
+                container.appendChild(lbl);
+            });
+        }
 
         function getLastName(fullName) {
             if (!fullName) return '';
@@ -795,94 +851,160 @@
         }
 
         function executeVirtualMeetCalculation() {
-            const checkboxes = document.querySelectorAll('.meet-year-checkbox');
-            let selectedYears = [];
-            checkboxes.forEach(cb => { if(cb.checked) selectedYears.push(cb.value); });
-
             const tbody = document.getElementById('leaderboardBody');
             const podiumContainer = document.getElementById('meetPodiumContainer');
-            
             tbody.innerHTML = '';
             podiumContainer.innerHTML = '';
 
-            if (selectedYears.length === 0) {
-                let defaultYears = generateUniqueYearsList().slice(0, 3);
-                checkboxes.forEach(cb => {
-                    if (defaultYears.includes(cb.value)) {
-                        cb.checked = true;
-                        selectedYears.push(cb.value);
-                    }
-                });
-            }
-
-            if (selectedYears.length < 2) {
-                podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 seasons to run an invitational!</p>';
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Awaiting meet lineups...</td></tr>';
-                globalRaceEntriesCache = [];
-                virtualMeetStandingsCache = [];
-                return;
-            }
-
             let globalRaceEntries = [];
+            let teamStandingsMap = {};
 
-            selectedYears.forEach(year => {
-                let seasonCandidates = [];
-                
-                Object.values(athletes).forEach(athlete => {
-                    if (athlete['XC 5K']) {
+            if (currentMeetMode === 'era') {
+                // Era mode: pool all runners from each era, pick best time per runner, top 7
+                const eraCheckboxes = document.querySelectorAll('.meet-era-checkbox');
+                let selectedEras = [];
+                eraCheckboxes.forEach(cb => { if(cb.checked) selectedEras.push(cb.value); });
+
+                if (selectedEras.length < 2) {
+                    podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 eras to run an invitational!</p>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Awaiting meet lineups...</td></tr>';
+                    globalRaceEntriesCache = [];
+                    virtualMeetStandingsCache = [];
+                    return;
+                }
+
+                selectedEras.forEach(eraName => {
+                    let era = COACH_ERAS.find(e => e.name === eraName);
+                    if (!era) return;
+
+                    let eraCandidates = [];
+                    Object.values(athletes).forEach(athlete => {
+                        if (!athlete['XC 5K']) return;
                         let evData = athlete['XC 5K'];
-                        let bestTimeThisYear = Infinity;
-                        let bestTimeStringThisYear = null;
-                        let runningGrade = "--";
+                        let bestTimeSecs = Infinity;
+                        let bestTimeStr = null;
+                        let bestGrade = '--';
+                        let bestYear = null;
 
                         ['9th', '10th', '11th', '12th'].forEach(grade => {
-                            if (extractYearFromTimeValue(evData[grade]) === year) {
-                                let secs = cleanTimeToSeconds(evData[grade]);
-                                if (secs < bestTimeThisYear) {
-                                    bestTimeThisYear = secs;
-                                    bestTimeStringThisYear = evData[grade].split('(')[0].trim();
-                                    runningGrade = grade.replace('th','');
-                                }
+                            let val = evData[grade];
+                            if (!val || val === '--') return;
+                            let yr = extractYearFromTimeValue(val);
+                            if (!yr) return;
+                            let yrNum = parseInt(yr);
+                            if (yrNum < era.start || yrNum > era.end) return;
+                            let secs = cleanTimeToSeconds(val);
+                            if (secs < bestTimeSecs) {
+                                bestTimeSecs = secs;
+                                bestTimeStr = val.split('(')[0].trim();
+                                bestGrade = grade.replace('th','');
+                                bestYear = yr;
                             }
                         });
 
-                        if (bestTimeStringThisYear) {
-                            seasonCandidates.push({
+                        if (bestTimeStr) {
+                            eraCandidates.push({
                                 name: athlete.name,
                                 gradYear: athlete.gradYear,
-                                gradeCode: runningGrade,
-                                timeSecs: bestTimeThisYear,
-                                displayTime: bestTimeStringThisYear,
-                                team: year + " PXC Team"
+                                gradeCode: bestGrade,
+                                timeSecs: bestTimeSecs,
+                                displayTime: bestTimeStr + ' (' + bestYear + ')',
+                                team: eraName
                             });
                         }
-                    }
+                    });
+
+                    eraCandidates.sort((a, b) => a.timeSecs - b.timeSecs);
+                    let topSeven = eraCandidates.slice(0, 7);
+                    topSeven.forEach((runner, index) => {
+                        runner.rosterRank = index + 1;
+                        globalRaceEntries.push(runner);
+                    });
+
+                    teamStandingsMap[eraName] = {
+                        teamKey: eraName,
+                        teamName: eraName,
+                        points: 0, scoringCount: 0, totalSeconds: 0,
+                        sixthPlaceGlobalRank: 99999, hasSixth: false, runnersList: []
+                    };
                 });
 
-                seasonCandidates.sort((a, b) => a.timeSecs - b.timeSecs);
-                let topSeven = seasonCandidates.slice(0, 7);
-                
-                topSeven.forEach((runner, index) => {
-                    runner.rosterRank = index + 1;
-                    globalRaceEntries.push(runner);
+            } else {
+                // Season mode (original logic)
+                const checkboxes = document.querySelectorAll('.meet-year-checkbox');
+                let selectedYears = [];
+                checkboxes.forEach(cb => { if(cb.checked) selectedYears.push(cb.value); });
+
+                if (selectedYears.length === 0) {
+                    let defaultYears = generateUniqueYearsList().slice(0, 3);
+                    checkboxes.forEach(cb => {
+                        if (defaultYears.includes(cb.value)) {
+                            cb.checked = true;
+                            selectedYears.push(cb.value);
+                        }
+                    });
+                }
+
+                if (selectedYears.length < 2) {
+                    podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 seasons to run an invitational!</p>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Awaiting meet lineups...</td></tr>';
+                    globalRaceEntriesCache = [];
+                    virtualMeetStandingsCache = [];
+                    return;
+                }
+
+                selectedYears.forEach(year => {
+                    let seasonCandidates = [];
+                    Object.values(athletes).forEach(athlete => {
+                        if (athlete['XC 5K']) {
+                            let evData = athlete['XC 5K'];
+                            let bestTimeThisYear = Infinity;
+                            let bestTimeStringThisYear = null;
+                            let runningGrade = "--";
+
+                            ['9th', '10th', '11th', '12th'].forEach(grade => {
+                                if (extractYearFromTimeValue(evData[grade]) === year) {
+                                    let secs = cleanTimeToSeconds(evData[grade]);
+                                    if (secs < bestTimeThisYear) {
+                                        bestTimeThisYear = secs;
+                                        bestTimeStringThisYear = evData[grade].split('(')[0].trim();
+                                        runningGrade = grade.replace('th','');
+                                    }
+                                }
+                            });
+
+                            if (bestTimeStringThisYear) {
+                                seasonCandidates.push({
+                                    name: athlete.name,
+                                    gradYear: athlete.gradYear,
+                                    gradeCode: runningGrade,
+                                    timeSecs: bestTimeThisYear,
+                                    displayTime: bestTimeStringThisYear,
+                                    team: year + " PXC Team"
+                                });
+                            }
+                        }
+                    });
+
+                    seasonCandidates.sort((a, b) => a.timeSecs - b.timeSecs);
+                    let topSeven = seasonCandidates.slice(0, 7);
+                    topSeven.forEach((runner, index) => {
+                        runner.rosterRank = index + 1;
+                        globalRaceEntries.push(runner);
+                    });
                 });
-            });
+
+                selectedYears.forEach(year => {
+                    teamStandingsMap[year + " PXC Team"] = {
+                        teamKey: year + " PXC Team",
+                        teamName: year + " PXC Team",
+                        points: 0, scoringCount: 0, totalSeconds: 0,
+                        sixthPlaceGlobalRank: 99999, hasSixth: false, runnersList: []
+                    };
+                });
+            }
 
             globalRaceEntries.sort((a, b) => a.timeSecs - b.timeSecs);
-
-            let teamStandingsMap = {};
-            selectedYears.forEach(year => {
-                teamStandingsMap[year + " PXC Team"] = {
-                    teamKey: year + " PXC Team",
-                    teamName: year + " PXC Team",
-                    points: 0,
-                    scoringCount: 0,
-                    totalSeconds: 0,
-                    sixthPlaceGlobalRank: 99999,
-                    hasSixth: false,
-                    runnersList: []
-                };
-            });
 
             globalRaceEntries.forEach((runner, index) => {
                 let finishPositionPoints = index + 1;
