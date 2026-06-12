@@ -113,6 +113,7 @@
         <button class="tab-btn" id="tab-records" onclick="switchTab('records')">Team Records</button>
     </div>
 
+    <!-- Center Focus Search Modal Overlay -->
     <div id="searchOverlay" class="search-overlay" onclick="closeSearchMode(event)">
         <div class="search-modal-content">
             <div class="modal-search-box">
@@ -123,15 +124,18 @@
         </div>
     </div>
 
+    <!-- Floating Search Action Button -->
     <div class="search-trigger-fab" id="searchFab" onclick="toggleSearchOverlay(true)" title="Search Athletes">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     </div>
 
     <div class="container">
+        <!-- RUNNERS LIST TAB PANEL -->
         <div id="panel-search" class="view-panel active">
             <div id="rosterList"></div>
         </div>
 
+        <!-- RECORDS LEADERBOARD TAB PANEL -->
         <div id="panel-records" class="view-panel">
             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
                 <select id="leaderboardEvent" class="leaderboard-select" style="flex: 1;" onchange="renderLeaderboard()">
@@ -173,7 +177,13 @@
         let athletes = {};
         let rankingsCache = {}; 
 
-        // Handle overlay presentation rules
+        // Helper function to extract an athlete's last name for intelligent roster sorting
+        function getLastName(fullName) {
+            if (!fullName) return '';
+            let parts = fullName.trim().split(/\s+/);
+            return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : fullName.toLowerCase();
+        }
+
         function toggleSearchOverlay(open) {
             const overlay = document.getElementById('searchOverlay');
             const input = document.getElementById('searchInput');
@@ -282,7 +292,8 @@
                 return;
             }
 
-            items.sort((a,b) => a.name.localeCompare(b.name));
+            // Global alphabetical layout sorted strictly by LAST name
+            items.sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
 
             let renderedCount = 0;
             for(let i=0; i<items.length; i++) {
