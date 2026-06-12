@@ -325,24 +325,32 @@
 
                         if (!year || !athleteName || !meetName || year.toLowerCase() === 'year') continue;
 
-                        // Google Sheets exports XC times as HH:MM:SS timestamps (e.g. 0:16:13 or 16:13:00)
-                        // Normalize any H:MM:SS or MM:SS:00 pattern down to MM:SS
-                        let timeParts = rawTime.split(':');
-                        if (timeParts.length === 3) {
-                            let a = parseInt(timeParts[0], 10);
-                            let b = parseInt(timeParts[1], 10);
-                            let c = timeParts[2];
-                            // Form: 0:MM:SS — leading zero hour
-                            if (a === 0) {
-                                rawTime = b + ':' + (parseFloat(c) < 10 ? '0' : '') + parseFloat(c).toFixed(0).padStart(2,'0');
-                            }
-                            // Form: MM:SS:00 — trailing zero seconds
-                            else if (c === '00' || c === '0') {
-                                rawTime = a + ':' + (b < 10 ? '0' : '') + b;
-                            }
-                            // Form: HH:MM:SS where HH is actually minutes (e.g. 16:13:00 means 16 min 13 sec)
-                            else {
-                                rawTime = a + ':' + (b < 10 ? '0' : '') + b;
+                        // Google Sheets may export times as:
+                        // 1) Excel decimal fractions (e.g. 0.675694 = 16:13) — fraction of a 24hr day
+                        // 2) HH:MM:SS timestamp strings (e.g. 0:16:13 or 16:13:00)
+                        // 3) Plain MM:SS strings (e.g. 16:13) — already correct
+                        let numericVal = parseFloat(rawTime);
+                        if (!isNaN(numericVal) && numericVal > 0 && numericVal < 1) {
+                            // Excel decimal fraction: multiply by 24*60 to get total minutes
+                            let totalMinutes = numericVal * 24 * 60;
+                            let mins = Math.floor(totalMinutes);
+                            let secs = Math.round((totalMinutes - mins) * 60);
+                            if (secs === 60) { mins++; secs = 0; }
+                            rawTime = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                        } else {
+                            // Handle HH:MM:SS or MM:SS:00 string forms
+                            let timeParts = rawTime.split(':');
+                            if (timeParts.length === 3) {
+                                let a = parseInt(timeParts[0], 10);
+                                let b = parseInt(timeParts[1], 10);
+                                let c = timeParts[2];
+                                if (a === 0) {
+                                    // 0:MM:SS — leading zero hour
+                                    rawTime = b + ':' + (parseFloat(c) < 10 ? '0' : '') + parseFloat(c).toFixed(0).padStart(2,'0');
+                                } else {
+                                    // MM:SS:00 or HH:MM:SS where first segment is minutes
+                                    rawTime = a + ':' + (b < 10 ? '0' : '') + b;
+                                }
                             }
                         }
 
