@@ -241,6 +241,7 @@
             <div class="meet-btn-group">
                 <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Meet</button>
                 <button class="export-btn" onclick="exportVirtualMeetToHytek()">Export 💾</button>
+                <button class="export-btn" style="background:#059669; border-color:#34d399;" onclick="openVirtualMeetInTab()">Open 🔗</button>
             </div>
         </div>
 
@@ -386,20 +387,15 @@
         function openDrawerToAthlete(name) {
             const overlay = document.getElementById('drawerOverlay');
             const input = document.getElementById('searchInput');
-            input.value = '';
+            // Filter to just this athlete so their card is the only thing shown, already expanded
+            input.value = name;
             overlay.classList.add('active');
             expandedAthleteName = name;
             renderRoster();
+            // Clear the search text visually after render so it doesn't look like a search
             setTimeout(() => {
-                let cards = document.querySelectorAll('.athlete-card');
-                for (let card of cards) {
-                    let header = card.querySelector('.card-toggle-header');
-                    if (header && header.dataset.runnerName === name) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        break;
-                    }
-                }
-            }, 150);
+                input.value = '';
+            }, 50);
         }
 
         function closeDrawerMode(e) {
@@ -1202,6 +1198,69 @@
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        function openVirtualMeetInTab() {
+            if (!globalRaceEntriesCache || globalRaceEntriesCache.length === 0 || !virtualMeetStandingsCache || virtualMeetStandingsCache.length === 0) {
+                showMessage("Please choose tracking options and Score Meet before opening.", true);
+                return;
+            }
+
+            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\npx`;
+            output += ` Virtual Meet Simulator                                      HY-TEK's Meet Manager\n`;
+            output += `                  All-Time Cross Country Championship Rankings                  \n`;
+            output += `                               Perry High School                                \n`;
+            output += `                               Last Completed Event                               \n \n`;
+            output += `Event 1  Boys 5k Run CC Varsity\n`;
+            output += `==================================================================================\n`;
+            output += `    Name                    Year School                Avg Mile     Finals  Points\n`;
+            output += `==================================================================================\n`;
+
+            globalRaceEntriesCache.forEach((runner, idx) => {
+                let rankStr = padStringColumns(idx + 1, 3, false);
+                let nameStr = padStringColumns(formatNameLastFirst(runner.name), 25, true);
+                let gradeStr = padStringColumns(runner.gradeCode, 2, false);
+                let schoolStr = padStringColumns(runner.team, 22, true);
+                let paceMin = Math.floor((runner.timeSecs / 3.10686) / 60);
+                let paceSec = ((runner.timeSecs / 3.10686) % 60).toFixed(1);
+                let avgMileStr = padStringColumns(`${paceMin}:${parseFloat(paceSec) < 10 ? '0' : ''}${paceSec}`, 8, false);
+                let finalClock = runner.displayTime;
+                if (!finalClock.includes('.')) finalClock += ".00";
+                let clockStr = padStringColumns(finalClock, 10, false);
+                let ptsStr = padStringColumns(runner.assignedMeetPoints, 5, false);
+                output += ` ${rankStr} ${nameStr} ${gradeStr} ${schoolStr} ${avgMileStr}   ${clockStr}  ${ptsStr}   \n`;
+            });
+
+            output += `                                                                                  \n`;
+            output += `                                   Team Scores                                    \n`;
+            output += `================================================================================= \n`;
+            output += `Rank Team                      Total    1    2    3    4    5   *6   *7   *8   *9 \n`;
+            output += `================================================================================= \n`;
+
+            virtualMeetStandingsCache.forEach((team, idx) => {
+                let rnkStr = padStringColumns(idx + 1, 4, false);
+                let tmNameStr = padStringColumns(team.teamName, 25, true);
+                let totPtsStr = padStringColumns(team.points, 4, false);
+                let pointsBreakdownRow = "";
+                team.runnersList.sort((a,b) => a.rosterRank - b.rosterRank);
+                for(let i = 0; i < 7; i++) {
+                    if (team.runnersList[i]) {
+                        pointsBreakdownRow += padStringColumns(team.runnersList[i].assignedMeetPoints, 5, false);
+                    }
+                }
+                output += `   ${rnkStr} ${tmNameStr} ${totPtsStr}  ${pointsBreakdownRow}\n`;
+                let totalTimeText = formatSecondsToClockStr(team.totalSeconds);
+                let averageTimeText = formatSecondsToClockStr(team.totalSeconds / 5);
+                output += `      Total Time:  ${padStringColumns(totalTimeText, 12, true)}                                                   \n`;
+                output += `         Average:    ${padStringColumns(averageTimeText, 12, true)}                                                   \n`;
+            });
+
+            output += `=================================================================================\n`;
+            output += `</PRE>\n</BODY>\n</HTML>`;
+
+            let blob = new Blob([output], { type: "text/html;charset=utf-8" });
+            let url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
         }
 
         function parseCSVText(text) {
