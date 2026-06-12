@@ -364,7 +364,7 @@
                         if (!row || row.length < 5) continue;
                         
                         let name = row[1] ? row[1].trim() : '';
-                        if (!name || name.toLowerCase() === 'name' || name.toLowerCase() === 'athlete') continue;
+                        if (!name || name.toLowerCase() === 'name' || name.toLowerCase() === 'athlete' || name.toLowerCase() === 'team total') continue;
 
                         if (!updatedAthletes[name]) {
                             updatedAthletes[name] = { name: name, gradYear: null };
@@ -397,11 +397,23 @@
                         };
 
                         if (!updatedAthletes[name].gradYear) {
-                            let yearOffset = isXC ? 1 : 0;
-                            if (srYear && !isNaN(parseInt(srYear))) updatedAthletes[name].gradYear = parseInt(srYear) + yearOffset;
-                            else if (jrYear && !isNaN(parseInt(jrYear))) updatedAthletes[name].gradYear = parseInt(jrYear) + 1 + yearOffset;
-                            else if (soYear && !isNaN(parseInt(soYear))) updatedAthletes[name].gradYear = parseInt(soYear) + 2 + yearOffset;
-                            else if (frYear && !isNaN(parseInt(frYear))) updatedAthletes[name].gradYear = parseInt(frYear) + 3 + yearOffset;
+                            let calculatedGradYear = null;
+                            
+                            if (isXC) {
+                                if (srYear && !isNaN(parseInt(srYear))) calculatedGradYear = parseInt(srYear) + 1;
+                                else if (jrYear && !isNaN(parseInt(jrYear))) calculatedGradYear = parseInt(jrYear) + 2;
+                                else if (soYear && !isNaN(parseInt(soYear))) calculatedGradYear = parseInt(soYear) + 3;
+                                else if (frYear && !isNaN(parseInt(frYear))) calculatedGradYear = parseInt(frYear) + 4;
+                            } else {
+                                if (srYear && !isNaN(parseInt(srYear))) calculatedGradYear = parseInt(srYear);
+                                else if (jrYear && !isNaN(parseInt(jrYear))) calculatedGradYear = parseInt(jrYear) + 1;
+                                else if (soYear && !isNaN(parseInt(soYear))) calculatedGradYear = parseInt(soYear) + 2;
+                                else if (frYear && !isNaN(parseInt(frYear))) calculatedGradYear = parseInt(frYear) + 3;
+                            }
+
+                            if (calculatedGradYear) {
+                                updatedAthletes[name].gradYear = calculatedGradYear;
+                            }
                         }
                     }
                     count++;
@@ -417,11 +429,12 @@
                         renderLeaderboard();
                     }
                     if (isManualClick) {
-                        showMessage(`Successfully synced all stats live from Google Sheets!`);
+                        showMessage("Successfully synced all stats live from Google Sheets!");
                         setTimeout(() => switchTab('search'), 1000);
                     }
                 }
             } catch(e) {
+                console.error(e);
                 if (isManualClick) {
                     showMessage("Failed to connect to Google Sheets live streaming endpoints.", true);
                 }
