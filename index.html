@@ -25,25 +25,25 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; }
         
-        /* Premium Header Styling - Tightened Spacing */
+        /* Premium Header Styling */
         header { 
             background: var(--primary); 
             color: white; 
-            padding: 12px 16px; /* Tightened from 20px vertical to 12px */
+            padding: 12px 16px; 
             text-align: center; 
             border-bottom: 4px solid var(--accent); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            gap: 4px; /* Reduced gap from 8px to 4px between stacking items */
+            gap: 4px; 
             position: relative; 
         }
         
         .logo-img { 
-            max-width: 155px; /* Scaled up from 130px to make the logo punchier */
+            max-width: 155px; 
             height: auto; 
             display: block; 
-            margin-bottom: -2px; /* Pulls the heading text closer to the logo base */
+            margin-bottom: -2px; 
         }
         
         header h1 { 
@@ -51,7 +51,7 @@
             font-weight: 800; 
             letter-spacing: -0.5px; 
             color: #ffffff; 
-            margin-top: 0; /* Strips browser default margins */
+            margin-top: 0; 
         }
         
         header p { color: #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
@@ -63,9 +63,10 @@
 
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
         
-        /* Dropdowns Layout */
-        .filter-row { display: flex; gap: 10px; margin-bottom: 16px; }
-        .leaderboard-select { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(--border); font-size: 15px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        /* Stacked dropdown rows for easy responsive filter usage */
+        .filter-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .filter-row { display: flex; gap: 8px; width: 100%; }
+        .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
         /* Leaderboards Component Layout */
         .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -94,16 +95,27 @@
         .modal-search-box input { width: 100%; padding: 14px; padding-left: 44px; border: 2px solid var(--primary); border-radius: 10px; font-size: 16px; background: #f8fafc; outline: none; font-weight: 600; }
         .modal-search-box svg { position: absolute; left: 14px; top: 15px; width: 20px; height: 20px; fill: var(--perry-gray); }
         
-        .drawer-scroll-area { flex: 1; overflow-y: auto; padding: 16px; }
+        .drawer-scroll-area { flex: 1; overflow-y: auto; padding: 12px; }
 
-        /* Roster Card Framework inside Drawer */
-        .athlete-card { background: var(--card-bg); border-radius: 14px; padding: 14px; margin-bottom: 14px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); cursor: pointer; transition: transform 0.15s; }
-        .athlete-card:hover { transform: translateY(-2px); border-color: #cbd5e1; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 10px; }
-        .athlete-name { font-size: 16px; font-weight: 800; color: var(--primary); }
-        .athlete-grad-year { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700; background: #f1f5f9; color: var(--primary); border: 1px solid var(--border); }
+        /* Compact & Collapsible Roster Card Framework inside Drawer */
+        .athlete-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; transition: border-color 0.15s; }
+        .athlete-card:hover { border-color: #cbd5e1; }
         
-        .events-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .card-toggle-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; background: white; user-select: none; }
+        .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; }
+        .athlete-name { font-size: 16px; font-weight: 800; color: var(--primary); }
+        .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
+        
+        .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
+        .athlete-card.expanded .card-chevron { transform: rotate(180deg); }
+
+        .card-expand-body { display: none; padding: 0 14px 14px 14px; background: #ffffff; border-top: 1px solid #f1f5f9; }
+        .athlete-card.expanded .card-expand-body { display: block; }
+        
+        .card-action-btn { width: 100%; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-align: center; border: 2px solid transparent; transition: all 0.15s; }
+        .card-action-btn:hover { background: #222; border-color: var(--accent); }
+
+        .events-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
         .event-row { background: #f8fafc; border-radius: 8px; padding: 8px 10px; border-left: 3px solid var(--perry-gray); }
         .event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .event-title { font-size: 13px; font-weight: 800; color: var(--primary); }
@@ -155,20 +167,32 @@
 
     <!-- MAIN CORE APPLICATION VIEW (TEAM RECORDS LEADERBOARDS) -->
     <div class="container">
-        <div class="filter-row">
-            <select id="leaderboardEvent" class="leaderboard-select" style="flex: 1.2;" onchange="renderLeaderboard()">
-                <option value="XC 5K">Cross Country 5K</option>
-                <option value="800m">800m Track</option>
-                <option value="1600m">1600m Track</option>
-                <option value="3200m">3200m Track</option>
-            </select>
-            <select id="leaderboardRankType" class="leaderboard-select" style="flex: 1;" onchange="renderLeaderboard()">
-                <option value="PR">All-Time Best</option>
-                <option value="9th">9th Grade</option>
-                <option value="10th">10th Grade</option>
-                <option value="11th">11th Grade</option>
-                <option value="12th">12th Grade</option>
-            </select>
+        <div class="filter-container">
+            <!-- Row 1: Event Type Picker -->
+            <div class="filter-row">
+                <select id="leaderboardEvent" class="leaderboard-select" onchange="renderLeaderboard()">
+                    <option value="XC 5K">Cross Country 5K</option>
+                    <option value="800m">800m Track</option>
+                    <option value="1600m">1600m Track</option>
+                    <option value="3200m">3200m Track</option>
+                </select>
+            </div>
+            <!-- Row 2: Category Rank vs Calendar Year Filter -->
+            <div class="filter-row">
+                <select id="leaderboardRankType" class="leaderboard-select" onchange="handleRankTypeChange()">
+                    <option value="PR">All-Time Best (Career PR)</option>
+                    <option value="9th">9th Grade Standings</option>
+                    <option value="10th">10th Grade Standings</option>
+                    <option value="11th">11th Grade Standings</option>
+                    <option value="12th">12th Grade Standings</option>
+                    <option value="SEASON_YEAR">Filter By Calendar Year ↓</option>
+                </select>
+                
+                <!-- Dynamic year input picker which pops up conditionally -->
+                <select id="leaderboardSeasonYear" class="leaderboard-select" style="display: none;" onchange="renderLeaderboard()">
+                    <!-- Populated dynamically by javascript based on database contents -->
+                </select>
+            </div>
         </div>
         
         <table class="rank-table">
@@ -219,6 +243,10 @@
             }
         }
 
+        function toggleAthleteCardElement(cardElement) {
+            cardElement.classList.toggle('expanded');
+        }
+
         function cleanTimeToSeconds(timeStr) {
             if (!timeStr || timeStr.trim() === "" || timeStr.toUpperCase() === "NT" || timeStr === "--") return Infinity;
             let clean = timeStr.split('(')[0].split('-')[0].trim();
@@ -226,6 +254,57 @@
             if (!clean.includes(':')) return parseFloat(clean) || Infinity;
             let parts = clean.split(':');
             return (parseInt(parts[0]) * 60) + parseFloat(parts[1]);
+        }
+
+        // Extracts calendar year out of string values like "16:22.40 (2024)"
+        function extractYearFromTimeValue(timeValueStr) {
+            if (!timeValueStr || !timeValueStr.includes('(')) return null;
+            let matches = timeValueStr.match(/\((\d{4})\)/);
+            return matches ? matches[1] : null;
+        }
+
+        // Sweeps data engine to look for all recorded seasons to build year options list
+        function populateSeasonYearDropdown() {
+            let yearSet = new Set();
+            Object.values(athletes).forEach(athlete => {
+                ['XC 5K', '800m', '1600m', '3200m'].forEach(ev => {
+                    if (athlete[ev]) {
+                        ['9th', '10th', '11th', '12th'].forEach(grade => {
+                            let yr = extractYearFromTimeValue(athlete[ev][grade]);
+                            if (yr) yearSet.add(yr);
+                        });
+                    }
+                });
+            });
+
+            const yearSelector = document.getElementById('leaderboardSeasonYear');
+            yearSelector.innerHTML = '';
+            
+            let sortedYears = Array.from(yearSet).sort((a, b) => b - a); // Newest season years on top
+            
+            if (sortedYears.length === 0) {
+                let currentYear = new Date().getFullYear();
+                sortedYears = [currentYear, currentYear - 1, currentYear - 2];
+            }
+
+            sortedYears.forEach(yr => {
+                let opt = document.createElement('option');
+                opt.value = yr;
+                opt.innerText = yr + " Season";
+                yearSelector.appendChild(opt);
+            });
+        }
+
+        function handleRankTypeChange() {
+            const rankType = document.getElementById('leaderboardRankType').value;
+            const yearSelector = document.getElementById('leaderboardSeasonYear');
+            
+            if (rankType === 'SEASON_YEAR') {
+                yearSelector.style.display = 'block';
+            } else {
+                yearSelector.style.display = 'none';
+            }
+            renderLeaderboard();
         }
 
         function recalculateAllRankings() {
@@ -314,13 +393,15 @@
                 if (query && !athlete.name.toLowerCase().includes(query) && !gradDisplay.toLowerCase().includes(query)) continue;
                 
                 renderedCount++;
-                if (renderedCount > 30 && !query) {
+                if (renderedCount > 60 && !query) {
                     break;
                 }
 
                 let card = document.createElement('div');
                 card.className = 'athlete-card';
-                card.setAttribute('onclick', `selectAthleteFromDrawer("${athlete.name.replace(/"/g, '&quot;')}")`);
+                if (query && athlete.name.toLowerCase() === query) {
+                    card.className += ' expanded';
+                }
                 
                 let eventsHtml = '';
                 ['XC 5K', '800m', '1600m', '3200m'].forEach(ev => {
@@ -345,7 +426,19 @@
                     }
                 });
 
-                card.innerHTML = `<div class="card-header"><span class="athlete-name">${athlete.name}</span><span class="athlete-grad-year">${gradDisplay}</span></div><div class="events-grid">${eventsHtml}</div>`;
+                card.innerHTML = `
+                    <div class="card-toggle-header" onclick="toggleAthleteCardElement(this.parentElement)">
+                        <div class="athlete-meta-box">
+                            <span class="athlete-name">${athlete.name}</span>
+                            <span class="athlete-grad-text">${gradDisplay}</span>
+                        </div>
+                        <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="card-expand-body">
+                        <div class="events-grid">${eventsHtml}</div>
+                        <button class="card-action-btn" onclick="event.stopPropagation(); selectAthleteFromDrawer('${athlete.name.replace(/"/g, '&quot;')}')">Highlight On Leaderboard</button>
+                    </div>
+                `;
                 container.appendChild(card);
             }
             
@@ -360,11 +453,56 @@
             const tbody = document.getElementById('leaderboardBody');
             tbody.innerHTML = '';
 
-            document.getElementById('rankHeaderTime').innerText = rankType === 'PR' ? 'Career PR' : rankType + ' Time';
+            let list = [];
 
-            let list = Object.values(athletes)
-                .filter(a => a[eventType] && a[eventType][rankType] && a[eventType][rankType] !== 'NT' && a[eventType][rankType] !== '' && a[eventType][rankType] !== '--')
-                .sort((a, b) => cleanTimeToSeconds(a[eventType][rankType]) - cleanTimeToSeconds(b[eventType][rankType]));
+            // CALENDAR YEAR ROUTINE: Scan all 4 grade columns for data points matching selected season year
+            if (rankType === 'SEASON_YEAR') {
+                const targetYear = document.getElementById('leaderboardSeasonYear').value;
+                document.getElementById('rankHeaderTime').innerText = targetYear + ' Season';
+
+                Object.values(athletes).forEach(athlete => {
+                    if (athlete[eventType]) {
+                        let evData = athlete[eventType];
+                        let matchedTimeStr = null;
+
+                        // Check each grade level for a time matching the chosen calendar year
+                        ['9th', '10th', '11th', '12th'].forEach(grade => {
+                            if (extractYearFromTimeValue(evData[grade]) === targetYear) {
+                                matchedTimeStr = evData[grade];
+                            }
+                        });
+
+                        if (matchedTimeStr) {
+                            // Strip out parenthetical year tag so table looks tidy
+                            let displayTime = matchedTimeStr.split('(')[0].trim();
+                            
+                            // Make a shadow copy of athlete structure to inject calculated display time
+                            list.push({
+                                name: athlete.name,
+                                gradYear: athlete.gradYear,
+                                calculatedDisplayTime: displayTime
+                            });
+                        }
+                    }
+                });
+
+                // Sort calendar year times fastest to slowest
+                list.sort((a, b) => cleanTimeToSeconds(a.calculatedDisplayTime) - cleanTimeToSeconds(b.calculatedDisplayTime));
+
+            } else {
+                // NORMAL GRADE-LEVEL BREAKDOWN ROUTINE
+                document.getElementById('rankHeaderTime').innerText = rankType === 'PR' ? 'Career PR' : rankType + ' Time';
+
+                let rawList = Object.values(athletes)
+                    .filter(a => a[eventType] && a[eventType][rankType] && a[eventType][rankType] !== 'NT' && a[eventType][rankType] !== '' && a[eventType][rankType] !== '--')
+                    .sort((a, b) => cleanTimeToSeconds(a[eventType][rankType]) - cleanTimeToSeconds(b[eventType][rankType]));
+
+                list = rawList.map(a => ({
+                    name: a.name,
+                    gradYear: a.gradYear,
+                    calculatedDisplayTime: a[eventType][rankType]
+                }));
+            }
 
             if(list.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;">No matching times found on file.</td></tr>';
@@ -387,7 +525,7 @@
                     <td style="font-weight:700; color:var(--perry-gray);">${index + 1}</td>
                     <td style="font-weight:700; color:var(--primary);">${athlete.name}</td>
                     <td><span class="athlete-grad-year">${yrDisp}</span></td>
-                    <td style="text-align:right; font-weight:700; color:var(--primary);">${athlete[eventType][rankType]}</td>
+                    <td style="text-align:right; font-weight:700; color:var(--primary);">${athlete.calculatedDisplayTime}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -498,6 +636,7 @@
                     localStorage.setItem('perry_athlete_db_v19', JSON.stringify(athletes));
                     
                     recalculateAllRankings();
+                    populateSeasonYearDropdown();
                     renderLeaderboard();
                     renderRoster();
                     if (isManualClick) {
@@ -514,6 +653,10 @@
             }
         }
 
+        // Initialize setup on first pass loading
+        if (Object.keys(athletes).length > 0) {
+            populateSeasonYearDropdown();
+        }
         renderLeaderboard();
         renderRoster();
         
