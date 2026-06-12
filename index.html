@@ -330,6 +330,7 @@
                         // 2) HH:MM:SS timestamp strings (e.g. 0:16:13 or 16:13:00)
                         // 3) Plain MM:SS strings (e.g. 16:13) — already correct
                         let numericVal = parseFloat(rawTime);
+                        if (!isNaN(numericVal) && numericVal >= 1) continue; // position/rank numbers, not times
                         if (!isNaN(numericVal) && numericVal > 0 && numericVal < 1) {
                             // Excel decimal fraction: multiply by 24*60 to get total minutes
                             let totalMinutes = numericVal * 24 * 60;
