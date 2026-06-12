@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perry Boys Distance Times</title>
     <meta name="theme-color" content="#000000">
-    
-    <!-- FAVICON LINK: Uses your logo image for the browser tab -->
     <link rel="icon" type="image/png" href="Mass. Perry Black Outline.png">
 
     <style>
@@ -26,7 +24,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; }
         
-        /* Premium Header Styling */
         header { 
             background: var(--primary); 
             color: white; 
@@ -40,21 +37,8 @@
             position: relative; 
         }
         
-        .logo-img { 
-            max-width: 155px; 
-            height: auto; 
-            display: block; 
-            margin-bottom: -2px; 
-        }
-        
-        header h1 { 
-            font-size: 22px; 
-            font-weight: 800; 
-            letter-spacing: -0.5px; 
-            color: #ffffff; 
-            margin-top: 0; 
-        }
-        
+        .logo-img { max-width: 155px; height: auto; display: block; margin-bottom: -2px; }
+        header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; margin-top: 0; }
         header p { color: #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         
         .header-sync-btn { position: absolute; top: 12px; right: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
@@ -62,33 +46,42 @@
         .header-sync-btn svg { width: 20px; height: 20px; fill: #ffffff; transition: transform 0.5s ease; }
         .header-sync-btn.spinning svg { transform: rotate(360deg); }
 
-        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 12px; }
         
-        /* Stacked dropdown rows for easy responsive filter usage */
         .filter-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         .filter-row { display: flex; gap: 8px; width: 100%; }
         .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        /* Leaderboards Component Layout */
-        .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .rank-table th, .rank-table td { padding: 14px 12px; text-align: left; font-size: 14px; }
+        /* Optimized Mobile Layout for Rankings Grid */
+        .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); table-layout: fixed; }
+        .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .rank-table th { background: var(--primary); color: white; }
+        
+        /* Column Width Distribution */
+        .col-rank { width: 32px; font-weight: 700; }
+        .col-athlete { width: auto; } /* Automatically stretches */
+        .col-grad { width: 42px; text-align: center; }
+        .col-time { width: 105px; text-align: right; }
+
         .rank-table tbody tr { cursor: pointer; transition: background 0.15s ease; }
         .rank-table tbody tr:hover { background: #f1f5f9; }
         .rank-table tr:not(:last-child) { border-bottom: 1px solid var(--border); }
         .rank-table tr.highlighted-row { background: #fffbeb; }
         .rank-table tr.highlighted-row:hover { background: #fef3c7; }
 
-        /* Custom Multi-Row Career View Styling */
+        /* Compact Time-Points Label Combo */
+        .score-points-label { color: #b45309; font-weight: 800; font-size: 12px; margin-right: 4px; }
+        .squad-subname { font-size: 11px; font-weight: 600; color: var(--text-muted); font-style: italic; display: block; margin-top: 1px; }
+
+        /* Career Progression view elements */
         .career-list-view { display: flex; flex-direction: column; gap: 10px; }
         .career-row-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: background 0.15s; }
         .career-row-card:hover { background: #f8fafc; }
         .career-row-card.highlighted-card { background: #fffbeb; border-color: #fde68a; }
-        .career-row-card.highlighted-card:hover { background: #fef3c7; }
         
         .career-main-line { display: flex; align-items: center; justify-content: space-between; }
-        .career-left-meta { display: flex; align-items: center; gap: 10px; }
-        .career-num { font-size: 14px; font-weight: 800; color: var(--perry-gray); min-width: 24px; }
+        .career-left-meta { display: flex; align-items: center; gap: 8px; }
+        .career-num { font-size: 14px; font-weight: 800; color: var(--perry-gray); min-width: 20px; }
         .career-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .career-grad { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
         .career-pr-pill { font-size: 13px; font-weight: 800; background: var(--accent); color: var(--primary); padding: 3px 8px; border-radius: 6px; }
@@ -99,62 +92,67 @@
         .career-lbl { font-size: 9px; font-weight: 700; color: var(--perry-gray); text-transform: uppercase; margin-bottom: 2px; }
         .career-val { font-size: 10px; font-weight: 700; color: var(--text); word-break: break-all; line-height: 1.1; }
 
-        /* NEW: Virtual Meet Component Layout Styles */
-        .meet-dashboard { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
-        .meet-dashboard h3 { font-size: 16px; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); }
-        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; max-height: 160px; overflow-y: auto; padding: 8px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; }
+        /* Virtual Meet Controls Panel */
+        .meet-dashboard { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
+        .meet-dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .meet-dashboard h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); }
+        .select-all-toggle-link { font-size: 12px; font-weight: 800; color: var(--perry-gray); cursor: pointer; text-decoration: underline; text-transform: uppercase; }
+        
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
         .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; user-select: none; }
         .checkbox-label input { width: 16px; height: 16px; accent-color: var(--primary); }
         
-        .action-btn { width: 100%; background: var(--primary); color: white; border: 3px solid var(--accent); padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: background 0.15s; text-align: center; }
-        .action-btn:hover { background: #222; }
+        .action-btn { width: 100%; background: var(--primary); color: white; border: 3px solid var(--accent); padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer; text-align: center; }
 
-        .meet-section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--perry-gray); margin: 20px 0 8px 4px; letter-spacing: 0.5px; }
-        .score-podium { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .team-score-card { background: white; border: 2px solid var(--border); border-left: 6px solid var(--perry-gray); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .meet-section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--perry-gray); margin: 18px 0 8px 4px; letter-spacing: 0.5px; }
+        .score-podium { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        
+        /* Interactive Championship Standings Cards */
+        .team-score-card { background: white; border: 1px solid var(--border); border-left: 6px solid var(--perry-gray); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.15s, background-color 0.15s; }
+        .team-score-card:hover { transform: translateY(-1px); background-color: #f8fafc; }
         .team-score-card.place-1 { border-left-color: #d97706; background: #fffbeb; border-color: #fde68a; }
+        .team-score-card.place-1:hover { background: #fef3c7; }
         .team-score-card.place-2 { border-left-color: #475569; }
         .team-score-card.place-3 { border-left-color: #b45309; }
-        .team-score-name { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
-        .team-score-pts { font-size: 18px; font-weight: 900; color: var(--primary); }
-        .tiebreaker-badge { font-size: 10px; background: #b45309; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .team-score-name { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        .team-score-pts { font-size: 16px; font-weight: 900; color: var(--primary); }
+        .tiebreaker-badge { font-size: 9px; background: #b45309; color: white; padding: 2px 5px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
 
-        /* Floating Trigger Action for Search Mode */
-        .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; transition: transform 0.2s; }
-        .search-trigger-fab:active { transform: scale(0.9); }
-        .search-trigger-fab svg { width: 24px; height: 24px; fill: #ffffff; }
+        /* Drilled-down Season View Panel */
+        .team-roster-breakdown-panel { background: #f1f5f9; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px; display: none; }
+        .breakdown-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; }
+        .breakdown-panel-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--primary); }
+        .breakdown-close-link { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); cursor: pointer; }
+        .breakdown-row-item { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; font-weight: 600; border-bottom: 1px dashed #e2e8f0; }
+        .breakdown-row-item.displacer { color: var(--text-muted); font-weight: 500; }
 
-        /* Smooth Slide-Out Athlete Panel (Drawer Framework) */
+        /* Slide-Out Roster Overlay Drawer */
+        .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
         .drawer-content { position: fixed; top: 0; right: 0; width: 88%; max-width: 440px; height: 100vh; background: var(--bg); box-shadow: -10px 0 25px -5px rgba(0,0,0,0.2); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 201; display: flex; flex-direction: column; }
         .drawer-overlay.active .drawer-content { transform: translateX(0); }
         
-        .drawer-header { padding: 16px; background: white; border-bottom: 1px solid var(--border); }
+        .drawer-header { padding: 14px; background: white; border-bottom: 1px solid var(--border); }
         .modal-search-box { position: relative; }
-        .modal-search-box input { width: 100%; padding: 14px; padding-left: 44px; border: 2px solid var(--primary); border-radius: 10px; font-size: 16px; background: #f8fafc; outline: none; font-weight: 600; }
-        .modal-search-box svg { position: absolute; left: 14px; top: 15px; width: 20px; height: 20px; fill: var(--perry-gray); }
+        .modal-search-box input { width: 100%; padding: 12px 12px 12px 40px; border: 2px solid var(--primary); border-radius: 10px; font-size: 15px; background: #f8fafc; outline: none; font-weight: 600; }
+        .modal-search-box svg { position: absolute; left: 12px; top: 13px; width: 18px; height: 18px; fill: var(--perry-gray); }
         
         .drawer-scroll-area { flex: 1; overflow-y: auto; padding: 12px; }
 
-        /* Compact & Collapsible Roster Card Framework inside Drawer */
-        .athlete-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; transition: border-color 0.15s; }
-        .athlete-card:hover { border-color: #cbd5e1; }
-        
-        .card-toggle-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; background: white; user-select: none; }
+        .athlete-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; }
+        .card-toggle-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; cursor: pointer; background: white; }
         .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; }
-        .athlete-name { font-size: 16px; font-weight: 800; color: var(--primary); }
+        .athlete-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
         
         .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
         .athlete-card.expanded .card-chevron { transform: rotate(180deg); }
-
         .card-expand-body { display: none; padding: 0 14px 14px 14px; background: #ffffff; border-top: 1px solid #f1f5f9; }
         .athlete-card.expanded .card-expand-body { display: block; }
         
-        .card-action-btn { width: 100%; margin-top: 10px; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-align: center; border: 2px solid transparent; transition: all 0.15s; }
-        .card-action-btn:hover { background: #222; border-color: var(--accent); }
+        .card-action-btn { width: 100%; margin-top: 10px; background: var(--primary); color: white; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; border: 2px solid transparent; text-align: center; }
 
         .events-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
         .event-row { background: #f8fafc; border-radius: 8px; padding: 8px 10px; border-left: 3px solid var(--perry-gray); }
@@ -169,7 +167,6 @@
         .prog-rank { font-size: 8px; font-weight: 800; color: #b45309; background: #fef3c7; padding: 1px 3px; border-radius: 3px; margin-top: 2px; display: inline-block; align-self: center; border: 1px solid #fde68a; }
         .pr-rank-badge { font-size: 9px; font-weight: 800; color: #ffffff; background: #1e293b; padding: 1px 3px; border-radius: 3px; margin-left: 3px; }
         
-        /* Notifications Panel */
         .status-msg { padding: 14px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: none; line-height: 1.4; position: fixed; top: 12px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; z-index: 300; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .status-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
@@ -188,7 +185,6 @@
         <p>XC & Track Career Leaderboards</p>
     </header>
 
-    <!-- Slide-Out Roster & Search Panel Overlay -->
     <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawerMode(event)">
         <div class="drawer-content">
             <div class="drawer-header">
@@ -201,15 +197,12 @@
         </div>
     </div>
 
-    <!-- Floating Search Action Button -->
     <div class="search-trigger-fab" id="searchFab" onclick="toggleDrawer(true)" title="Search Athletes">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     </div>
 
-    <!-- MAIN CORE APPLICATION VIEW -->
     <div class="container">
         <div class="filter-container">
-            <!-- Row 1: Event Type Picker -->
             <div class="filter-row" id="eventSelectorRow">
                 <select id="leaderboardEvent" class="leaderboard-select" onchange="renderLeaderboard()">
                     <option value="XC 5K">Cross Country 5K</option>
@@ -218,7 +211,6 @@
                     <option value="3200m">3200m Track</option>
                 </select>
             </div>
-            <!-- Row 2: Category Rank vs Alternative Dynamic Application Modes -->
             <div class="filter-row">
                 <select id="leaderboardRankType" class="leaderboard-select" onchange="handleRankTypeChange()">
                     <option value="PR">All-Time Best (Career PR)</option>
@@ -230,8 +222,6 @@
                     <option value="12th">12th Grade Standings</option>
                     <option value="SEASON_YEAR">Filter By Calendar Year ↓</option>
                 </select>
-                
-                <!-- Dynamic calendar season picker which drops down conditionally -->
                 <select id="leaderboardSeasonYear" class="leaderboard-select" style="display: none;" onchange="renderLeaderboard()">
                 </select>
             </div>
@@ -239,31 +229,42 @@
         
         <!-- MODULE: VIRTUAL MEET CONTROL COCKPIT -->
         <div id="virtualMeetDashboard" class="meet-dashboard" style="display: none;">
-            <h3>Select Cross Country Seasons to Score</h3>
+            <div class="meet-dashboard-header">
+                <h3>Select XC Seasons to Score</h3>
+                <span id="selectAllMeetYearsBtn" class="select-all-toggle-link" onclick="toggleSelectAllMeetYears()">Select All</span>
+            </div>
             <div id="meetSeasonCheckboxes" class="checkbox-grid"></div>
             <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Championship Race</button>
         </div>
 
         <div id="virtualMeetResultsArea" style="display: none;">
-            <div class="meet-section-title">Team Championship Podium</div>
+            <div class="meet-section-title">Team Championship Podium (Click to View Roster)</div>
             <div id="meetPodiumContainer" class="score-podium"></div>
+            
+            <!-- Dynamic Drill-Down Interactive Roster Box -->
+            <div id="teamRosterBreakdownPanel" class="team-roster-breakdown-panel">
+                <div class="breakdown-panel-header">
+                    <span id="breakdownPanelTitle" class="breakdown-panel-title">Varsity Scoring Lineup</span>
+                    <span class="breakdown-close-link" onclick="closeTeamRosterPanel()">Close ✕</span>
+                </div>
+                <div id="breakdownRowsContainer"></div>
+            </div>
+
             <div class="meet-section-title">Official Race Results Grid</div>
         </div>
         
-        <!-- Standard Data Table Component -->
         <table class="rank-table" id="standardRankTable">
             <thead>
                 <tr>
-                    <th style="width: 45px; font-weight:700;">#</th>
-                    <th style="font-weight:700;">Athlete</th>
-                    <th style="font-weight:700;">Grad</th>
-                    <th id="rankHeaderTime" style="text-align: right; font-weight:700;">Time</th>
+                    <th class="col-rank">#</th>
+                    <th class="col-athlete">Athlete</th>
+                    <th class="col-grad">Grad</th>
+                    <th id="rankHeaderTime" class="col-time">Time</th>
                 </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
         </table>
 
-        <!-- Custom Comprehensive Career View Container -->
         <div id="careerProgressiveView" class="career-list-view" style="display: none;"></div>
     </div>
 
@@ -278,6 +279,7 @@
         let athletes = {};
         let rankingsCache = {}; 
         let highlightedAthlete = null;
+        let virtualMeetStandingsCache = []; // Global pointer holding details for drill-down selections
 
         function getLastName(fullName) {
             if (!fullName) return '';
@@ -351,7 +353,6 @@
                 yearSelector.appendChild(opt);
             });
 
-            // Simultaneously populate checkboxes for meet simulator
             populateMeetCheckboxPanel(sortedYears);
         }
 
@@ -361,9 +362,22 @@
             years.forEach(yr => {
                 let lbl = document.createElement('label');
                 lbl.className = 'checkbox-label';
-                lbl.innerHTML = `<input type="checkbox" class="meet-year-checkbox" value="${yr}"> ${yr} Season`;
+                lbl.innerHTML = `<input type="checkbox" class="meet-year-checkbox" value="${yr}"> ${yr}`;
                 container.appendChild(lbl);
             });
+            document.getElementById('selectAllMeetYearsBtn').innerText = "Select All";
+        }
+
+        function toggleSelectAllMeetYears() {
+            const checkboxes = document.querySelectorAll('.meet-year-checkbox');
+            const linkBtn = document.getElementById('selectAllMeetYearsBtn');
+            let anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+
+            checkboxes.forEach(cb => {
+                cb.checked = anyUnchecked;
+            });
+
+            linkBtn.innerText = anyUnchecked ? "Clear All" : "Select All";
         }
 
         function handleRankTypeChange() {
@@ -375,11 +389,12 @@
             const meetDashboard = document.getElementById('virtualMeetDashboard');
             const meetResultsArea = document.getElementById('virtualMeetResultsArea');
             
-            // Re-route visibility grids based on app structural mode
             yearSelector.style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
             eventRow.style.display = (rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
             meetDashboard.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
             meetResultsArea.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
+            
+            closeTeamRosterPanel();
 
             if (rankType === 'CAREER_ALL') {
                 standardTable.style.display = 'none';
@@ -387,7 +402,7 @@
             } else if (rankType === 'VIRTUAL_MEET') {
                 standardTable.style.display = 'table';
                 careerView.style.display = 'none';
-                executeVirtualMeetCalculation(); // Run initial calculation on load
+                executeVirtualMeetCalculation();
                 return;
             } else {
                 standardTable.style.display = 'table';
@@ -483,15 +498,11 @@
                 if (query && !athlete.name.toLowerCase().includes(query) && !gradDisplay.toLowerCase().includes(query)) continue;
                 
                 renderedCount++;
-                if (renderedCount > 60 && !query) {
-                    break;
-                }
+                if (renderedCount > 60 && !query) break;
 
                 let card = document.createElement('div');
                 card.className = 'athlete-card';
-                if (query && athlete.name.toLowerCase() === query) {
-                    card.className += ' expanded';
-                }
+                if (query && athlete.name.toLowerCase() === query) card.className += ' expanded';
                 
                 let eventsHtml = '';
                 ['XC 5K', '800m', '1600m', '3200m'].forEach(ev => {
@@ -538,7 +549,6 @@
         }
 
         function executeVirtualMeetCalculation() {
-            // Locate all selected years from checkbox controls
             const checkboxes = document.querySelectorAll('.meet-year-checkbox');
             let selectedYears = [];
             checkboxes.forEach(cb => { if(cb.checked) selectedYears.push(cb.value); });
@@ -548,8 +558,8 @@
             
             tbody.innerHTML = '';
             podiumContainer.innerHTML = '';
+            closeTeamRosterPanel();
 
-            // Guard rails: Default to top 3 available seasons if none are explicitly selected
             if (selectedYears.length === 0) {
                 let defaultYears = generateUniqueYearsList().slice(0, 3);
                 checkboxes.forEach(cb => {
@@ -561,14 +571,13 @@
             }
 
             if (selectedYears.length < 2) {
-                podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 seasons to run a dual or invitational meet!</p>';
+                podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 seasons to run an invitational!</p>';
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Awaiting meet lineups...</td></tr>';
                 return;
             }
 
             let globalRaceEntries = [];
 
-            // Phase 1: Roster Capping (Extract individual fastest marks per target calendar year)
             selectedYears.forEach(year => {
                 let seasonCandidates = [];
                 
@@ -600,37 +609,33 @@
                     }
                 });
 
-                // Enforce XC Rules: Sort candidates and limit rosters to top 7 varsity runners
                 seasonCandidates.sort((a, b) => a.timeSecs - b.timeSecs);
                 let topSeven = seasonCandidates.slice(0, 7);
                 
                 topSeven.forEach((runner, index) => {
-                    runner.rosterRank = index + 1; // 1-5 are scorers, 6-7 are pushers/displacers
+                    runner.rosterRank = index + 1;
                     globalRaceEntries.push(runner);
                 });
             });
 
-            // Phase 2: Run the Race (Global Sorting)
             globalRaceEntries.sort((a, b) => a.timeSecs - b.timeSecs);
 
-            // Establish score tracking objects
             let teamStandingsMap = {};
             selectedYears.forEach(year => {
                 teamStandingsMap[year + " Squad"] = {
+                    teamKey: year + " Squad",
                     teamName: year + " Season",
                     points: 0,
                     scoringCount: 0,
-                    sixthPlaceGlobalRank: 99999, // High default for tiebreaker safety
+                    sixthPlaceGlobalRank: 99999,
                     hasSixth: false,
                     runnersList: []
                 };
             });
 
-            // Phase 3: Live XC Displacement Points Distribution
             globalRaceEntries.forEach((runner, index) => {
                 let finishPositionPoints = index + 1;
                 let team = teamStandingsMap[runner.team];
-                
                 let runnerScoreForTeam = "--";
 
                 if (team.scoringCount < 5) {
@@ -648,25 +653,23 @@
                 }
 
                 runner.assignedMeetPoints = runnerScoreForTeam;
+                runner.globalPlace = finishPositionPoints;
                 team.runnersList.push(runner);
             });
 
-            // Phase 4: Championship Rankings and NFHS Multi-Team Tiebreaker Execution
             let rankedTeamsList = Object.values(teamStandingsMap).filter(t => t.scoringCount >= 5);
-            
-            // Track if a tiebreaker was triggered for visual badging
             let tieMap = new Set();
 
             rankedTeamsList.sort((teamA, teamB) => {
                 if (teamA.points !== teamB.points) {
-                    return teamA.points - teamB.points; // Lowest cumulative score wins
+                    return teamA.points - teamB.points;
                 }
-                // Tie Scenario: Execute 6th runner placement compare
                 tieMap.add(teamA.points);
                 return teamA.sixthPlaceGlobalRank - teamB.sixthPlaceGlobalRank;
             });
 
-            // Render Podium View UI
+            virtualMeetStandingsCache = rankedTeamsList;
+
             rankedTeamsList.forEach((team, idx) => {
                 let card = document.createElement('div');
                 card.className = `team-score-card place-${idx + 1}`;
@@ -674,6 +677,7 @@
                 let isBrokenTie = tieMap.has(team.points);
                 let tieBadge = isBrokenTie ? `<span class="tiebreaker-badge" title="Tie broken via faster 6th-man place finish">6th-Man Tiebreak</span>` : '';
 
+                card.setAttribute('onclick', `drillDownTeamRoster('${team.teamKey}')`);
                 card.innerHTML = `
                     <div class="team-score-name">
                         <strong>#${idx + 1}</strong> ${team.teamName} ${tieBadge}
@@ -683,7 +687,6 @@
                 podiumContainer.appendChild(card);
             });
 
-            // Render Main Race Result Rows to Standard Table Component
             document.getElementById('rankHeaderTime').innerText = "Points (Time)";
             globalRaceEntries.forEach((runner, index) => {
                 let row = document.createElement('tr');
@@ -694,17 +697,52 @@
 
                 let yrDisp = runner.gradYear ? `'${String(runner.gradYear).slice(-2)}` : '--';
                 row.innerHTML = `
-                    <td style="font-weight:700; color:var(--perry-gray);">${index + 1}</td>
-                    <td>
-                        <div style="font-weight:700; color:var(--primary);">${runner.name} <span style="font-size:11px; font-weight:600; color:var(--text-muted); font-style:italic;">${runner.team}</span></div>
+                    <td class="col-rank" style="color:var(--perry-gray);">${index + 1}</td>
+                    <td class="col-athlete">
+                        <div style="font-weight:700; color:var(--primary); text-overflow:ellipsis; overflow:hidden;">${runner.name}</div>
+                        <span class="squad-subname">${runner.team}</span>
                     </td>
-                    <td><span class="athlete-grad-year">${yrDisp}</span></td>
-                    <td style="text-align:right; font-weight:800; color:var(--primary);">
-                        <span style="color:#b45309; margin-right:8px; font-size:13px;">[Pts: ${runner.assignedMeetPoints}]</span>${runner.displayTime}
+                    <td class="col-grad"><span class="athlete-grad-year">${yrDisp}</span></td>
+                    <td class="col-time" style="font-weight:800; color:var(--primary);">
+                        <span class="score-points-label">(${runner.assignedMeetPoints})</span>${runner.displayTime}
                     </td>
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        function drillDownTeamRoster(teamKey) {
+            const targetTeam = virtualMeetStandingsCache.find(t => t.teamKey === teamKey);
+            if (!targetTeam) return;
+
+            const panel = document.getElementById('teamRosterBreakdownPanel');
+            const title = document.getElementById('breakdownPanelTitle');
+            const rowsContainer = document.getElementById('breakdownRowsContainer');
+
+            title.innerText = `${targetTeam.teamName} Lineup`;
+            rowsContainer.innerHTML = '';
+
+            targetTeam.runnersList.sort((a,b) => a.rosterRank - b.rosterRank);
+
+            targetTeam.runnersList.forEach(runner => {
+                let isDisplacer = runner.rosterRank > 5;
+                let row = document.createElement('div');
+                row.className = `breakdown-row-item ${isDisplacer ? 'displacer' : ''}`;
+                
+                let scoreText = isDisplacer ? `Pusher (Pts: ${runner.assignedMeetPoints})` : `Scorer (Pts: ${runner.assignedMeetPoints})`;
+                row.innerHTML = `
+                    <div><strong>#${runner.rosterRank}</strong> ${runner.name} <span style="font-size:10px;color:var(--text-muted);">[Global Place: ${runner.globalPlace}]</span></div>
+                    <div style="text-align:right;">${runner.displayTime} <span style="font-size:10px; font-weight:700; margin-left:4px;">${isDisplacer ? '✕' : '✓'}</span></div>
+                `;
+                rowsContainer.appendChild(row);
+            });
+
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeTeamRosterPanel() {
+            document.getElementById('teamRosterBreakdownPanel').style.display = 'none';
         }
 
         function renderLeaderboard() {
@@ -713,9 +751,7 @@
             const tbody = document.getElementById('leaderboardBody');
             const careerContainer = document.getElementById('careerProgressiveView');
             
-            if (rankType === 'VIRTUAL_MEET') {
-                return; // Deflect handling to standalone dedicated calculator loop
-            }
+            if (rankType === 'VIRTUAL_MEET') return;
 
             tbody.innerHTML = '';
             careerContainer.innerHTML = '';
@@ -724,9 +760,6 @@
                 .filter(a => a[eventType] && a[eventType]['PR'] && a[eventType]['PR'] !== 'NT' && a[eventType]['PR'] !== '' && a[eventType]['PR'] !== '--')
                 .sort((a, b) => cleanTimeToSeconds(a[eventType]['PR']) - cleanTimeToSeconds(b[eventType]['PR']));
 
-            // ==========================================
-            // OPTION A: COMPREHENSIVE CAREER VIEW MODE
-            // ==========================================
             if (rankType === 'CAREER_ALL') {
                 if (sortedPRList.length === 0) {
                     careerContainer.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:30px;font-weight:600;">No career charts found on file.</p>';
@@ -737,9 +770,7 @@
                     let card = document.createElement('div');
                     card.id = `row-${btoa(athlete.name)}`;
                     card.className = 'career-row-card';
-                    if (highlightedAthlete === athlete.name) {
-                        card.className += ' highlighted-card';
-                    }
+                    if (highlightedAthlete === athlete.name) card.className += ' highlighted-card';
 
                     card.setAttribute('onclick', `highlightedAthlete="${athlete.name.replace(/"/g, '&quot;')}"; renderLeaderboard(); toggleDrawer(true); document.getElementById('searchInput').value="${athlete.name.replace(/"/g, '&quot;')}"; renderRoster();`);
 
@@ -780,9 +811,6 @@
                 return;
             }
 
-            // ==========================================
-            // OPTION B: STANDARD TABLE BREAKDOWN ROUTINES
-            // ==========================================
             let list = [];
 
             if (rankType === 'SEASON_YEAR') {
@@ -795,9 +823,7 @@
                         let matchedTimeStr = null;
 
                         ['9th', '10th', '11th', '12th'].forEach(grade => {
-                            if (extractYearFromTimeValue(evData[grade]) === targetYear) {
-                                matchedTimeStr = evData[grade];
-                            }
+                            if (extractYearFromTimeValue(evData[grade]) === targetYear) matchedTimeStr = evData[grade];
                         });
 
                         if (matchedTimeStr) {
@@ -833,21 +859,17 @@
 
             list.forEach((athlete, index) => {
                 let row = document.createElement('tr');
-                let rowId = `row-${btoa(athlete.name)}`;
-                row.id = rowId;
-                
-                if (highlightedAthlete === athlete.name) {
-                    row.className = 'highlighted-row';
-                }
+                row.id = `row-${btoa(athlete.name)}`;
+                if (highlightedAthlete === athlete.name) row.className = 'highlighted-row';
                 
                 row.setAttribute('onclick', `highlightedAthlete="${athlete.name.replace(/"/g, '&quot;')}"; renderLeaderboard(); toggleDrawer(true); document.getElementById('searchInput').value="${athlete.name.replace(/"/g, '&quot;')}"; renderRoster();`);
                 
                 let yrDisp = athlete.gradYear ? `'${String(athlete.gradYear).slice(-2)}` : '--';
                 row.innerHTML = `
-                    <td style="font-weight:700; color:var(--perry-gray);">${index + 1}</td>
-                    <td style="font-weight:700; color:var(--primary);">${athlete.name}</td>
-                    <td><span class="athlete-grad-year">${yrDisp}</span></td>
-                    <td style="text-align:right; font-weight:700; color:var(--primary);">${athlete.calculatedDisplayTime}</td>
+                    <td class="col-rank" style="color:var(--perry-gray);">${index + 1}</td>
+                    <td class="col-athlete"><div style="font-weight:700; color:var(--primary); text-overflow:ellipsis; overflow:hidden;">${athlete.name}</div></td>
+                    <td class="col-grad"><span class="athlete-grad-year">${yrDisp}</span></td>
+                    <td class="col-time" style="font-weight:700; color:var(--primary);">${athlete.calculatedDisplayTime}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -862,7 +884,7 @@
                 } else if (char === ',' && !inQuotes) {
                     insideQuoteRow.push(currentField.trim()); currentField = '';
                 } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (char === '\r' && nextChar === '\n') { i++; }
+                    if (char === '\r' && nextChar === '\n') i++;
                     insideQuoteRow.push(currentField.trim());
                     if (insideQuoteRow.join('').trim() !== '') rows.push(insideQuoteRow);
                     insideQuoteRow = []; currentField = '';
@@ -932,7 +954,6 @@
 
                         if (!updatedAthletes[name].gradYear) {
                             let calculatedGradYear = null;
-                            
                             if (isXC) {
                                 if (srYear && !isNaN(parseInt(srYear))) calculatedGradYear = parseInt(srYear) + 1;
                                 else if (jrYear && !isNaN(parseInt(jrYear))) calculatedGradYear = parseInt(jrYear) + 2;
@@ -944,10 +965,7 @@
                                 else if (soYear && !isNaN(parseInt(soYear))) calculatedGradYear = parseInt(soYear) + 2;
                                 else if (frYear && !isNaN(parseInt(frYear))) calculatedGradYear = parseInt(frYear) + 3;
                             }
-
-                            if (calculatedGradYear) {
-                                updatedAthletes[name].gradYear = calculatedGradYear;
-                            }
+                            if (calculatedGradYear) updatedAthletes[name].gradYear = calculatedGradYear;
                         }
                     }
                     count++;
@@ -961,23 +979,17 @@
                     populateSeasonYearDropdown();
                     renderLeaderboard();
                     renderRoster();
-                    if (isManualClick) {
-                        showMessage("Successfully updated team files!");
-                    }
+                    if (isManualClick) showMessage("Successfully updated team files!");
                 }
             } catch(e) {
                 console.error(e);
-                if (isManualClick) {
-                    showMessage("Unable to update streaming sheets endpoints.", true);
-                }
+                if (isManualClick) showMessage("Unable to update streaming sheets endpoints.", true);
             } finally {
                 if(syncBtn) syncBtn.classList.remove('spinning');
             }
         }
 
-        if (Object.keys(athletes).length > 0) {
-            populateSeasonYearDropdown();
-        }
+        if (Object.keys(athletes).length > 0) populateSeasonYearDropdown();
         renderLeaderboard();
         renderRoster();
         
