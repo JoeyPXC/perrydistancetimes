@@ -394,8 +394,7 @@
                 let targetGridId = `history-grid-${safeIdName}`;
                 
                 let gridBox = document.getElementById(targetGridId);
-                if (gridBox && !gridBox.dataset.loaded) {
-                    gridBox.dataset.loaded = "true";
+                if (gridBox) {
                     loadAthleteMeetHistory(runnerName, targetGridId);
                 }
             }
