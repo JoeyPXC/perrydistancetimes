@@ -52,12 +52,12 @@
         .filter-row { display: flex; gap: 8px; width: 100%; }
         .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        /* STANDINGS GRID TABLE LAYOUT FIXES */
+        /* STANDINGS GRID TABLE LAYOUT FIXES - ADDRESSED 3-DIGIT TRUNCATION OPTIMIZATION */
         .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); table-layout: fixed; }
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
         .rank-table th { background: var(--primary); color: white; }
         
-        .col-rank { width: 35px; font-weight: 700; text-align: center; }
+        .col-rank { width: 44px; font-weight: 700; text-align: center; } /* Adjusted from 35px to support high volume counts cleanly */
         .col-grad { width: 55px; text-align: left; font-weight: 600; color: var(--perry-gray); }
         .col-athlete { width: auto; }
         .col-time { width: 105px; text-align: right; }
@@ -78,7 +78,7 @@
         
         .career-main-line { display: flex; align-items: center; justify-content: space-between; }
         .career-left-meta { display: flex; align-items: center; gap: 8px; }
-        .career-num { font-size: 14px; font-weight: 800; color: var(--perry-gray); min-width: 20px; }
+        .career-num { font-size: 14px; font-weight: 800; color: var(--perry-gray); min-width: 25px; text-align: center; }
         .career-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .career-grad { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
         .career-pr-pill { font-size: 13px; font-weight: 800; background: var(--accent); color: var(--primary); padding: 3px 8px; border-radius: 6px; }
@@ -176,14 +176,6 @@
         .status-msg { padding: 14px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: none; line-height: 1.4; position: fixed; top: 12px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; z-index: 300; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .status-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-
-        /* SEASON SHEET DYNAMIC LOOKUP STYLING */
-        .season-sheet-box { margin-top: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; }
-        .season-sheet-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #b45309; margin-bottom: 6px; letter-spacing: 0.5px; }
-        .season-sheet-table { width: 100%; border-collapse: collapse; font-size: 11px; font-weight: 700; text-align: left; }
-        .season-sheet-table th { color: #b45309; padding-bottom: 4px; border-bottom: 1px solid #fde68a; text-transform: uppercase; font-size: 10px; }
-        .season-sheet-table td { padding: 5px 2px; border-bottom: 1px dashed #fef3c7; color: var(--text); }
-        .season-sheet-table tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -283,19 +275,11 @@
             '3200m': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTBwM8kOEimN_wZH1wz9AOdDalBGnqIMau3pya67oGsFJZHKzfWUsQ8XWLc1We8xtX-Vylj09kEZkxP/pub?gid=1993866337&single=true&output=csv'
         };
 
-        // Configuration Map pointing years to their live season-specific spreadsheet export endpoints
-        const SEASON_SHEET_URLS = {
-            '2026': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=2026_GID_HERE&single=true&output=csv',
-            '2025': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=2025_GID_HERE&single=true&output=csv',
-            '2024': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=2024_GID_HERE&single=true&output=csv'
-        };
-
         let athletes = {};
         let rankingsCache = {}; 
         let highlightedAthlete = null;
         let virtualMeetStandingsCache = [];
         let globalRaceEntriesCache = [];
-        let seasonDataCache = {}; // Cache to avoid multiple redundant network hits for individual season files
 
         function getLastName(fullName) {
             if (!fullName) return '';
@@ -331,14 +315,7 @@
         }
 
         function toggleAthleteCardElement(cardElement) {
-            const wasExpanded = cardElement.classList.contains('expanded');
             cardElement.classList.toggle('expanded');
-            
-            // If the card is expanding, scan and parse season sheet information if applicable
-            if (!wasExpanded) {
-                const name = cardElement.querySelector('.athlete-name').innerText;
-                loadSeasonSpreadsheetDataInline(name, cardElement.querySelector('.card-expand-body'));
-            }
         }
 
         function cleanTimeToSeconds(timeStr) {
@@ -508,91 +485,6 @@
             }, 350);
         }
 
-        /* 
-         * Async runtime checker that parses individual season logs when expanding an athlete's profile card view.
-         * Appends seasonal entries right below the track/XC grids seamlessly.
-         */
-        async function loadSeasonSpreadsheetDataInline(athleteName, appendTargetElement) {
-            const athlete = athletes[athleteName];
-            if (!athlete || !athlete['XC 5K']) return;
-
-            // Remove previous dynamically generated boxes to avoid duplications
-            const existingBox = appendTargetElement.querySelector('.season-sheet-box');
-            if (existingBox) existingBox.remove();
-
-            // Locate any cross country years associated with the athlete's progression blocks
-            let targetYears = [];
-            ['9th', '10th', '11th', '12th'].forEach(grade => {
-                let yr = extractYearFromTimeValue(athlete['XC 5K'][grade]);
-                if (yr && SEASON_SHEET_URLS[yr]) targetYears.push(yr);
-            });
-
-            if (targetYears.length === 0) return;
-
-            // Create container element placeholder
-            const containerBox = document.createElement('div');
-            containerBox.className = 'season-sheet-box';
-            containerBox.innerHTML = `<div class="season-sheet-title">Loading Individual Season Logs...</div>`;
-            appendTargetElement.appendChild(containerBox);
-
-            let matchedRowsHtml = '';
-
-            for (let year of targetYears) {
-                try {
-                    let rows = [];
-                    if (seasonDataCache[year]) {
-                        rows = seasonDataCache[year];
-                    } else {
-                        let res = await fetch(SEASON_SHEET_URLS[year] + '&cachebust=' + new Date().getTime());
-                        let text = await res.text();
-                        rows = parseCSVText(text);
-                        seasonDataCache[year] = rows;
-                    }
-
-                    // Scan the lines looking for name matches
-                    for (let i = 1; i < rows.length; i++) {
-                        let row = rows[i];
-                        if (!row || row.length < 4) continue;
-                        let rowAthleteName = row[1] ? row[1].trim() : '';
-
-                        if (rowAthleteName.toLowerCase() === athleteName.toLowerCase()) {
-                            let meetName = row[2] ? row[2].trim() : 'Unknown Meet';
-                            let meetTime = row[3] ? row[3].trim() : '--';
-                            matchedRowsHtml += `
-                                <tr>
-                                    <td><strong>${year}</strong></td>
-                                    <td>${meetName}</td>
-                                    <td style="text-align:right;">${meetTime}</td>
-                                </tr>
-                            `;
-                        }
-                    }
-                } catch (err) {
-                    console.error(`Error processing season sheets endpoints for year ${year}:`, err);
-                }
-            }
-
-            if (matchedRowsHtml !== '') {
-                containerBox.innerHTML = `
-                    <div class="season-sheet-title">Cross Country Season Logs</div>
-                    <table class="season-sheet-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 45px;">Year</th>
-                                <th>Meet Location</th>
-                                <th style="text-align:right; width: 75px;">Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${matchedRowsHtml}
-                        </tbody>
-                    </table>
-                `;
-            } else {
-                containerBox.remove(); // Remove clean if no matched metrics were returned from the spreadsheets
-            }
-        }
-
         function renderRoster() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const container = document.getElementById('rosterList');
@@ -657,11 +549,6 @@
                     </div>
                 `;
                 container.appendChild(card);
-                
-                // Trigger auto-fetch if card defaults to open state via exact search parameters match
-                if (query && athlete.name.toLowerCase() === query) {
-                    loadSeasonSpreadsheetDataInline(athlete.name, card.querySelector('.card-expand-body'));
-                }
             }
             
             if(query && renderedCount === 0) {
