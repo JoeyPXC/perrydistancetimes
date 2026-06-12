@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,12 +52,10 @@
         .filter-row { display: flex; gap: 8px; width: 100%; }
         .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        /* STANDINGS GRID TABLE LAYOUT FIXES */
         .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); table-layout: fixed; }
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
         .rank-table th { background: var(--primary); color: white; }
         
-        /* Fixed Column widths to accommodate rankings beyond 99 safely without truncation */
         .col-rank { width: 48px; font-weight: 700; text-align: center; }
         .col-grad { width: 55px; text-align: left; font-weight: 600; color: var(--perry-gray); }
         .col-athlete { width: auto; }
@@ -107,7 +104,6 @@
         .meet-section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--perry-gray); margin: 18px 0 8px 4px; letter-spacing: 0.5px; }
         .score-podium { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         
-        /* TEAM ACCORDION CONTAINER WRAPPERS */
         .team-accordion-group { display: flex; flex-direction: column; background: white; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         
         .team-score-card { border-left: 6px solid var(--perry-gray); padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.15s; user-select: none; }
@@ -127,7 +123,6 @@
         .accordion-chevron { width: 18px; height: 18px; fill: var(--perry-gray); transition: transform 0.2s ease; }
         .team-accordion-group.expanded .accordion-chevron { transform: rotate(180deg); }
 
-        /* IN-PLACE ROSTER ACCORDION DROPDOWN PANEL */
         .team-roster-breakdown-panel { background: #f8fafc; border-top: 1px solid var(--border); padding: 12px; display: none; }
         .team-accordion-group.expanded .team-roster-breakdown-panel { display: block; }
         .breakdown-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
@@ -235,7 +230,6 @@
             </div>
         </div>
         
-        <!-- MODULE: VIRTUAL MEET CONTROL COCKPIT -->
         <div id="virtualMeetDashboard" class="meet-dashboard" style="display: none;">
             <div class="meet-dashboard-header">
                 <h3>Select XC Seasons to Score</h3>
@@ -277,13 +271,9 @@
             '3200m': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTBwM8kOEimN_wZH1wz9AOdDalBGnqIMau3pya67oGsFJZHKzfWUsQ8XWLc1We8xtX-Vylj09kEZkxP/pub?gid=1993866337&single=true&output=csv'
         };
 
-        // ── XC Season Meet History ──────────────────────────────────────────────
-        // Paste the published CSV URL for your All_Time_History tab here.
-        // In Google Sheets: File → Share → Publish to web → select "All_Time_History"
-        // tab → CSV → Copy the link and replace the placeholder below.
+        // Added your live published CSV link for the All_Time_History tab below:
         const XC_ALL_TIME_HISTORY_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-3btJXTHknwy-ko0O1pinK71_v5hS51PDH-U3yoM2QK2hIeVJAfnIbLSDKSsrVzNjzT-LyIYlYghl/pub?gid=1287484724&single=true&output=csv";
 
-        // Cache so we only fetch once per page load
         let xcHistoryCache = null;
         let xcHistoryFetchPromise = null;
 
@@ -298,37 +288,37 @@
                     let text = await res.text();
                     let rows = parseCSVText(text);
 
-                    // Build a structure: { "2025": { meetHeaders: [...], athletes: { "Last, First": [...times] } }, ... }
+                    // Rebuilt to match the dynamic layout in 'Boys XC Season Spreadsheets - All_Time_History (1).csv'
+                    // Structure: { "Athlete Name": { "2025": [ { meet: "GlenOak", time: "16:13" }, ... ] } }
                     let parsed = {};
-                    let currentYear = null;
-                    let currentHeaders = [];
 
-                    for (let r = 0; r < rows.length; r++) {
+                    for (let r = 1; r < rows.length; r++) {
                         let row = rows[r];
-                        if (!row || row.length === 0) continue;
+                        if (!row || row.length < 5) continue;
 
-                        let firstCell = (row[0] || '').trim();
+                        let year = (row[0] || '').trim();
+                        let athleteName = (row[1] || '').trim();
+                        let meetName = (row[3] || '').trim();
+                        let rawTime = (row[4] || '').trim();
 
-                        // Detect a year-marker row: col A is a 4-digit year (e.g. "2025")
-                        // and col B is a meet header row (contains "Name" or first meet name)
-                        if (/^\d{4}$/.test(firstCell)) {
-                            currentYear = firstCell;
-                            // The next column(s) in this same row are the meet headers from col B onward
-                            currentHeaders = row.slice(1).map(h => (h || '').trim());
-                            parsed[currentYear] = { meetHeaders: currentHeaders, athletes: {} };
-                            continue;
+                        if (!year || !athleteName || !meetName || year.toLowerCase() === 'year') continue;
+
+                        // Normalize spreadsheet timestamps like '16:13:00' down to standard '16:13'
+                        if (/:00$/.test(rawTime)) {
+                            rawTime = rawTime.substring(0, rawTime.length - 3);
                         }
 
-                        // If we have a current year and this row has an athlete name in col B (col A is blank or also name)
-                        if (currentYear && parsed[currentYear]) {
-                            // Col A = blank (year marker took it), Col B = athlete name, Col C+ = times
-                            // But depending on formula structure col A might be athlete name directly
-                            let athleteName = firstCell || (row[1] || '').trim();
-                            if (!athleteName || athleteName.toLowerCase() === 'name' || athleteName.toLowerCase() === 'athlete') continue;
-                            // Skip the Best/Avg columns by ignoring -- we just store all columns
-                            let times = row.slice(1).map(t => (t || '').trim());
-                            parsed[currentYear].athletes[athleteName] = times;
+                        if (!parsed[athleteName]) {
+                            parsed[athleteName] = {};
                         }
+                        if (!parsed[athleteName][year]) {
+                            parsed[athleteName][year] = [];
+                        }
+
+                        parsed[athleteName][year].push({
+                            meet: meetName,
+                            time: rawTime
+                        });
                     }
 
                     xcHistoryCache = parsed;
@@ -384,7 +374,6 @@
         function toggleAthleteCardElement(cardElement) {
             cardElement.classList.toggle('expanded');
             
-            // Lazy load historical detailed meet rows if expanding
             if (cardElement.classList.contains('expanded')) {
                 let nameEl = cardElement.querySelector('.athlete-name');
                 if (nameEl) {
@@ -566,19 +555,13 @@
             }, 350);
         }
 
-        // ── Meet-by-Meet History ────────────────────────────────────────────────
-        // Loads from the single All_Time_History tab (one fetch, cached for the
-        // whole session).  The tab layout expected:
-        //   Row with col-A = "YYYY"  →  season header; col B onward = meet names
-        //   Subsequent rows          →  col A = athlete name, col B onward = times
+        // Adapted match-maker logic to filter, evaluate, and group by vertical rows
         async function loadAthleteMeetHistory(athleteName, targetGridId) {
             const gridContainer = document.getElementById(targetGridId);
             if (!gridContainer) return;
 
-            // Show a proper loading state
             gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">⏳ Loading season history…</p>`;
 
-            // Check if URL has been configured
             if (!XC_ALL_TIME_HISTORY_URL || XC_ALL_TIME_HISTORY_URL.includes("YOUR_ALL_TIME")) {
                 gridContainer.innerHTML = `<p style="font-size:11px;color:#b45309;text-align:center;padding:12px;">⚠️ Set <strong>XC_ALL_TIME_HISTORY_URL</strong> in the code to enable meet history.</p>`;
                 return;
@@ -591,43 +574,39 @@
                 return;
             }
 
-            // Normalize the search name for fuzzy matching (last-name-first or first-last both work)
             const normSearch = athleteName.toLowerCase().replace(/[^a-z]/g, '');
 
+            // Locate matching runner index within the vertical ledger
+            let matchedKey = Object.keys(historyData).find(k => k.toLowerCase() === athleteName.toLowerCase());
+            if (!matchedKey) {
+                matchedKey = Object.keys(historyData).find(k => {
+                    let norm = k.toLowerCase().replace(/[^a-z]/g, '');
+                    return norm === normSearch || norm.includes(normSearch) || normSearch.includes(norm);
+                });
+            }
+
+            if (!matchedKey || !historyData[matchedKey]) {
+                gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">No meet history found for this runner.</p>`;
+                return;
+            }
+
+            let athleteRecords = historyData[matchedKey];
             let compiledGridHtml = "";
             let foundAnyData = false;
 
-            // Iterate years newest-first
-            const sortedYears = Object.keys(historyData).sort((a, b) => b - a);
+            const sortedYears = Object.keys(athleteRecords).sort((a, b) => b - a);
 
             for (let year of sortedYears) {
-                const yearData = historyData[year];
-                const { meetHeaders, athletes: yearAthletes } = yearData;
-
-                // Find this athlete's row — try exact match first, then fuzzy
-                let matchedKey = Object.keys(yearAthletes).find(k => k.toLowerCase() === athleteName.toLowerCase());
-                if (!matchedKey) {
-                    matchedKey = Object.keys(yearAthletes).find(k => {
-                        let norm = k.toLowerCase().replace(/[^a-z]/g, '');
-                        return norm === normSearch || norm.includes(normSearch) || normSearch.includes(norm);
-                    });
-                }
-                if (!matchedKey) continue;
-
-                const times = yearAthletes[matchedKey];
+                let meetEntries = athleteRecords[year];
                 let meetElementsHtml = "";
                 let seasonPR = null;
 
-                for (let colIdx = 0; colIdx < meetHeaders.length; colIdx++) {
-                    let meetName = (meetHeaders[colIdx] || '').trim();
-                    let timeValue = (times[colIdx] || '').trim();
+                for (let entry of meetEntries) {
+                    let meetName = entry.meet;
+                    let timeValue = entry.time;
 
-                    // Skip blank, placeholder, summary columns
                     if (!meetName || !timeValue) continue;
-                    if (meetName.toLowerCase().includes('best') || meetName.toLowerCase().includes('avg') ||
-                        meetName.toLowerCase().includes('average') || meetName.toLowerCase().includes('season pos')) continue;
-                    if (timeValue === 'DNR' || timeValue === 'DNF' || timeValue === '--' ||
-                        timeValue === '0' || timeValue === '0.0') continue;
+                    if (timeValue === 'DNR' || timeValue === 'DNF' || timeValue === '--' || timeValue === '0' || timeValue === '0.0') continue;
 
                     let timeSecs = cleanTimeToSeconds(timeValue);
                     if (seasonPR === null || timeSecs < cleanTimeToSeconds(seasonPR)) seasonPR = timeValue;
@@ -722,7 +701,6 @@
                     <div class="card-expand-body">
                         <div class="events-grid">${eventsHtml}</div>
                         
-                        <!-- Embedded Historical Meet-by-Meet Layout Content -->
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                             <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet XC History</h4>
                             <div class="meet-history-vertical-grid" id="history-grid-${btoa(athlete.name)}" style="max-height: 280px; overflow-y: auto; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
