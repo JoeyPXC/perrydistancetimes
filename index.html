@@ -339,6 +339,7 @@
                     return parsed;
                 } catch(e) {
                     console.error('XC History fetch error:', e);
+                    xcHistoryFetchPromise = null;
                     return null;
                 }
             })();
