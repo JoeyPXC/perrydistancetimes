@@ -38,7 +38,7 @@
             position: relative; 
         }
         
-        .logo-img { max-width: 180px; height: auto; display: block; margin-bottom: -10px; }
+        .logo-img { max-width: 140px; height: auto; display: block; margin-bottom: -4px; }
         header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; margin-top: 0; }
         header p { color: #e2e8f0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         
@@ -132,7 +132,6 @@
         .breakdown-row-item.displacer { color: var(--text-muted); font-weight: 500; }
 
         .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; }
-        .search-trigger-fab svg { width: 26px; height: 26px; fill: white; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
@@ -175,6 +174,37 @@
         .status-msg { padding: 14px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 600; display: none; line-height: 1.4; position: fixed; top: 12px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; z-index: 300; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .status-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+
+        /* FAB search icon */
+        .search-trigger-fab svg { width: 26px; height: 26px; fill: white; }
+
+        /* Sticky table header */
+        .rank-table thead { position: sticky; top: 0; z-index: 2; }
+
+        /* Alternating row stripes */
+        .rank-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .rank-table tbody tr:nth-child(even):hover { background: #f1f5f9; }
+        .rank-table tr.highlighted-row { background: #fffbeb !important; }
+        .rank-table tr.highlighted-row:hover { background: #fef3c7 !important; }
+
+        /* Medal rank cell */
+        .rank-medal { font-size: 16px; line-height: 1; }
+
+        /* All-time record banner */
+        .record-banner { background: var(--primary); border: 2px solid var(--accent); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .record-banner-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+        .record-banner-name { font-size: 14px; font-weight: 800; color: #ffffff; margin-top: 2px; }
+        .record-banner-time { font-size: 22px; font-weight: 900; color: var(--accent); white-space: nowrap; }
+        .record-banner-left { display: flex; flex-direction: column; }
+
+        /* Last-synced chip under sync button */
+        .sync-timestamp { font-size: 9px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 2px; letter-spacing: 0.3px; position: absolute; top: 54px; right: 8px; white-space: nowrap; }
+
+        /* PR highlight in time column */
+        .time-pr-pill { background: var(--accent); color: var(--primary); font-weight: 800; padding: 2px 7px; border-radius: 5px; display: inline-block; }
+
+        /* Career PR star */
+        .pr-star { font-size: 11px; margin-left: 2px; }
     </style>
 </head>
 <body>
@@ -185,7 +215,8 @@
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
         </div>
-        <img src="Mass. Perry Black Outline.png" alt="Perry Athletics Logo" class="logo-img">
+        <span class="sync-timestamp" id="syncTimestamp"></span>
+        <img src="Mass. Perry Black Outline.png" alt="Perry Athletics Logo" class="logo-img" style="max-width:180px; margin-bottom:-10px;">
         <h1>Perry Boys Distance Times</h1>
         <p>XC & Track Career Leaderboards</p>
     </header>
@@ -207,6 +238,13 @@
     </div>
 
     <div class="container">
+        <div id="recordBanner" class="record-banner" style="display:none;">
+            <div class="record-banner-left">
+                <span class="record-banner-label">🏆 All-Time Program Record</span>
+                <span class="record-banner-name" id="recordName">—</span>
+            </div>
+            <span class="record-banner-time" id="recordTime">—</span>
+        </div>
         <div class="filter-container">
             <div class="filter-row" id="eventSelectorRow">
                 <select id="leaderboardEvent" class="leaderboard-select" onchange="renderLeaderboard()">
@@ -228,7 +266,7 @@
                     <option value="SEASON_YEAR">Filter By Calendar Year ↓</option>
                 </select>
             </div>
-            <div class="filter-row" id="seasonYearRow" style="display: none;">
+            <div class="filter-row" id="seasonYearRow" style="display:none;">
                 <select id="leaderboardSeasonYear" class="leaderboard-select" onchange="renderLeaderboard()">
                 </select>
             </div>
@@ -243,7 +281,6 @@
             <div class="meet-btn-group">
                 <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Meet</button>
                 <button class="export-btn" onclick="exportVirtualMeetToHytek()">Export 💾</button>
-                <button class="export-btn" style="background:#059669; border-color:#34d399;" onclick="openVirtualMeetInTab()">Open 🔗</button>
             </div>
         </div>
 
@@ -317,8 +354,7 @@
 
                         if (!year || !athleteName || !meetName || year.toLowerCase() === 'year') continue;
 
-                        // Only strip trailing :00 from H:MM:SS format (two colons), not M:SS like 11:00
-                        if (/:00$/.test(rawTime) && (rawTime.match(/:/g) || []).length === 2) {
+                        if (/:00$/.test(rawTime)) {
                             rawTime = rawTime.substring(0, rawTime.length - 3);
                         }
 
@@ -379,8 +415,9 @@
             const overlay = document.getElementById('drawerOverlay');
             const input = document.getElementById('searchInput');
             if (open) {
-                overlay.classList.add('active');
+                input.value = '';
                 input.placeholder = 'Search runner name or graduation year...';
+                overlay.classList.add('active');
                 setTimeout(() => input.focus(), 150);
             } else {
                 overlay.classList.remove('active');
@@ -390,12 +427,10 @@
         function openDrawerToAthlete(name) {
             const overlay = document.getElementById('drawerOverlay');
             const input = document.getElementById('searchInput');
-            // Filter to just this athlete so their card is the only thing shown, already expanded
             input.value = name;
             overlay.classList.add('active');
             expandedAthleteName = name;
             renderRoster();
-            // Clear search text without firing oninput (which would re-render and lose the card)
             setTimeout(() => {
                 input.value = '';
                 input.placeholder = name;
@@ -636,32 +671,12 @@
             let compiledGridHtml = "";
             let foundAnyData = false;
 
-            // Build a lookup of year -> season PR time from the career sheet data
-            let careerSheetPRByYear = {};
-            let careerAthleteData = athletes[athleteName] && athletes[athleteName]['XC 5K'] ? athletes[athleteName]['XC 5K'] : null;
-            if (!careerAthleteData) {
-                // Try case-insensitive match
-                let matchKey = Object.keys(athletes).find(k => k.toLowerCase() === athleteName.toLowerCase());
-                if (matchKey) careerAthleteData = athletes[matchKey]['XC 5K'];
-            }
-            if (careerAthleteData) {
-                ['9th', '10th', '11th', '12th'].forEach(grade => {
-                    let val = careerAthleteData[grade];
-                    if (val && val !== '--') {
-                        let yr = extractYearFromTimeValue(val);
-                        let time = val.split('(')[0].trim();
-                        if (yr && time && time !== '--') careerSheetPRByYear[yr] = time;
-                    }
-                });
-            }
-
             const sortedYears = Object.keys(athleteRecords).sort((a, b) => b - a);
 
             for (let year of sortedYears) {
                 let meetEntries = athleteRecords[year];
                 let meetElementsHtml = "";
-                // Use the season PR from the career sheet instead of computing from raw meet times
-                let seasonPR = careerSheetPRByYear[year] || null;
+                let seasonPR = null;
 
                 for (let entry of meetEntries) {
                     let meetName = entry.meet;
@@ -669,6 +684,9 @@
 
                     if (!meetName || !timeValue) continue;
                     if (timeValue === 'DNR' || timeValue === 'DNF' || timeValue === '--' || timeValue === '0' || timeValue === '0.0') continue;
+
+                    let timeSecs = cleanTimeToSeconds(timeValue);
+                    if (seasonPR === null || timeSecs < cleanTimeToSeconds(seasonPR)) seasonPR = timeValue;
 
                     foundAnyData = true;
                     meetElementsHtml += `
@@ -853,7 +871,7 @@
                                 gradeCode: runningGrade,
                                 timeSecs: bestTimeThisYear,
                                 displayTime: bestTimeStringThisYear,
-                                team: year + " PXC Team"
+                                team: year + " Team"
                             });
                         }
                     }
@@ -872,9 +890,9 @@
 
             let teamStandingsMap = {};
             selectedYears.forEach(year => {
-                teamStandingsMap[year + " PXC Team"] = {
-                    teamKey: year + " PXC Team",
-                    teamName: year + " PXC Team",
+                teamStandingsMap[year + " Team"] = {
+                    teamKey: year + " Team",
+                    teamName: year + " Team",
                     points: 0,
                     scoringCount: 0,
                     totalSeconds: 0,
@@ -1111,7 +1129,7 @@
                     card.innerHTML = `
                         <div class="career-main-line">
                             <div class="career-left-meta">
-                                <span class="career-num">${index + 1}</span>
+                                <span class="career-num">${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}</span>
                                 <span class="career-name">${athlete.name} <span class="career-grad">${yrDisp}</span></span>
                             </div>
                             <span class="career-pr-pill">PR: ${evData['PR']}</span>
@@ -1119,19 +1137,19 @@
                         <div class="career-grid">
                             <div class="career-block ${checkIsPR(evData['9th']) ? 'is-pr-year' : ''}">
                                 <div class="career-lbl">9th</div>
-                                <div class="career-val">${evData['9th'].split('(')[0].trim()}</div>
+                                <div class="career-val">${evData['9th'].split('(')[0].trim()}${checkIsPR(evData['9th']) ? '<span class="pr-star">⭐</span>' : ''}</div>
                             </div>
                             <div class="career-block ${checkIsPR(evData['10th']) ? 'is-pr-year' : ''}">
                                 <div class="career-lbl">10th</div>
-                                <div class="career-val">${evData['10th'].split('(')[0].trim()}</div>
+                                <div class="career-val">${evData['10th'].split('(')[0].trim()}${checkIsPR(evData['10th']) ? '<span class="pr-star">⭐</span>' : ''}</div>
                             </div>
                             <div class="career-block ${checkIsPR(evData['11th']) ? 'is-pr-year' : ''}">
                                 <div class="career-lbl">11th</div>
-                                <div class="career-val">${evData['11th'].split('(')[0].trim()}</div>
+                                <div class="career-val">${evData['11th'].split('(')[0].trim()}${checkIsPR(evData['11th']) ? '<span class="pr-star">⭐</span>' : ''}</div>
                             </div>
                             <div class="career-block ${checkIsPR(evData['12th']) ? 'is-pr-year' : ''}">
                                 <div class="career-lbl">12th</div>
-                                <div class="career-val">${evData['12th'].split('(')[0].trim()}</div>
+                                <div class="career-val">${evData['12th'].split('(')[0].trim()}${checkIsPR(evData['12th']) ? '<span class="pr-star">⭐</span>' : ''}</div>
                             </div>
                         </div>
                     `;
@@ -1186,85 +1204,37 @@
                 return;
             }
 
+            // Update record banner
+            if (list.length > 0) {
+                const banner = document.getElementById('recordBanner');
+                const isCareerPR = (rankType === 'PR');
+                banner.style.display = 'flex';
+                document.getElementById('recordName').textContent = list[0].name + (list[0].gradYear ? ` · '${String(list[0].gradYear).slice(-2)}` : '');
+                document.getElementById('recordTime').textContent = list[0].calculatedDisplayTime.split('(')[0].trim();
+            }
+
             list.forEach((athlete, index) => {
                 let row = document.createElement('tr');
                 row.id = `row-${btoa(athlete.name)}`;
                 if (highlightedAthlete === athlete.name) row.className = 'highlighted-row';
-                
+
                 row.setAttribute('onclick', `highlightedAthlete="${athlete.name.replace(/"/g, '&quot;')}"; renderLeaderboard(); openDrawerToAthlete("${athlete.name.replace(/"/g, '&quot;')}");`);
-                
+
                 let yrDisp = athlete.gradYear ? `'${String(athlete.gradYear).slice(-2)}` : '--';
+                let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                let isTopTime = (rankType === 'PR' && index === 0);
+                let timeHtml = isTopTime
+                    ? `<span class="time-pr-pill">${athlete.calculatedDisplayTime.split('(')[0].trim()}</span>`
+                    : athlete.calculatedDisplayTime.split('(')[0].trim();
+
                 row.innerHTML = `
-                    <td class="col-rank" style="color:var(--perry-gray);">${index + 1}</td>
+                    <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
                     <td class="col-grad"><span class="athlete-grad-year">${yrDisp}</span></td>
                     <td class="col-athlete"><div style="font-weight:700; color:var(--primary); text-overflow:ellipsis; overflow:hidden;">${athlete.name}</div></td>
-                    <td class="col-time" style="font-weight:700; color:var(--primary);">${athlete.calculatedDisplayTime}</td>
+                    <td class="col-time" style="font-weight:700; color:var(--primary);">${timeHtml}</td>
                 `;
                 tbody.appendChild(row);
             });
-        }
-
-        function openVirtualMeetInTab() {
-            if (!globalRaceEntriesCache || globalRaceEntriesCache.length === 0 || !virtualMeetStandingsCache || virtualMeetStandingsCache.length === 0) {
-                showMessage("Please choose tracking options and Score Meet before opening.", true);
-                return;
-            }
-
-            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\npx`;
-            output += ` Virtual Meet Simulator                                      HY-TEK's Meet Manager\n`;
-            output += `                  All-Time Cross Country Championship Rankings                  \n`;
-            output += `                               Perry High School                                \n`;
-            output += `                               Last Completed Event                               \n \n`;
-            output += `Event 1  Boys 5k Run CC Varsity\n`;
-            output += `==================================================================================\n`;
-            output += `    Name                    Year School                Avg Mile     Finals  Points\n`;
-            output += `==================================================================================\n`;
-
-            globalRaceEntriesCache.forEach((runner, idx) => {
-                let rankStr = padStringColumns(idx + 1, 3, false);
-                let nameStr = padStringColumns(formatNameLastFirst(runner.name), 25, true);
-                let gradeStr = padStringColumns(runner.gradeCode, 2, false);
-                let schoolStr = padStringColumns(runner.team, 22, true);
-                let paceMin = Math.floor((runner.timeSecs / 3.10686) / 60);
-                let paceSec = ((runner.timeSecs / 3.10686) % 60).toFixed(1);
-                let avgMileStr = padStringColumns(`${paceMin}:${parseFloat(paceSec) < 10 ? '0' : ''}${paceSec}`, 8, false);
-                let finalClock = runner.displayTime;
-                if (!finalClock.includes('.')) finalClock += ".00";
-                let clockStr = padStringColumns(finalClock, 10, false);
-                let ptsStr = padStringColumns(runner.assignedMeetPoints, 5, false);
-                output += ` ${rankStr} ${nameStr} ${gradeStr} ${schoolStr} ${avgMileStr}   ${clockStr}  ${ptsStr}   \n`;
-            });
-
-            output += `                                                                                  \n`;
-            output += `                                   Team Scores                                    \n`;
-            output += `================================================================================= \n`;
-            output += `Rank Team                      Total    1    2    3    4    5   *6   *7   *8   *9 \n`;
-            output += `================================================================================= \n`;
-
-            virtualMeetStandingsCache.forEach((team, idx) => {
-                let rnkStr = padStringColumns(idx + 1, 4, false);
-                let tmNameStr = padStringColumns(team.teamName, 25, true);
-                let totPtsStr = padStringColumns(team.points, 4, false);
-                let pointsBreakdownRow = "";
-                team.runnersList.sort((a,b) => a.rosterRank - b.rosterRank);
-                for(let i = 0; i < 7; i++) {
-                    if (team.runnersList[i]) {
-                        pointsBreakdownRow += padStringColumns(team.runnersList[i].assignedMeetPoints, 5, false);
-                    }
-                }
-                output += `   ${rnkStr} ${tmNameStr} ${totPtsStr}  ${pointsBreakdownRow}\n`;
-                let totalTimeText = formatSecondsToClockStr(team.totalSeconds);
-                let averageTimeText = formatSecondsToClockStr(team.totalSeconds / 5);
-                output += `      Total Time:  ${padStringColumns(totalTimeText, 12, true)}                                                   \n`;
-                output += `         Average:    ${padStringColumns(averageTimeText, 12, true)}                                                   \n`;
-            });
-
-            output += `=================================================================================\n`;
-            output += `</PRE>\n</BODY>\n</HTML>`;
-
-            let blob = new Blob([output], { type: "text/html;charset=utf-8" });
-            let url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
         }
 
         function parseCSVText(text) {
@@ -1371,6 +1341,11 @@
                     populateSeasonYearDropdown();
                     renderLeaderboard();
                     renderRoster();
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const el = document.getElementById('syncTimestamp');
+                    if (el) el.textContent = 'Synced ' + timeStr;
+                    localStorage.setItem('perry_last_sync', now.toISOString());
                     if (isManualClick) showMessage("Successfully updated team files!");
                 }
             } catch(e) {
@@ -1384,6 +1359,16 @@
         if (Object.keys(athletes).length > 0) populateSeasonYearDropdown();
         renderLeaderboard();
         renderRoster();
+
+        // Restore last sync timestamp from localStorage
+        try {
+            const lastSync = localStorage.getItem('perry_last_sync');
+            if (lastSync) {
+                const d = new Date(lastSync);
+                const el = document.getElementById('syncTimestamp');
+                if (el) el.textContent = 'Synced ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            }
+        } catch(e) {}
         
         window.addEventListener('DOMContentLoaded', () => {
             fetchLiveGoogleSheets(false);
