@@ -414,11 +414,7 @@
                 if (nameEl) {
                     let runnerName = nameEl.innerText;
                     let targetGridId = `history-grid-${btoa(runnerName)}`;
-                    
-                    let gridBox = document.getElementById(targetGridId);
-                    if (gridBox && gridBox.innerText.includes("Loading historical meet times…")) {
-                        loadAthleteMeetHistory(runnerName, targetGridId);
-                    }
+                    loadAthleteMeetHistory(runnerName, targetGridId);
                 }
             }
         }
@@ -1294,6 +1290,7 @@
         
         window.addEventListener('DOMContentLoaded', () => {
             fetchLiveGoogleSheets(false);
+            getXCHistoryData(); // pre-fetch in background so it's ready when cards open
         });
     </script>
 </body>
