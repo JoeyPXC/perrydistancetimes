@@ -52,14 +52,12 @@
         .filter-row { display: flex; gap: 8px; width: 100%; }
         .leaderboard-select { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); font-size: 14px; font-weight: 700; background-color: white; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         
-        /* Optimized Mobile Layout for Rankings Grid */
         .rank-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); table-layout: fixed; }
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .rank-table th { background: var(--primary); color: white; }
         
-        /* Column Width Distribution */
         .col-rank { width: 32px; font-weight: 700; }
-        .col-athlete { width: auto; } /* Automatically stretches */
+        .col-athlete { width: auto; }
         .col-grad { width: 42px; text-align: center; }
         .col-time { width: 105px; text-align: right; }
 
@@ -69,11 +67,9 @@
         .rank-table tr.highlighted-row { background: #fffbeb; }
         .rank-table tr.highlighted-row:hover { background: #fef3c7; }
 
-        /* Compact Time-Points Label Combo */
         .score-points-label { color: #b45309; font-weight: 800; font-size: 12px; margin-right: 4px; }
         .squad-subname { font-size: 11px; font-weight: 600; color: var(--text-muted); font-style: italic; display: block; margin-top: 1px; }
 
-        /* Career Progression view elements */
         .career-list-view { display: flex; flex-direction: column; gap: 10px; }
         .career-row-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: background 0.15s; }
         .career-row-card:hover { background: #f8fafc; }
@@ -92,7 +88,6 @@
         .career-lbl { font-size: 9px; font-weight: 700; color: var(--perry-gray); text-transform: uppercase; margin-bottom: 2px; }
         .career-val { font-size: 10px; font-weight: 700; color: var(--text); word-break: break-all; line-height: 1.1; }
 
-        /* Virtual Meet Controls Panel */
         .meet-dashboard { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
         .meet-dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .meet-dashboard h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); }
@@ -102,12 +97,13 @@
         .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; user-select: none; }
         .checkbox-label input { width: 16px; height: 16px; accent-color: var(--primary); }
         
-        .action-btn { width: 100%; background: var(--primary); color: white; border: 3px solid var(--accent); padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer; text-align: center; }
+        .meet-btn-group { display: flex; gap: 8px; }
+        .action-btn { flex: 2; background: var(--primary); color: white; border: 3px solid var(--accent); padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer; text-align: center; }
+        .export-btn { flex: 1; background: #2563eb; color: white; border: 3px solid #60a5fa; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; text-transform: uppercase; cursor: pointer; text-align: center; }
 
         .meet-section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--perry-gray); margin: 18px 0 8px 4px; letter-spacing: 0.5px; }
         .score-podium { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         
-        /* Interactive Championship Standings Cards */
         .team-score-card { background: white; border: 1px solid var(--border); border-left: 6px solid var(--perry-gray); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.15s, background-color 0.15s; }
         .team-score-card:hover { transform: translateY(-1px); background-color: #f8fafc; }
         .team-score-card.place-1 { border-left-color: #d97706; background: #fffbeb; border-color: #fde68a; }
@@ -118,7 +114,6 @@
         .team-score-pts { font-size: 16px; font-weight: 900; color: var(--primary); }
         .tiebreaker-badge { font-size: 9px; background: #b45309; color: white; padding: 2px 5px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
 
-        /* Drilled-down Season View Panel */
         .team-roster-breakdown-panel { background: #f1f5f9; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px; display: none; }
         .breakdown-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; }
         .breakdown-panel-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--primary); }
@@ -126,7 +121,6 @@
         .breakdown-row-item { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; font-weight: 600; border-bottom: 1px dashed #e2e8f0; }
         .breakdown-row-item.displacer { color: var(--text-muted); font-weight: 500; }
 
-        /* Slide-Out Roster Overlay Drawer */
         .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
@@ -234,14 +228,16 @@
                 <span id="selectAllMeetYearsBtn" class="select-all-toggle-link" onclick="toggleSelectAllMeetYears()">Select All</span>
             </div>
             <div id="meetSeasonCheckboxes" class="checkbox-grid"></div>
-            <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Championship Race</button>
+            <div class="meet-btn-group">
+                <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Meet</button>
+                <button class="export-btn" onclick="exportVirtualMeetToHytek()">Export 💾</button>
+            </div>
         </div>
 
         <div id="virtualMeetResultsArea" style="display: none;">
             <div class="meet-section-title">Team Championship Podium (Click to View Roster)</div>
             <div id="meetPodiumContainer" class="score-podium"></div>
             
-            <!-- Dynamic Drill-Down Interactive Roster Box -->
             <div id="teamRosterBreakdownPanel" class="team-roster-breakdown-panel">
                 <div class="breakdown-panel-header">
                     <span id="breakdownPanelTitle" class="breakdown-panel-title">Varsity Scoring Lineup</span>
@@ -279,12 +275,23 @@
         let athletes = {};
         let rankingsCache = {}; 
         let highlightedAthlete = null;
-        let virtualMeetStandingsCache = []; // Global pointer holding details for drill-down selections
+        let virtualMeetStandingsCache = [];
+        let globalRaceEntriesCache = []; // Internal holder for formatting flat export outputs
 
         function getLastName(fullName) {
             if (!fullName) return '';
             let parts = fullName.trim().split(/\s+/);
             return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : fullName.toLowerCase();
+        }
+
+        function formatNameLastFirst(fullName) {
+            if (!fullName) return '';
+            let parts = fullName.trim().split(/\s+/);
+            if (parts.length > 1) {
+                let last = parts.pop();
+                return `${last}, ${parts.join(' ')}`;
+            }
+            return fullName;
         }
 
         function toggleDrawer(open) {
@@ -573,6 +580,8 @@
             if (selectedYears.length < 2) {
                 podiumContainer.innerHTML = '<p style="padding:10px; color:var(--text-muted); font-weight:700;">Select at least 2 seasons to run an invitational!</p>';
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Awaiting meet lineups...</td></tr>';
+                globalRaceEntriesCache = [];
+                virtualMeetStandingsCache = [];
                 return;
             }
 
@@ -586,6 +595,7 @@
                         let evData = athlete['XC 5K'];
                         let bestTimeThisYear = Infinity;
                         let bestTimeStringThisYear = null;
+                        let runningGrade = "--";
 
                         ['9th', '10th', '11th', '12th'].forEach(grade => {
                             if (extractYearFromTimeValue(evData[grade]) === year) {
@@ -593,6 +603,7 @@
                                 if (secs < bestTimeThisYear) {
                                     bestTimeThisYear = secs;
                                     bestTimeStringThisYear = evData[grade].split('(')[0].trim();
+                                    runningGrade = grade.replace('th','');
                                 }
                             }
                         });
@@ -601,9 +612,10 @@
                             seasonCandidates.push({
                                 name: athlete.name,
                                 gradYear: athlete.gradYear,
+                                gradeCode: runningGrade,
                                 timeSecs: bestTimeThisYear,
                                 displayTime: bestTimeStringThisYear,
-                                team: year + " Squad"
+                                team: year + " Team"
                             });
                         }
                     }
@@ -622,11 +634,12 @@
 
             let teamStandingsMap = {};
             selectedYears.forEach(year => {
-                teamStandingsMap[year + " Squad"] = {
-                    teamKey: year + " Squad",
-                    teamName: year + " Season",
+                teamStandingsMap[year + " Team"] = {
+                    teamKey: year + " Team",
+                    teamName: year + " Team",
                     points: 0,
                     scoringCount: 0,
+                    totalSeconds: 0,
                     sixthPlaceGlobalRank: 99999,
                     hasSixth: false,
                     runnersList: []
@@ -641,6 +654,7 @@
                 if (team.scoringCount < 5) {
                     team.points += finishPositionPoints;
                     team.scoringCount++;
+                    team.totalSeconds += runner.timeSecs;
                     runnerScoreForTeam = finishPositionPoints;
                 } else if (team.scoringCount === 5 && runner.rosterRank === 6) {
                     team.sixthPlaceGlobalRank = finishPositionPoints;
@@ -669,6 +683,7 @@
             });
 
             virtualMeetStandingsCache = rankedTeamsList;
+            globalRaceEntriesCache = globalRaceEntries;
 
             rankedTeamsList.forEach((team, idx) => {
                 let card = document.createElement('div');
@@ -700,7 +715,7 @@
                     <td class="col-rank" style="color:var(--perry-gray);">${index + 1}</td>
                     <td class="col-athlete">
                         <div style="font-weight:700; color:var(--primary); text-overflow:ellipsis; overflow:hidden;">${runner.name}</div>
-                        <span class="squad-subname">${runner.team}</span>
+                        <span class="squad-subname">${runner.runnerRank === 6 || runner.rosterRank === 7 ? runner.team + ' (Pusher)' : runner.team}</span>
                     </td>
                     <td class="col-grad"><span class="athlete-grad-year">${yrDisp}</span></td>
                     <td class="col-time" style="font-weight:800; color:var(--primary);">
@@ -709,6 +724,97 @@
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        // TEXT COLUMN PAD HELPER FUNCTION FOR HY-TEK SIMULATOR
+        function padStringColumns(str, targetLength, padRight = true) {
+            str = String(str);
+            if (str.length >= targetLength) return str.substring(0, targetLength);
+            let diff = targetLength - str.length;
+            return padRight ? (str + " ".repeat(diff)) : (" ".repeat(diff) + str);
+        }
+
+        function formatSecondsToClockStr(totalSecs) {
+            let m = Math.floor(totalSecs / 60);
+            let s = (totalSecs % 60).toFixed(2);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function exportVirtualMeetToHytek() {
+            if (!globalRaceEntriesCache || globalRaceEntriesCache.length === 0 || !virtualMeetStandingsCache || virtualMeetStandingsCache.length === 0) {
+                showMessage("Please choose tracking options and Score Meet before exporting.", true);
+                return;
+            }
+
+            // Calculations based on 5K (3.10686 miles)
+            let output = `<!-- saved from url=(0022)http://internet.e-mail -->\n<HTML>\n<BODY>\n<P>\n<PRE>\n`;
+            output += ` Virtual Meet Simulator                                      HY-TEK's Meet Manager\n`;
+            output += `                  All-Time Cross Country Championship Rankings                  \n`;
+            output += `                               Perry High School                                \n`;
+            output += `                               Last Completed Event                               \n \n`;
+            output += `Event 1  Boys 5k Run CC Varsity\n`;
+            output += `==================================================================================\n`;
+            output += `    Name                    Year School                Avg Mile     Finals  Points\n`;
+            output += `==================================================================================\n`;
+
+            globalRaceEntriesCache.forEach((runner, idx) => {
+                let rankStr = padStringColumns(idx + 1, 3, false);
+                let nameStr = padStringColumns(formatNameLastFirst(runner.name), 25, true);
+                let gradeStr = padStringColumns(runner.gradeCode, 2, false);
+                let schoolStr = padStringColumns(runner.team, 22, true);
+                
+                let paceMin = Math.floor((runner.timeSecs / 3.10686) / 60);
+                let paceSec = ((runner.timeSecs / 3.10686) % 60).toFixed(1);
+                let avgMileStr = padStringColumns(`${paceMin}:${parseFloat(paceSec) < 10 ? '0' : ''}${paceSec}`, 8, false);
+                
+                // standardizing final outputs to match standard HY-TEK precision metrics
+                let finalClock = runner.displayTime;
+                if (!finalClock.includes('.')) finalClock += ".00";
+                let clockStr = padStringColumns(finalClock, 10, false);
+                let ptsStr = padStringColumns(runner.assignedMeetPoints, 5, false);
+
+                output += ` ${rankStr} ${nameStr} ${gradeStr} ${schoolStr} ${avgMileStr}   ${clockStr}  ${ptsStr}   \n`;
+            });
+
+            output += `                                                                                  \n`;
+            output += `                                   Team Scores                                    \n`;
+            output += `================================================================================= \n`;
+            output += `Rank Team                      Total    1    2    3    4    5   *6   *7   *8   *9 \n`;
+            output += `================================================================================= \n`;
+
+            virtualMeetStandingsCache.forEach((team, idx) => {
+                let rnkStr = padStringColumns(idx + 1, 4, false);
+                let tmNameStr = padStringColumns(team.teamName, 25, true);
+                let totPtsStr = padStringColumns(team.points, 4, false);
+
+                let pointsBreakdownRow = "";
+                team.runnersList.sort((a,b) => a.rosterRank - b.rosterRank);
+                
+                for(let i = 0; i < 7; i++) {
+                    if (team.runnersList[i]) {
+                        pointsBreakdownRow += padStringColumns(team.runnersList[i].assignedMeetPoints, 5, false);
+                    }
+                }
+
+                output += `   ${rnkStr} ${tmNameStr} ${totPtsStr} ${pointsBreakdownRow}\n`;
+                
+                let totalTimeText = formatSecondsToClockStr(team.totalSeconds);
+                let averageTimeText = formatSecondsToClockStr(team.totalSeconds / 5);
+                output += `      Total Time:  ${padStringColumns(totalTimeText, 12, true)}                                                   \n`;
+                output += `         Average:    ${padStringColumns(averageTimeText, 12, true)}                                                   \n`;
+            });
+
+            output += `=================================================================================\n`;
+            output += `</PRE>\n</BODY>\n</HTML>`;
+
+            let blob = new Blob([output], { type: "text/html;charset=utf-8" });
+            let downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = "Virtual_Meet_Championship_Results.htm";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            showMessage("HY-TEK flat file generated successfully!");
         }
 
         function drillDownTeamRoster(teamKey) {
@@ -729,7 +835,6 @@
                 let row = document.createElement('div');
                 row.className = `breakdown-row-item ${isDisplacer ? 'displacer' : ''}`;
                 
-                let scoreText = isDisplacer ? `Pusher (Pts: ${runner.assignedMeetPoints})` : `Scorer (Pts: ${runner.assignedMeetPoints})`;
                 row.innerHTML = `
                     <div><strong>#${runner.rosterRank}</strong> ${runner.name} <span style="font-size:10px;color:var(--text-muted);">[Global Place: ${runner.globalPlace}]</span></div>
                     <div style="text-align:right;">${runner.displayTime} <span style="font-size:10px; font-weight:700; margin-left:4px;">${isDisplacer ? '✕' : '✓'}</span></div>
