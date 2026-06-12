@@ -227,7 +227,9 @@
                     <option value="12th">12th Grade Standings</option>
                     <option value="SEASON_YEAR">Filter By Calendar Year ↓</option>
                 </select>
-                <select id="leaderboardSeasonYear" class="leaderboard-select" style="display: none;" onchange="renderLeaderboard()">
+            </div>
+            <div class="filter-row" id="seasonYearRow" style="display: none;">
+                <select id="leaderboardSeasonYear" class="leaderboard-select" onchange="renderLeaderboard()">
                 </select>
             </div>
         </div>
@@ -378,6 +380,7 @@
             const input = document.getElementById('searchInput');
             if (open) {
                 overlay.classList.add('active');
+                input.placeholder = 'Search runner name or graduation year...';
                 setTimeout(() => input.focus(), 150);
             } else {
                 overlay.classList.remove('active');
@@ -392,9 +395,10 @@
             overlay.classList.add('active');
             expandedAthleteName = name;
             renderRoster();
-            // Clear the search text visually after render so it doesn't look like a search
+            // Clear search text without firing oninput (which would re-render and lose the card)
             setTimeout(() => {
                 input.value = '';
+                input.placeholder = name;
             }, 50);
         }
 
@@ -515,7 +519,7 @@
             const meetDashboard = document.getElementById('virtualMeetDashboard');
             const meetResultsArea = document.getElementById('virtualMeetResultsArea');
             
-            yearSelector.style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
+            document.getElementById('seasonYearRow').style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
             eventRow.style.display = (rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
             meetDashboard.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
             meetResultsArea.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
@@ -849,7 +853,7 @@
                                 gradeCode: runningGrade,
                                 timeSecs: bestTimeThisYear,
                                 displayTime: bestTimeStringThisYear,
-                                team: year + " Team"
+                                team: year + " PXC Team"
                             });
                         }
                     }
@@ -868,9 +872,9 @@
 
             let teamStandingsMap = {};
             selectedYears.forEach(year => {
-                teamStandingsMap[year + " Team"] = {
-                    teamKey: year + " Team",
-                    teamName: year + " Team",
+                teamStandingsMap[year + " PXC Team"] = {
+                    teamKey: year + " PXC Team",
+                    teamName: year + " PXC Team",
                     points: 0,
                     scoringCount: 0,
                     totalSeconds: 0,
