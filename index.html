@@ -7,6 +7,12 @@
     <title>Perry Boys Distance Times</title>
     <meta name="theme-color" content="#000000">
     <link rel="icon" type="image/png" href="Mass. Perry Black Outline.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Perry Distance">
+    <link rel="apple-touch-icon" href="Mass. Perry Black Outline.png">
 
     <style>
         :root {
@@ -2309,6 +2315,15 @@
             fetchLiveGoogleSheets(false);
             getXCHistoryData(); 
         });
+
+        // Register service worker for PWA offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
