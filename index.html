@@ -525,6 +525,123 @@
 
         const XC_ALL_TIME_HISTORY_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-3btJXTHknwy-ko0O1pinK71_v5hS51PDH-U3yoM2QK2hIeVJAfnIbLSDKSsrVzNjzT-LyIYlYghl/pub?gid=1287484724&single=true&output=csv";
 
+        // Track times sheet — one tab per year, each with full meet-by-meet results.
+        // 2020 had no season (COVID).
+        const TRACK_HISTORY_CSV_URLS = {
+            '2026': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=2141241181&single=true&output=csv',
+            '2025': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1177808557&single=true&output=csv',
+            '2024': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1458744744&single=true&output=csv',
+            '2023': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1284669945&single=true&output=csv',
+            '2022': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1506434888&single=true&output=csv',
+            '2021': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=640104502&single=true&output=csv',
+            '2019': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=986451660&single=true&output=csv',
+            '2018': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1697620965&single=true&output=csv',
+            '2017': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=639906263&single=true&output=csv',
+            '2016': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=423215515&single=true&output=csv',
+            '2015': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=0&single=true&output=csv',
+            '2014': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=2049677519&single=true&output=csv',
+            '2013': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=485910338&single=true&output=csv',
+            '2012': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=777303416&single=true&output=csv',
+            '2011': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=1886502511&single=true&output=csv',
+            '2010': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=510249522&single=true&output=csv',
+            '2009': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=2042448537&single=true&output=csv',
+            '2008': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=350856809&single=true&output=csv',
+            '2007': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=2046217055&single=true&output=csv'
+        };
+
+        // Matches "800 - 2:01.32", "1600 - 4:34.4", "3200 - 10:23.65", "4x800 - 2:10.2"
+        // Tolerates a stray ';' instead of ':' (a known data-entry typo).
+        const TRACK_EVENT_TIME_RE = /^(800|1600|3200|4x800)\s*-\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?)\s*$/;
+
+        let trackHistoryCache = null;
+        let trackHistoryFetchPromise = null;
+
+        async function getTrackHistoryData() {
+            if (trackHistoryCache) return trackHistoryCache;
+            if (trackHistoryFetchPromise) return trackHistoryFetchPromise;
+
+            trackHistoryFetchPromise = (async () => {
+                let parsed = {};
+
+                const yearEntries = Object.entries(TRACK_HISTORY_CSV_URLS);
+                const results = await Promise.all(yearEntries.map(async ([year, url]) => {
+                    try {
+                        let res = await fetch(url + '&cachebust=' + Math.floor(Date.now() / 60000));
+                        if (!res.ok) throw new Error('fetch failed for ' + year);
+                        let text = await res.text();
+                        return { year, rows: parseCSVText(text) };
+                    } catch (e) {
+                        console.error('Track history fetch error (' + year + '):', e);
+                        return null;
+                    }
+                }));
+
+                results.forEach(result => {
+                    if (!result) return;
+                    let { year, rows } = result;
+                    if (!rows || rows.length < 2) return;
+
+                    let header = rows[0];
+
+                    // Find the marker row where column A contains "Points" — everything
+                    // from there down is the duplicated points section, which we skip.
+                    let markerIdx = rows.length;
+                    for (let i = 1; i < rows.length; i++) {
+                        let a = rows[i][0] || '';
+                        if (a.includes('Points')) { markerIdx = i; break; }
+                    }
+
+                    for (let i = 1; i < markerIdx; i++) {
+                        let row = rows[i];
+                        if (!row) continue;
+                        let rawName = (row[0] || '').trim();
+                        if (!rawName) continue;
+
+                        let lookupKey = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (!lookupKey) continue;
+
+                        if (!parsed[lookupKey]) {
+                            parsed[lookupKey] = { originalName: rawName, seasons: {} };
+                        }
+                        if (!parsed[lookupKey].seasons[year]) {
+                            parsed[lookupKey].seasons[year] = [];
+                        }
+
+                        for (let c = 2; c < row.length; c++) {
+                            let cell = row[c];
+                            if (!cell) continue;
+                            let meetName = (header[c] || '').trim();
+                            if (!meetName) continue;
+
+                            let entry = null;
+                            // Cells can have multiple events separated by line breaks
+                            // and/or runs of 2+ spaces on the same line.
+                            cell.split('\n').forEach(line => {
+                                line.split(/\s{2,}/).forEach(piece => {
+                                    piece = piece.trim();
+                                    let m = TRACK_EVENT_TIME_RE.exec(piece);
+                                    if (!m) return;
+                                    let eventKey = m[1];
+                                    let time = m[2].replace(';', ':');
+                                    if (!entry) entry = { meet: meetName };
+                                    entry[eventKey] = time;
+                                });
+                            });
+
+                            if (entry) {
+                                parsed[lookupKey].seasons[year].push(entry);
+                            }
+                        }
+                    }
+                });
+
+                trackHistoryCache = parsed;
+                return parsed;
+            })();
+
+            return trackHistoryFetchPromise;
+        }
+
         let xcHistoryCache = null;
         let xcHistoryFetchPromise = null;
 
@@ -1010,6 +1127,11 @@
             const gridContainer = document.getElementById(targetGridId);
             if (!gridContainer) return;
 
+            const currentEvent = document.getElementById('leaderboardEvent') ? document.getElementById('leaderboardEvent').value : 'XC 5K';
+            if (currentEvent !== 'XC 5K') {
+                return loadTrackMeetHistory(athleteName, targetGridId, currentEvent);
+            }
+
             gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">⏳ Loading season history…</p>`;
 
             const historyData = await getXCHistoryData();
@@ -1080,6 +1202,103 @@
                         <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
                             <div style="background:var(--primary);color:var(--accent);padding:5px 10px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;">
                                 <span>📅 ${year} Cross Country Season</span>
+                                ${seasonPR ? `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;">Season PR: ${seasonPR}</span>` : ''}
+                            </div>
+                            <div>${meetElementsHtml}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            if (foundAnyData) {
+                gridContainer.innerHTML = compiledGridHtml;
+            } else {
+                gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">No meet history found for this runner.</p>`;
+            }
+        }
+
+        async function loadTrackMeetHistory(athleteName, targetGridId, currentEvent) {
+            const gridContainer = document.getElementById(targetGridId);
+            if (!gridContainer) return;
+
+            gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">⏳ Loading season history…</p>`;
+
+            const targetEventKey = currentEvent.replace('m', ''); // '800m' -> '800', etc.
+            const historyData = await getTrackHistoryData();
+
+            if (!historyData) {
+                gridContainer.innerHTML = `<p style="font-size:11px;color:#991b1b;text-align:center;padding:12px;">Could not load season history. Check your connection or publishing settings.</p>`;
+                return;
+            }
+
+            let targetLookupKey = athleteName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            let match = historyData[targetLookupKey];
+
+            if (!match) {
+                let keys = Object.keys(historyData);
+                let foundKey = keys.find(k => k.includes(targetLookupKey) || targetLookupKey.includes(k));
+                if (foundKey) match = historyData[foundKey];
+            }
+
+            if (!match || !match.seasons) {
+                gridContainer.innerHTML = `<p style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">No meet history found for this runner.</p>`;
+                return;
+            }
+
+            let athleteRecords = match.seasons;
+            let compiledGridHtml = "";
+            let foundAnyData = false;
+
+            const sortedYears = Object.keys(athleteRecords).sort((a, b) => b - a);
+
+            for (let year of sortedYears) {
+                let meetEntries = athleteRecords[year];
+                let meetElementsHtml = "";
+
+                // Look up the season PR for this event from the main athletes data
+                let seasonPR = null;
+                let athleteObj = athletes[athleteName] || Object.values(athletes).find(a => a.name === athleteName);
+                if (athleteObj && athleteObj[currentEvent]) {
+                    let evData = athleteObj[currentEvent];
+                    ['9th','10th','11th','12th'].forEach(grade => {
+                        if (evData[grade] && extractYearFromTimeValue(evData[grade]) === year) {
+                            let t = evData[grade].split('(')[0].trim();
+                            if (t && t !== '--') seasonPR = t;
+                        }
+                    });
+                }
+
+                let meetRowIdx = 0;
+                for (let entry of meetEntries) {
+                    let meetName = entry.meet;
+                    let timeValue = entry[targetEventKey];
+                    if (!meetName || !timeValue) continue;
+
+                    let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
+                    meetRowIdx++;
+                    foundAnyData = true;
+
+                    let splitHtml = '';
+                    if (entry['4x800']) {
+                        splitHtml = `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">4x800 split: ${entry['4x800']}</div>`;
+                    }
+
+                    meetElementsHtml += `
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;border-bottom:1px dashed var(--border);background:${rowBg};">
+                            <span style="font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">
+                                ${meetName}
+                                ${splitHtml}
+                            </span>
+                            <span style="font-weight:800;color:var(--accent);background:var(--primary);padding:1px 6px;border-radius:4px;white-space:nowrap;">${timeValue}</span>
+                        </div>
+                    `;
+                }
+
+                if (meetElementsHtml !== "") {
+                    compiledGridHtml += `
+                        <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
+                            <div style="background:var(--primary);color:var(--accent);padding:5px 10px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;">
+                                <span>📅 ${year} Track Season</span>
                                 ${seasonPR ? `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;">Season PR: ${seasonPR}</span>` : ''}
                             </div>
                             <div>${meetElementsHtml}</div>
