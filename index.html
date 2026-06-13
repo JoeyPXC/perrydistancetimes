@@ -1319,6 +1319,7 @@
             if (rankType === 'SEASON_YEAR') {
                 const targetYear = document.getElementById('leaderboardSeasonYear').value;
                 document.getElementById('rankHeaderTime').innerText = targetYear + ' Season';
+                document.querySelector('th.col-grad').innerText = 'Grade';
 
                 Object.values(athletes).forEach(athlete => {
                     if (athlete[eventType]) {
@@ -1343,6 +1344,7 @@
 
             } else {
                 document.getElementById('rankHeaderTime').innerText = rankType === 'PR' ? 'Career PR' : rankType + ' Time';
+                document.querySelector('th.col-grad').innerText = 'Year';
 
                 let rawList = Object.values(athletes)
                     .filter(a => a[eventType] && a[eventType][rankType] && a[eventType][rankType] !== 'NT' && a[eventType][rankType] !== '' && a[eventType][rankType] !== '--')
@@ -1448,10 +1450,21 @@
                     classLabel = gradeLabels[gradeNum] ? `<span class="lbd-class-pill" style="font-size:10px;font-weight:800;background:var(--primary);color:var(--accent);padding:1px 4px;border-radius:3px;margin-right:4px;">${gradeLabels[gradeNum]}</span>` : '';
                 }
 
+                // When filtering by season year: show grade in col-grad, drop class pill from name
+                let gradCell, namePrefix;
+                if (rankType === 'SEASON_YEAR') {
+                    gradCell = classLabel
+                        ? `<td class="col-grad" style="text-align:center;">${classLabel}</td>`
+                        : `<td class="col-grad" style="text-align:center;color:var(--text-muted);font-size:11px;">--</td>`;
+                    namePrefix = ''; // grade already in its own column
+                } else {
+                    gradCell = `<td class="col-grad" style="text-align:center;">${markYearDisp}</td>`;
+                    namePrefix = classLabel;
+                }
                 row.innerHTML = `
                     <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
-                    <td class="col-grad" style="text-align:center;">${markYearDisp}</td>
-                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${classLabel}${athlete.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span></div></td>
+                    ${gradCell}
+                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${namePrefix}${athlete.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span></div></td>
                     <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${timeHtml}</span></td>
                 `;
                 tbody.appendChild(row);
