@@ -89,6 +89,38 @@
         body.dark-mode .prog-val { color: #e8eaf0; }
         body.dark-mode .prog-label { color: #a0a4a8; border-bottom-color: var(--border); }
 
+        /* ── Compare mode ─────────────────────────────────────────────── */
+        .compare-mode-btn { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 2px solid var(--border); background: none; color: var(--text-muted); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; white-space: nowrap; }
+        .compare-mode-btn.active { border-color: var(--accent); background: var(--primary); color: var(--accent); }
+        .athlete-card.compare-selected { border: 2px solid var(--accent) !important; background: rgba(255,221,0,0.06) !important; }
+        .compare-check { display: none; font-size: 16px; position: absolute; top: 8px; right: 8px; }
+        .compare-mode .athlete-card { position: relative; cursor: pointer; }
+        .compare-mode .athlete-card.compare-selected .compare-check { display: block; }
+        .compare-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); border-top: 3px solid var(--accent); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 9999; transform: translateY(100%); transition: transform 0.25s; }
+        .compare-bar.visible { transform: translateY(0); }
+        .compare-bar-names { font-size: 12px; font-weight: 700; color: #e8eaf0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .compare-bar-btn { background: var(--accent); color: var(--primary); border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+        .compare-bar-clear { background: none; border: 2px solid #555; color: #aaa; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+        /* Compare panel */
+        .compare-panel-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: none; flex-direction: column; overflow: hidden; }
+        .compare-panel-overlay.open { display: flex; }
+        .compare-panel-header { background: var(--primary); border-bottom: 3px solid var(--accent); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .compare-panel-title { font-size: 14px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .compare-panel-close { background: none; border: 2px solid #555; color: #aaa; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 700; }
+        .compare-panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+        .compare-event-section { margin-bottom: 18px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .compare-event-header { background: var(--primary); color: var(--accent); padding: 7px 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .compare-grid { display: grid; gap: 0; }
+        .compare-row { display: grid; border-bottom: 1px solid var(--border); }
+        .compare-row.header-row { background: rgba(0,0,0,0.04); font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
+        body.dark-mode .compare-row.header-row { background: #16191f; }
+        .compare-cell { padding: 7px 10px; font-size: 12px; font-weight: 700; color: var(--text); border-right: 1px solid var(--border); }
+        .compare-cell:last-child { border-right: none; }
+        .compare-cell.grade-col { color: var(--text-muted); font-size: 11px; }
+        .compare-cell.best-time { color: #b45309; font-weight: 800; }
+        body.dark-mode .compare-cell.best-time { color: var(--accent); }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; }
         
@@ -123,6 +155,15 @@
         .rank-table-wrapper { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .rank-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+        @media (max-width: 480px) {
+            .col-grad { display: none; }
+            .col-rank { width: 36px; }
+            .col-time { width: 80px; font-size: 12px; }
+            .rank-table th, .rank-table td { padding: 8px 5px; }
+            .lbd-name { font-size: 12px; }
+            .mobile-grade-inline { display: inline !important; }
+        }
+        .mobile-grade-inline { display: none; }
         .rank-table th { background: var(--primary); color: white; }
         
         .col-rank { width: 44px; font-weight: 700; text-align: center; }
@@ -310,6 +351,7 @@
                         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                         <input type="text" id="searchInput" placeholder="Search runner name or graduation year..." oninput="renderRoster()" autocomplete="off">
                     </div>
+                    <button id="compareModeBtn" class="compare-mode-btn" onclick="toggleCompareMode()" title="Compare Athletes">⇄ Compare</button>
                     <button onclick="toggleDrawer(false)" style="background:none;border:2px solid var(--border);border-radius:8px;width:38px;height:38px;font-size:18px;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Close">✕</button>
                 </div>
             </div>
@@ -399,6 +441,22 @@
         </div>
 
         <div id="careerProgressiveView" class="career-list-view" style="display: none;"></div>
+    </div>
+
+    <!-- Compare selection bar -->
+    <div class="compare-bar" id="compareBar">
+        <div class="compare-bar-names" id="compareBarNames">No athletes selected</div>
+        <button class="compare-bar-clear" onclick="clearCompareSelection()">Clear</button>
+        <button class="compare-bar-btn" id="compareBarBtn" onclick="openComparePanel()" disabled>Compare</button>
+    </div>
+
+    <!-- Compare full-screen panel -->
+    <div class="compare-panel-overlay" id="comparePanelOverlay">
+        <div class="compare-panel-header">
+            <span class="compare-panel-title">⇄ Athlete Comparison</span>
+            <button class="compare-panel-close" onclick="closeComparePanel()">✕ Close</button>
+        </div>
+        <div class="compare-panel-body" id="comparePanelBody"></div>
     </div>
 
     <script>
@@ -894,8 +952,10 @@
 
                 let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
+                card.dataset.compareName = athlete.name;
                 card.innerHTML = `
                     <div class="card-toggle-header" data-runner-name="${athlete.name.replace(/"/g, '&quot;')}">
+                    <span class="compare-check">✓</span>
                         <div class="athlete-meta-box">
                             <span class="athlete-name">${athlete.name}</span>
                             <span class="athlete-grad-text">${gradDisplay}</span>
@@ -916,6 +976,7 @@
 
                 let toggleHeader = card.querySelector('.card-toggle-header');
                 toggleHeader.addEventListener('click', function() {
+                    if (toggleAthleteCompareSelect(card.dataset.compareName, card)) return;
                     toggleAthleteCardElement(card, this.dataset.runnerName);
                 });
                 container.appendChild(card);
@@ -1464,11 +1525,161 @@
                 row.innerHTML = `
                     <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
                     ${gradCell}
-                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${namePrefix}${athlete.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span></div></td>
+                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${namePrefix}${athlete.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span><span class="mobile-grade-inline" style="font-size:10px;font-weight:700;color:var(--perry-gray);margin-left:4px;">${rankType==='SEASON_YEAR' && classLabel ? '·&nbsp;'+(['Fr','So','Jr','Sr'].find(g=>classLabel.includes(g))||'') : markYear ? '·&nbsp;'+markYear : ''}</span></div></td>
                     <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${timeHtml}</span></td>
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        // ── Compare Mode ────────────────────────────────────────────────────────
+        let compareMode = false;
+        let compareSelected = []; // array of athlete names
+
+        function toggleCompareMode() {
+            compareMode = !compareMode;
+            const btn = document.getElementById('compareModeBtn');
+            const list = document.getElementById('rosterList');
+            btn.classList.toggle('active', compareMode);
+            btn.textContent = compareMode ? '✕ Cancel' : '⇄ Compare';
+            list.classList.toggle('compare-mode', compareMode);
+            if (!compareMode) {
+                clearCompareSelection();
+            }
+        }
+
+        function clearCompareSelection() {
+            compareSelected = [];
+            document.querySelectorAll('.athlete-card.compare-selected').forEach(c => c.classList.remove('compare-selected'));
+            updateCompareBar();
+        }
+
+        function updateCompareBar() {
+            const bar = document.getElementById('compareBar');
+            const names = document.getElementById('compareBarNames');
+            const btn = document.getElementById('compareBarBtn');
+            if (compareSelected.length === 0) {
+                bar.classList.remove('visible');
+            } else {
+                bar.classList.add('visible');
+                names.textContent = compareSelected.join(' vs ');
+                btn.disabled = compareSelected.length < 2;
+                btn.style.opacity = compareSelected.length < 2 ? '0.5' : '1';
+            }
+        }
+
+        function toggleAthleteCompareSelect(name, cardEl) {
+            if (!compareMode) return false;
+            const idx = compareSelected.indexOf(name);
+            if (idx === -1) {
+                if (compareSelected.length >= 3) {
+                    // Remove oldest, add new
+                    const oldName = compareSelected.shift();
+                    document.querySelectorAll('.athlete-card').forEach(c => {
+                        if (c.dataset.compareName === oldName) c.classList.remove('compare-selected');
+                    });
+                }
+                compareSelected.push(name);
+                cardEl.classList.add('compare-selected');
+            } else {
+                compareSelected.splice(idx, 1);
+                cardEl.classList.remove('compare-selected');
+            }
+            updateCompareBar();
+            return true; // consumed the click
+        }
+
+        function openComparePanel() {
+            if (compareSelected.length < 2) return;
+            const panel = document.getElementById('comparePanelOverlay');
+            const body = document.getElementById('comparePanelBody');
+            panel.classList.add('open');
+
+            const events = ['XC 5K', '800m', '1600m', '3200m'];
+            const grades = ['9th', '10th', '11th', '12th'];
+            const gradeLabels = {'9th':'Fr','10th':'So','11th':'Jr','12th':'Sr'};
+            const cols = compareSelected.length + 1; // grade col + one per athlete
+
+            let html = '';
+
+            // Summary header row
+            html += `<div style="display:grid;grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;">`;
+            html += `<div class="compare-cell grade-col" style="background:var(--primary);color:var(--accent);font-size:10px;font-weight:800;text-transform:uppercase;padding:8px 10px;">Athlete</div>`;
+            compareSelected.forEach(name => {
+                const a = athletes[name];
+                const gradDisp = a && a.gradYear ? `'${String(a.gradYear).slice(-2)}` : '--';
+                html += `<div class="compare-cell" style="background:var(--primary);color:white;font-size:12px;font-weight:800;padding:8px 10px;">${name} <span style="color:var(--accent);font-size:10px;">${gradDisp}</span></div>`;
+            });
+            html += `</div>`;
+
+            // One section per event
+            events.forEach(ev => {
+                const hasData = compareSelected.some(name => athletes[name] && athletes[name][ev]);
+                if (!hasData) return;
+
+                html += `<div class="compare-event-section">`;
+                html += `<div class="compare-event-header">${ev}</div>`;
+                html += `<div class="compare-grid">`;
+
+                // Header row
+                html += `<div class="compare-row header-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};">`;
+                html += `<div class="compare-cell grade-col">Grade</div>`;
+                compareSelected.forEach(name => {
+                    html += `<div class="compare-cell">${name.split(' ')[0]}</div>`;
+                });
+                html += `</div>`;
+
+                // PR row
+                html += `<div class="compare-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};background:rgba(255,221,0,0.05);">`;
+                html += `<div class="compare-cell grade-col" style="font-weight:800;color:var(--text);">PR</div>`;
+                // Find the best time across all athletes for this event to highlight winner
+                const prTimes = compareSelected.map(name => {
+                    const d = athletes[name] && athletes[name][ev];
+                    return d && d.PR && d.PR !== '--' ? cleanTimeToSeconds(d.PR) : Infinity;
+                });
+                const bestPR = Math.min(...prTimes);
+                compareSelected.forEach((name, i) => {
+                    const d = athletes[name] && athletes[name][ev];
+                    const pr = d ? (d.PR || '--') : '--';
+                    const isBest = prTimes[i] === bestPR && bestPR !== Infinity;
+                    html += `<div class="compare-cell${isBest ? ' best-time' : ''}">${pr}${isBest && compareSelected.length > 1 ? ' 🏆' : ''}</div>`;
+                });
+                html += `</div>`;
+
+                // Grade rows
+                grades.forEach(grade => {
+                    const hasSome = compareSelected.some(name => {
+                        const d = athletes[name] && athletes[name][ev];
+                        return d && d[grade] && d[grade] !== '--';
+                    });
+                    if (!hasSome) return;
+
+                    const gradeTimes = compareSelected.map(name => {
+                        const d = athletes[name] && athletes[name][ev];
+                        const val = d && d[grade] && d[grade] !== '--' ? d[grade].split('(')[0].trim() : null;
+                        return val ? cleanTimeToSeconds(val) : Infinity;
+                    });
+                    const bestGrade = Math.min(...gradeTimes);
+
+                    html += `<div class="compare-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};">`;
+                    html += `<div class="compare-cell grade-col">${gradeLabels[grade]}</div>`;
+                    compareSelected.forEach((name, i) => {
+                        const d = athletes[name] && athletes[name][ev];
+                        const val = d && d[grade] && d[grade] !== '--' ? d[grade].split('(')[0].trim() : '--';
+                        const isBest = gradeTimes[i] === bestGrade && bestGrade !== Infinity && compareSelected.length > 1;
+                        html += `<div class="compare-cell${isBest ? ' best-time' : ''}">${val}</div>`;
+                    });
+                    html += `</div>`;
+                });
+
+                html += `</div></div>`; // close grid + event-section
+            });
+
+            body.innerHTML = html;
+        }
+
+        function closeComparePanel() {
+            document.getElementById('comparePanelOverlay').classList.remove('open');
         }
 
         function parseCSVText(text) {
