@@ -1,0 +1,19 @@
+{
+  "name": "Perry Boys Distance Times",
+  "short_name": "Perry Distance",
+  "description": "Perry High School Boys Distance XC & Track Career Leaderboards",
+  "start_url": "/perryboysdistancetimes/",
+  "scope": "/perryboysdistancetimes/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "Mass. Perry Black Outline.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
