@@ -244,6 +244,25 @@
         .search-trigger-fab { position: fixed; bottom: 24px; right: 24px; background: var(--primary); border: 3px solid var(--accent); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 95; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .progression-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 250; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .progression-overlay.active { display: flex; }
+        .progression-modal { background: var(--bg); border-radius: 14px; max-width: 460px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3); }
+        .progression-header { position: sticky; top: 0; background: var(--primary); color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-radius: 14px 14px 0 0; }
+        .progression-header h3 { font-size: 14px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .progression-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; }
+        .progression-body { padding: 12px 16px 16px; }
+        .progression-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .progression-item:last-child { border-bottom: none; }
+        .progression-year { font-size: 11px; font-weight: 800; color: var(--text-muted); width: 44px; flex-shrink: 0; }
+        .progression-info { flex: 1; }
+        .progression-name { font-size: 14px; font-weight: 800; color: var(--text); }
+        .progression-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); margin-top: 2px; }
+        .progression-time { font-size: 16px; font-weight: 900; color: var(--accent); white-space: nowrap; }
+        .progression-item.current .progression-time { color: var(--primary); background: var(--accent); padding: 2px 8px; border-radius: 6px; }
+        .record-banner { cursor: pointer; transition: transform 0.15s ease; }
+        .record-banner:active { transform: scale(0.98); }
+        .record-banner-hint { font-size: 9px; font-weight: 700; color: var(--accent); opacity: 0.8; margin-top: 2px; }
         
         .drawer-content { position: fixed; top: 0; right: 0; width: 88%; max-width: 440px; height: 100vh; background: var(--bg); box-shadow: -10px 0 25px -5px rgba(0,0,0,0.2); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 201; display: flex; flex-direction: column; }
         .drawer-overlay.active .drawer-content { transform: translateX(0); }
@@ -332,6 +351,16 @@
 
     <div id="statusNotification" class="status-msg"></div>
 
+    <div id="progressionOverlay" class="progression-overlay" onclick="if(event.target.id==='progressionOverlay') closeRecordProgression()">
+        <div class="progression-modal">
+            <div class="progression-header">
+                <h3 id="progressionTitle">🏆 Record Progression</h3>
+                <button class="progression-close" onclick="closeRecordProgression()">&times;</button>
+            </div>
+            <div class="progression-body" id="progressionBody"></div>
+        </div>
+    </div>
+
     <header>
         <div class="dark-mode-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()" id="darkModeBtn">🌙</div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
@@ -364,10 +393,11 @@
     </div>
 
     <div class="container">
-        <div id="recordBanner" class="record-banner" style="display:none;">
+        <div id="recordBanner" class="record-banner" style="display:none;" onclick="showRecordProgression()">
             <div class="record-banner-left">
                 <span class="record-banner-label" id="recordBannerLabel">🏆 All-Time Program Record</span>
                 <span class="record-banner-name" id="recordName">—</span>
+                <span class="record-banner-hint">Tap to view record history →</span>
             </div>
             <span class="record-banner-time" id="recordTime">—</span>
         </div>
@@ -642,6 +672,105 @@
             let matches = timeValueStr.match(/\((\d{4})\)/);
             return matches ? matches[1] : null;
         }
+
+        function computeRecordProgression(eventType) {
+            // Gather every grade-level performance with a year stamp
+            let entries = [];
+            Object.values(athletes).forEach(athlete => {
+                if (!athlete[eventType]) return;
+                ['9th', '10th', '11th', '12th'].forEach(grade => {
+                    let raw = athlete[eventType][grade];
+                    if (!raw || raw === '--' || raw === 'NT') return;
+                    let year = extractYearFromTimeValue(raw);
+                    if (!year) return;
+                    let secs = cleanTimeToSeconds(raw);
+                    if (!isFinite(secs)) return;
+                    entries.push({
+                        year: parseInt(year, 10),
+                        seconds: secs,
+                        display: raw.split('(')[0].trim(),
+                        name: athlete.name,
+                        gradYear: athlete.gradYear || null
+                    });
+                });
+            });
+
+            if (entries.length === 0) return [];
+
+            // For each year, find that year's fastest performance
+            let bestByYear = {};
+            entries.forEach(e => {
+                if (!bestByYear[e.year] || e.seconds < bestByYear[e.year].seconds) {
+                    bestByYear[e.year] = e;
+                }
+            });
+
+            let years = Object.keys(bestByYear).map(y => parseInt(y, 10)).sort((a, b) => a - b);
+
+            // Walk chronologically, recording each time a new all-time best is set
+            let progression = [];
+            let currentBestSecs = Infinity;
+            years.forEach(year => {
+                let candidate = bestByYear[year];
+                if (candidate.seconds < currentBestSecs) {
+                    progression.push(candidate);
+                    currentBestSecs = candidate.seconds;
+                }
+            });
+
+            return progression.reverse(); // most recent record first
+        }
+
+        function showRecordProgression() {
+            const eventType = document.getElementById('leaderboardEvent').value;
+            const progression = computeRecordProgression(eventType);
+            const overlay = document.getElementById('progressionOverlay');
+            const body = document.getElementById('progressionBody');
+            const title = document.getElementById('progressionTitle');
+
+            const eventLabel = document.getElementById('leaderboardEvent').selectedOptions[0]
+                ? document.getElementById('leaderboardEvent').selectedOptions[0].textContent
+                : eventType;
+            title.textContent = `🏆 ${eventLabel} Record History`;
+
+            if (progression.length === 0) {
+                body.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;font-weight:600;">No record history available for this event.</p>';
+                overlay.classList.add('active');
+                return;
+            }
+
+            let html = '';
+            progression.forEach((entry, idx) => {
+                const isCurrent = idx === 0;
+                let tag;
+                if (isCurrent) {
+                    tag = 'Current Record';
+                } else {
+                    let heldUntil = progression[idx - 1].year;
+                    tag = entry.year === heldUntil
+                        ? `Record in ${entry.year}`
+                        : `Record ${entry.year}–${heldUntil}`;
+                }
+                html += `
+                    <div class="progression-item ${isCurrent ? 'current' : ''}">
+                        <div class="progression-year">${entry.year}</div>
+                        <div class="progression-info">
+                            <div class="progression-name">${entry.name}</div>
+                            <div class="progression-tag">${tag}</div>
+                        </div>
+                        <div class="progression-time">${entry.display}</div>
+                    </div>
+                `;
+            });
+
+            body.innerHTML = html;
+            overlay.classList.add('active');
+        }
+
+        function closeRecordProgression() {
+            document.getElementById('progressionOverlay').classList.remove('active');
+        }
+
 
         function generateUniqueYearsList() {
             let yearSet = new Set();
