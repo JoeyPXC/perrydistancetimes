@@ -70,6 +70,18 @@
         body.dark-mode .team-score-pts { color: #e8eaf0; }
         body.dark-mode .squad-subname { color: #8892a4 !important; }
         body.dark-mode .score-points-label { color: #f59e0b; }
+        /* Athlete card text */
+        body.dark-mode .athlete-name { color: #e8eaf0; }
+        body.dark-mode .athlete-grad-text { color: #a0a4a8; }
+        body.dark-mode .card-expand-body { background: var(--card-bg) !important; border-top-color: var(--border); }
+        body.dark-mode .event-title { color: #e8eaf0; }
+        body.dark-mode .career-val { color: #e8eaf0; }
+        body.dark-mode .career-lbl { color: #a0a4a8; }
+        body.dark-mode .career-name { color: #e8eaf0; }
+        body.dark-mode .career-grad { color: #a0a4a8; }
+        body.dark-mode .career-num { color: #a0a4a8; }
+        body.dark-mode .prog-val { color: #e8eaf0; }
+        body.dark-mode .prog-label { color: #a0a4a8; border-bottom-color: var(--border); }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; }
@@ -779,20 +791,20 @@
                     if (!meetName || !timeValue) continue;
                     if (timeValue === 'DNR' || timeValue === 'DNF' || timeValue === '--' || timeValue === '0' || timeValue === '0.0') continue;
 
-                    let rowBg = meetRowIdx % 2 === 0 ? '#ffffff' : '#f1f5f9';
+                    let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
                     meetRowIdx++;
                     foundAnyData = true;
                     meetElementsHtml += `
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;border-bottom:1px dashed #e2e8f0;background:${rowBg};">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;border-bottom:1px dashed var(--border);background:${rowBg};">
                             <span style="font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">${meetName}</span>
-                            <span style="font-weight:800;color:#2563eb;white-space:nowrap;">${timeValue}</span>
+                            <span style="font-weight:800;color:var(--accent);background:var(--primary);padding:1px 6px;border-radius:4px;white-space:nowrap;">${timeValue}</span>
                         </div>
                     `;
                 }
 
                 if (meetElementsHtml !== "") {
                     compiledGridHtml += `
-                        <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:white;overflow:hidden;">
+                        <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
                             <div style="background:var(--primary);color:var(--accent);padding:5px 10px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;">
                                 <span>📅 ${year} Cross Country Season</span>
                                 ${seasonPR ? `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;">Season PR: ${seasonPR}</span>` : ''}
@@ -878,7 +890,7 @@
                         
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                             <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet XC History</h4>
-                            <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="max-height: 280px; overflow-y: auto; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
+                            <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="max-height: 280px; overflow-y: auto; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
                                 <p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px;">Loading historical meet times…</p>
                             </div>
                         </div>
@@ -1041,16 +1053,14 @@
 
                 team.runnersList.sort((a,b) => a.rosterRank - b.rosterRank);
                 let rosterRowsHtml = '';
-                let hasExhibition = team.runnersList.some(r => r.rosterRank > 7);
                 team.runnersList.forEach(runner => {
                     let isDisplacer = runner.rosterRank === 6 || runner.rosterRank === 7;
                     let isExhibition = runner.rosterRank > 7;
-                    let rowClass = isExhibition ? 'displacer' : (isDisplacer ? 'displacer' : '');
-                    let badge = isExhibition ? '⬜' : (isDisplacer ? '✕' : '✓');
-                    let label = isExhibition ? '<span style="font-size:9px;background:#6b7280;color:white;padding:1px 4px;border-radius:3px;margin-left:4px;">EXH</span>' : '';
+                    let rowClass = (isDisplacer || isExhibition) ? 'displacer' : '';
+                    let badge = isExhibition ? '--' : (isDisplacer ? '✕' : '✓');
                     rosterRowsHtml += `
                         <div class="breakdown-row-item ${rowClass}">
-                            <div><strong>#${runner.rosterRank}</strong> ${runner.name}${label} <span style="font-size:10px;color:var(--text-muted);">[Ovr: ${runner.globalPlace}]</span></div>
+                            <div><strong>#${runner.rosterRank}</strong> ${runner.name} <span style="font-size:10px;color:var(--text-muted);">[Ovr: ${runner.globalPlace}]</span></div>
                             <div style="text-align:right;">${runner.displayTime} <span style="font-size:10px; font-weight:700; margin-left:4px;">${badge}</span></div>
                         </div>
                     `;
@@ -1097,7 +1107,7 @@
                         <span class="squad-subname">${isNonScoring ? runner.team + ' (Exhibition)' : (runner.rosterRank === 6 || runner.rosterRank === 7 ? runner.team + ' (Pusher)' : runner.team)}</span>
                     </td>
                     <td class="col-time" style="text-align:center;">
-                        <span class="score-points-label">${isNonScoring ? '(—)' : '(' + runner.assignedMeetPoints + ')'}</span><span class="lbd-time" style="font-weight:800;">${runner.displayTime}</span>
+                        <span class="score-points-label">${isNonScoring ? '(--)' : '(' + runner.assignedMeetPoints + ')'}</span><span class="lbd-time" style="font-weight:800;">${runner.displayTime}</span>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1146,7 +1156,7 @@
                 let finalClock = runner.displayTime;
                 if (!finalClock.includes('.')) finalClock += ".00";
                 let clockStr = padStringColumns(finalClock, 10, false);
-                let ptsStr = runner.assignedMeetPoints === '--' ? padStringColumns('EXH', 5, false) : padStringColumns(runner.assignedMeetPoints, 5, false);
+                let ptsStr = runner.assignedMeetPoints === '--' ? padStringColumns('--', 5, false) : padStringColumns(runner.assignedMeetPoints, 5, false);
 
                 output += ` ${rankStr} ${nameStr} ${gradeStr} ${schoolStr} ${clockStr}  ${ptsStr}   ${avgMileStr}\n`;
             });
