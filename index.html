@@ -345,6 +345,28 @@
         .stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 3px; }
         .stat-value { font-size: 14px; font-weight: 800; color: var(--primary); }
         .stat-value.accent { color: #b45309; }
+        @media print {
+            body * { visibility: hidden; }
+            header, .search-trigger-fab, .filter-container, .progression-overlay, .drawer-overlay,
+            #virtualMeetDashboard, #virtualMeetResultsArea, #careerProgressiveView { display: none !important; }
+
+            .container, .container * ,
+            #recordBanner, #recordBanner *,
+            #seasonBestStrip, #seasonBestStrip *,
+            #seasonStatBlock, #seasonStatBlock *,
+            .rank-table-wrapper, .rank-table-wrapper * {
+                visibility: visible;
+            }
+
+            .container { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+            #recordBanner { display: flex !important; cursor: default; }
+            .record-banner-hint { display: none; }
+            .rank-table th, .rank-table td { color: #000 !important; }
+            .rank-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #recordBanner { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+            #recordBanner .record-banner-label, #recordBanner .record-banner-name, #recordBanner .record-banner-time { color: #000 !important; }
+            .rank-table-wrapper { border: 1px solid #999; box-shadow: none; }
+        }
     </style>
 </head>
 <body>
@@ -425,6 +447,9 @@
             <div class="filter-row" id="seasonYearRow" style="display:none;">
                 <select id="leaderboardSeasonYear" class="leaderboard-select" onchange="renderLeaderboard()">
                 </select>
+            </div>
+            <div class="filter-row" id="printRow">
+                <button class="action-btn" id="printResultsBtn" onclick="window.print()" style="flex:1;">🖨️ Print / Save as PDF</button>
             </div>
         </div>
         
@@ -872,6 +897,7 @@
             const meetResultsArea = document.getElementById('virtualMeetResultsArea');
             
             document.getElementById('seasonYearRow').style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
+            document.getElementById('printRow').style.display = (rankType === 'CAREER_ALL' || rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
             eventRow.style.display = (rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
             meetDashboard.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
             meetResultsArea.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
