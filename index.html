@@ -287,7 +287,7 @@
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
         .athlete-college-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
         .athlete-college-name { font-size: 11px; font-weight: 700; color: var(--text-muted); }
-        .college-logo-mini { width: 18px; height: 18px; object-fit: contain; border-radius: 3px; background: white; flex-shrink: 0; }
+        .college-logo-mini { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; background: white; flex-shrink: 0; padding: 2px; }
         
         .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
         .athlete-card.expanded .card-chevron { transform: rotate(180deg); }
@@ -1434,17 +1434,17 @@
             'University of Cincinnati': 'https://logos.tfrrs.org/cincinnati.png',
             'Case Western Reserve University': 'https://logos.tfrrs.org/case-western-reserve.png',
             'Heidelberg University': 'https://logos.tfrrs.org/heidelberg.png',
-            'Mount Vernon Nazarene University': 'https://logos.tfrrs.org/mount-vernon-nazarene.png',
+            'Mount Vernon Nazarene University': 'https://logos.tfrrs.org/mount-vernon-nazarene-ohio.png',
             'Ashland University': 'https://logos.tfrrs.org/ashland.png',
             'The Ohio State University': 'https://logos.tfrrs.org/ohio-state.png',
             'University of Kentucky': 'https://logos.tfrrs.org/kentucky.png',
             'Coastal Carolina University': 'https://logos.tfrrs.org/coastal-carolina.png',
             'John Carroll University': 'https://logos.tfrrs.org/john-carroll.png',
             'Grand Valley State University': 'https://logos.tfrrs.org/grand-valley-state.png',
-            'Hiram College': 'https://logos.tfrrs.org/hiram.png',
+            'Hiram College': 'https://logos.tfrrs.org/svgs/hiram.svg',
             'Grove City College': 'https://logos.tfrrs.org/grove-city.png',
             'Harding University': 'https://logos.tfrrs.org/harding.png',
-            'West Liberty University': 'https://logos.tfrrs.org/west-liberty.png',
+            'West Liberty University': 'https://logos.tfrrs.org/west-liberty-state.png',
             'Messiah University': 'https://logos.tfrrs.org/messiah.png',
         };
 
@@ -2487,7 +2487,8 @@
         
         window.addEventListener('DOMContentLoaded', () => {
             fetchLiveGoogleSheets(false);
-            getXCHistoryData(); 
+            getXCHistoryData();
+            getTrackHistoryData(); // prefetch all 19 tabs so cards open instantly
         });
 
 
