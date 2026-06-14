@@ -443,7 +443,7 @@
         .accomp-year-chip { font-size:12px; font-weight:800; padding:4px 10px; border-radius:6px; }
         .accomp-state-chip  { background:#166534; color:white; }
         .accomp-dist-chip   { background:#14532d; color:#bbf7d0; }
-        .accomp-fed-chip    { background:var(--primary); color:var(--accent); border:1px solid var(--accent); }
+        .accomp-fed-chip    { background:#991b1b; color:#fecaca; }
         .accomp-stark-chip  { background:#1e3a5f; color:#bfdbfe; }
         .accomp-reg-chip    { background:#3730a3; color:#e0e7ff; }
         .accomp-ind-chip    { background:#111827; color:#f9fafb; }
@@ -545,13 +545,13 @@
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
     <div class="nav-overlay" id="navOverlay">
         <div class="nav-header">
-            <span class="nav-header-title" id="navHeaderTitle">📅 XC Year by Year</span>
+            <span class="nav-header-title" id="navHeaderTitle">🏆 XC Accomplishments</span>
             <button class="nav-close-btn" onclick="closeNavMenu()">✕ Close</button>
         </div>
         <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
-            <button class="nav-tab" id="navTabAccomp" onclick="switchNavTab('accomplishments')">🏆 Accomplishments</button>
+            <button class="nav-tab active" id="navTabAccomp" onclick="switchNavTab('accomplishments')">🏆 Accomplishments</button>
             <button class="nav-tab" id="navTabAlumni" onclick="switchNavTab('alumni')">🎓 Collegiate</button>
-            <button class="nav-tab active" id="navTabYBY" onclick="switchNavTab('yearbyyear')">📅 Year by Year</button>
+            <button class="nav-tab" id="navTabYBY" onclick="switchNavTab('yearbyyear')">📅 Year by Year</button>
         </div>
         <div class="nav-body" id="navBody">
             <!-- content rendered by JS -->
@@ -2904,12 +2904,12 @@
 
         function openNavMenu() {
             document.getElementById('navOverlay').classList.add('open');
-            navCurrentTab = 'yearbyyear';
-            document.getElementById('navTabYBY').classList.add('active');
-            document.getElementById('navTabAccomp').classList.remove('active');
+            navCurrentTab = 'accomplishments';
+            document.getElementById('navTabAccomp').classList.add('active');
             document.getElementById('navTabAlumni').classList.remove('active');
-            document.getElementById('navHeaderTitle').textContent = '📅 XC Year by Year';
-            renderYearByYearPage(document.getElementById('navBody'));
+            document.getElementById('navTabYBY').classList.remove('active');
+            document.getElementById('navHeaderTitle').textContent = '🏆 XC Accomplishments';
+            renderAccomplishmentsPage(document.getElementById('navBody'));
         }
 
         function closeNavMenu() {
@@ -3019,7 +3019,7 @@
                 ${section('State Qualifying Teams','#166534','white',stateTeams,'accomp-state-chip',OHSAA_IMG,'State Runner-up / Individual Qualifiers (see below)',null)}
                 ${section('Regional Qualifying Teams','#3730a3','#e0e7ff',regQual,'accomp-reg-chip',REGIONAL_IMG,'Regional Runner-up',regRunnerup)}
                 ${section('District Champion','#14532d','#bbf7d0',distChamp,'accomp-dist-chip',DISTRICT_IMG,'District Runner-up',distRunnerup)}
-                ${section('Federal League Champion','#000000','#ffdd00',fedChamp,'accomp-fed-chip',FED_IMG,'Federal League Runner-up',fedRunnerup)}
+                ${section('Federal League Champion','#991b1b','#fecaca',fedChamp,'accomp-fed-chip',FED_IMG,'Federal League Runner-up',fedRunnerup)}
                 ${section('Stark County Champion','#1e3a5f','#bfdbfe',starkChamp,'accomp-stark-chip',STARK_IMG,'Stark County Runner-up',starkRunnerup)}
 
                 <div class="accomp-section">
