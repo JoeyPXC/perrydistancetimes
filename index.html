@@ -285,13 +285,9 @@
         .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; }
         .athlete-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
-        .college-badge { font-size: 13px; margin-left: 5px; }
-        .college-section { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 10px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
-        .college-logo { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; flex-shrink: 0; background: white; }
-        .college-info { flex: 1; min-width: 0; }
-        .college-info-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        .college-info-name { font-size: 13px; font-weight: 800; color: var(--text); }
-        body.dark-mode .college-section { background: var(--card-bg); }
+        .athlete-college-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+        .athlete-college-name { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+        .college-logo-mini { width: 18px; height: 18px; object-fit: contain; border-radius: 3px; background: white; flex-shrink: 0; }
         
         .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
         .athlete-card.expanded .card-chevron { transform: rotate(180deg); }
@@ -1425,11 +1421,31 @@
             'gabe weiford':       { name: 'Gabe Weiford',       hsGradYear: 2024, colleges: ['Hiram College'] },
         };
 
-        // School name -> TFRRS team logo image URL (hotlinked — <img> tags
-        // don't require CORS, unlike fetch()). Filled in for the most common
-        // schools; entries with no logo simply don't show one.
+        // School name -> TFRRS team logo (https://logos.tfrrs.org/<slug>.png).
+        // Confirmed pattern from Walsh ("walsh.png"); the rest are best-guess
+        // slugs following the same lowercase/hyphenated short-name convention
+        // TFRRS uses for team filters. The <img onerror> in renderRoster hides
+        // any that don't resolve, so a wrong guess just silently shows no logo.
         const COLLEGE_LOGOS = {
-            // populated below
+            'Walsh University': 'https://logos.tfrrs.org/walsh.png',
+            'University of Mount Union': 'https://logos.tfrrs.org/mount-union.png',
+            'Malone University': 'https://logos.tfrrs.org/malone.png',
+            'University of Akron': 'https://logos.tfrrs.org/akron.png',
+            'University of Cincinnati': 'https://logos.tfrrs.org/cincinnati.png',
+            'Case Western Reserve University': 'https://logos.tfrrs.org/case-western-reserve.png',
+            'Heidelberg University': 'https://logos.tfrrs.org/heidelberg.png',
+            'Mount Vernon Nazarene University': 'https://logos.tfrrs.org/mount-vernon-nazarene.png',
+            'Ashland University': 'https://logos.tfrrs.org/ashland.png',
+            'The Ohio State University': 'https://logos.tfrrs.org/ohio-state.png',
+            'University of Kentucky': 'https://logos.tfrrs.org/kentucky.png',
+            'Coastal Carolina University': 'https://logos.tfrrs.org/coastal-carolina.png',
+            'John Carroll University': 'https://logos.tfrrs.org/john-carroll.png',
+            'Grand Valley State University': 'https://logos.tfrrs.org/grand-valley-state.png',
+            'Hiram College': 'https://logos.tfrrs.org/hiram.png',
+            'Grove City College': 'https://logos.tfrrs.org/grove-city.png',
+            'Harding University': 'https://logos.tfrrs.org/harding.png',
+            'West Liberty University': 'https://logos.tfrrs.org/west-liberty.png',
+            'Messiah University': 'https://logos.tfrrs.org/messiah.png',
         };
 
         function getCollegeInfo(athlete) {
@@ -1502,27 +1518,21 @@
 
                 let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-                // College info — shows a 🎓 badge in the header (so it's
-                // visible at a glance while browsing) and a school card
-                // (with logo, if we have one) when expanded.
+                // College info — a row below the grad year showing the
+                // school's logo + name, visible on the collapsed card so the
+                // whole roster's college runners are visible at a glance.
                 let collegeInfo = getCollegeInfo(athlete);
-                let collegeBadgeHtml = collegeInfo
-                    ? `<span class="college-badge" title="Ran in college: ${collegeInfo.colleges.join(' & ')}">🎓</span>`
-                    : '';
-                let collegeSectionHtml = '';
+                let collegeRowHtml = '';
                 if (collegeInfo) {
                     let logosHtml = collegeInfo.colleges.map(c => {
                         const logo = COLLEGE_LOGOS[c];
-                        return logo ? `<img src="${logo}" alt="${c}" class="college-logo" onerror="this.remove()">` : '';
+                        return logo ? `<img src="${logo}" alt="" class="college-logo-mini" onerror="this.remove()">` : '';
                     }).join('');
-                    collegeSectionHtml = `
-                        <div class="college-section">
+                    collegeRowHtml = `
+                        <span class="athlete-college-row">
                             ${logosHtml}
-                            <div class="college-info">
-                                <div class="college-info-label">🎓 Ran in College</div>
-                                <div class="college-info-name">${collegeInfo.colleges.join(' & ')}</div>
-                            </div>
-                        </div>`;
+                            <span class="athlete-college-name">${collegeInfo.colleges.join(' & ')}</span>
+                        </span>`;
                 }
 
                 card.dataset.compareName = athlete.name;
@@ -1530,13 +1540,13 @@
                     <div class="card-toggle-header" data-runner-name="${athlete.name.replace(/"/g, '&quot;')}">
                     <span class="compare-check">✓</span>
                         <div class="athlete-meta-box">
-                            <span class="athlete-name">${athlete.name}${collegeBadgeHtml}</span>
+                            <span class="athlete-name">${athlete.name}</span>
                             <span class="athlete-grad-text">${gradDisplay}</span>
+                            ${collegeRowHtml}
                         </div>
                         <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                     </div>
                     <div class="card-expand-body">
-                        ${collegeSectionHtml}
                         <div class="events-grid">${eventsHtml}</div>
                         
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
@@ -1544,6 +1554,7 @@
                             <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
                                 <p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px;">Loading historical meet times…</p>
                             </div>
+
                         </div>
                     </div>
                 `;
