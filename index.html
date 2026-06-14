@@ -1419,6 +1419,7 @@
             'cooper reed':        { name: 'Cooper Reed',        hsGradYear: 2023, colleges: ['University of Mount Union'] },
             'connor reed':        { name: 'Connor Reed',        hsGradYear: 2024, colleges: ['Grand Valley State University'] },
             'gabe weiford':       { name: 'Gabe Weiford',       hsGradYear: 2024, colleges: ['Hiram College'] },
+            'jayden simonson':    { name: 'Jayden Simonson',    hsGradYear: 2025, colleges: ['Malone University'] },
         };
 
         // School name -> TFRRS team logo (https://logos.tfrrs.org/<slug>.png).
@@ -2659,18 +2660,28 @@
                 const rows = parseCSVText(text);
                 if (rows.length < 2) throw new Error('Year by Year sheet returned no data');
 
-                const headers = rows[0].map(h => h.trim());
+                const headers = rows[0].map(h => h.replace(/\s+/g, ' ').trim());
                 
                 // Find column indices
                 const col = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
-                const yearCol = col('year') !== -1 ? col('year') : 0;
-                const coachCol = col('coach');
-                const starkCol = col('stark');
-                const fedCol = col('federal') !== -1 ? col('federal') : col('fed');
-                const distCol = col('district') !== -1 ? col('district') : col('dist');
-                const regCol = col('regional') !== -1 ? col('regional') : col('reg');
-                const stateCol = col('state');
-                const notesCol = col('note') !== -1 ? col('note') : col('accomplishment') !== -1 ? col('accomplishment') : col('honors');
+                const yearCol    = col('year') !== -1 ? col('year') : 0;
+                const coachCol   = col('head coach') !== -1 ? col('head coach') : col('coach');
+                const asstCol    = col('assistant');
+                const overallCol = col('overall');
+                const dualCol    = col('dual');
+                const starkOvrCol = headers.findIndex(h => h.toLowerCase().includes('stark') && h.toLowerCase().includes('ovr'));
+                const starkD1Col  = headers.findIndex(h => h.toLowerCase().includes('stark') && (h.toLowerCase().includes('d1') || h.toLowerCase().includes('aaa')));
+                const fedCol     = col('federal') !== -1 ? col('federal') : col('fed');
+                const distCol    = col('district') !== -1 ? col('district') : col('dist');
+                const regCol     = col('regional') !== -1 ? col('regional') : col('reg');
+                const allCountyCol = headers.findIndex(h => h.toLowerCase().includes('county'));
+                const allFedCol  = headers.findIndex(h => h.toLowerCase().includes('all-federal') || (h.toLowerCase().includes('1st') && h.toLowerCase().includes('federal')));
+                const regQualTeamCol = headers.findIndex(h => h.toLowerCase().includes('qualified') && h.toLowerCase().includes('regional'));
+                const regQualIndCol  = headers.findIndex(h => h.toLowerCase().includes('individual') && h.toLowerCase().includes('regional'));
+                const stateQualTeamCol = headers.findIndex(h => h.toLowerCase().includes('qualified') && h.toLowerCase().includes('state'));
+                const stateQualIndCol  = headers.findIndex(h => h.toLowerCase().includes('individual') && h.toLowerCase().includes('state'));
+                const stateTeamPlaceCol = headers.findIndex(h => h.toLowerCase().includes('state team') || (h.toLowerCase().includes('state') && h.toLowerCase().includes('place')));
+                const notesCol   = col('note') !== -1 ? col('note') : col('accomplishment') !== -1 ? col('accomplishment') : col('honors');
 
                 const dataRows = rows.slice(1).filter(r => r[yearCol] && r[yearCol].trim() && /\d{4}/.test(r[yearCol]));
                 // Sort descending
@@ -2679,28 +2690,38 @@
                 let html = `<input type="text" class="ybyr-search" id="ybyrSearch" placeholder="Search year, coach, or result…" oninput="filterYearCards(this.value)">`;
 
                 dataRows.forEach(row => {
-                    const year = row[yearCol].trim();
-                    const coach = coachCol !== -1 ? (row[coachCol] || '').trim() : '';
-                    const csvState = stateCol !== -1 ? (row[stateCol] || '').trim() : '';
-                    const dist = distCol !== -1 ? (row[distCol] || '').trim() : '';
-                    const fed = fedCol !== -1 ? (row[fedCol] || '').trim() : '';
-                    const hist = histData.byYear[year];
+                    const year    = row[yearCol].trim();
+                    const coach   = coachCol !== -1 ? (row[coachCol] || '').trim() : '';
+                    const asst    = asstCol !== -1 ? (row[asstCol] || '').replace(/\n/g, ', ').trim() : '';
+                    const overall = overallCol !== -1 ? (row[overallCol] || '').trim() : '';
+                    const dual    = dualCol !== -1 ? (row[dualCol] || '').trim() : '';
+                    const starkOvr = starkOvrCol !== -1 ? (row[starkOvrCol] || '').trim() : '';
+                    const starkD1  = starkD1Col !== -1 ? (row[starkD1Col] || '').trim() : '';
+                    const fed     = fedCol !== -1 ? (row[fedCol] || '').trim() : '';
+                    const dist    = distCol !== -1 ? (row[distCol] || '').trim() : '';
+                    const reg     = regCol !== -1 ? (row[regCol] || '').trim() : '';
+                    const allCounty = allCountyCol !== -1 ? (row[allCountyCol] || '').replace(/\n/g, ', ').trim() : '';
+                    const allFed  = allFedCol !== -1 ? (row[allFedCol] || '').replace(/\n/g, ', ').trim() : '';
+                    const regQualTeam = regQualTeamCol !== -1 ? (row[regQualTeamCol] || '').trim() : '';
+                    const regQualInd  = regQualIndCol !== -1 ? (row[regQualIndCol] || '').replace(/\n/g, ', ').trim() : '';
+                    const stateQualTeam = stateQualTeamCol !== -1 ? (row[stateQualTeamCol] || '').trim() : '';
+                    const stateQualInd  = stateQualIndCol !== -1 ? (row[stateQualIndCol] || '').replace(/\n/g, ', ').trim() : '';
+                    const statePlace = stateTeamPlaceCol !== -1 ? (row[stateTeamPlaceCol] || '').trim() : '';
+                    const hist    = histData.byYear[year];
                     const histStats = hist ? hist.stats : {};
 
-                    // State result — prefer the more specific placement pulled
-                    // from the History doc (e.g. "7th out of 16") over the
-                    // sheet's value (often just "Qualified to State").
-                    const stateVal = histStats.state || csvState;
+                    // State result
+                    const stateVal = histStats.state || statePlace || (stateQualTeam && !/^none$/i.test(stateQualTeam) ? stateQualTeam : '');
 
-                    // Achievement badges for header
+                    // Achievement badges
                     let badges = '';
                     if (stateVal && !/did not|no team|dnq|^none$/i.test(stateVal)) badges += '<span style="background:#d97706;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">STATE</span>';
-                    if (/^1st|champion|1st place/i.test(fed)) badges += '<span style="background:var(--accent);color:var(--primary);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">FED CHAMP</span>';
-                    if (/^1st|champion|1st place/i.test(dist)) badges += '<span style="background:#166534;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">DIST CHAMP</span>';
+                    if (/^1st|champion/i.test(fed)) badges += '<span style="background:var(--accent);color:var(--primary);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">FED CHAMP</span>';
+                    if (/^1st|champion/i.test(dist)) badges += '<span style="background:#166534;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">DIST CHAMP</span>';
 
                     let rowsHtml = '';
                     const addRow = (label, value, highlight) => {
-                        if (!value || value === '--' || value === '0') return;
+                        if (!value || value === '--' || value === '0' || /^none$/i.test(value)) return;
                         rowsHtml += `
                             <div class="ybyr-row">
                                 <span class="ybyr-row-label">${label}</span>
@@ -2708,14 +2729,23 @@
                             </div>`;
                     };
 
-                    addRow('Coach', coach);
-                    // Dual/Invitational Record from the History doc (1970-94 dual era, etc.)
-                    if (histStats.record) addRow(histStats.recordLabel, histStats.record);
-                    if (starkCol !== -1) addRow('Stark County', (row[starkCol] || '').trim());
-                    if (fedCol !== -1) addRow('Federal League', fed, /^1st/i.test(fed));
-                    if (distCol !== -1) addRow('District', dist, /^1st/i.test(dist));
-                    if (regCol !== -1) addRow('Regional', (row[regCol] || '').trim());
-                    addRow('State', stateVal, true);
+                    addRow('Head Coach', coach);
+                    if (asst) addRow('Assistants', asst);
+                    if (overall) addRow('Overall Record', overall);
+                    if (dual && dual !== '-') addRow('Dual Record', dual);
+                    if (histStats.record) addRow(histStats.recordLabel || 'Record', histStats.record);
+                    if (starkOvr) addRow('Stark County Overall', starkOvr);
+                    if (starkD1) addRow('Stark County D1/AAA', starkD1);
+                    if (fed) addRow('Federal League', fed, /^1st/i.test(fed));
+                    if (dist) addRow('District', dist, /^1st/i.test(dist));
+                    if (reg) addRow('Regional', reg);
+                    if (allCounty && !/^none$/i.test(allCounty)) addRow('1st Team All-County', allCounty);
+                    if (allFed && !/^none$/i.test(allFed)) addRow('1st Team All-Federal', allFed);
+                    if (regQualTeam && !/^none$/i.test(regQualTeam)) addRow('Regional (Team)', regQualTeam, /qualified/i.test(regQualTeam));
+                    if (regQualInd && !/^none$/i.test(regQualInd)) addRow('Regional Ind. Qualifiers', regQualInd);
+                    if (stateQualTeam && !/^none$/i.test(stateQualTeam)) addRow('State (Team)', stateQualTeam, /qualified/i.test(stateQualTeam));
+                    if (stateQualInd && !/^none$/i.test(stateQualInd)) addRow('State Ind. Qualifiers', stateQualInd);
+                    if (statePlace && !/^none$/i.test(statePlace)) addRow('State Team Place', statePlace, true);
                     if (notesCol !== -1) addRow('Notes / Honors', (row[notesCol] || '').trim());
 
                     if (!rowsHtml) return;
