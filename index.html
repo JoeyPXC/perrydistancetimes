@@ -351,6 +351,67 @@
         .stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 3px; }
         .stat-value { font-size: 14px; font-weight: 800; color: var(--primary); }
         .stat-value.accent { color: #b45309; }
+
+        /* ── Hamburger / Nav Menu ─────────────────────────────────────── */
+        .hamburger-btn { position: absolute; top: 12px; left: 60px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; flex-direction: column; gap: 4px; padding: 10px; }
+        .hamburger-btn:hover { background: rgba(255,255,255,0.2); }
+        .hamburger-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; transition: all 0.2s; }
+
+        /* Full-screen nav overlay */
+        .nav-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: none; flex-direction: column; overflow: hidden; }
+        .nav-overlay.open { display: flex; }
+        .nav-header { background: var(--primary); border-bottom: 4px solid var(--accent); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .nav-header-title { font-size: 13px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-close-btn { background: none; border: 2px solid #555; color: #aaa; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 700; }
+        .nav-tabs { display: flex; background: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; overflow-x: auto; }
+        .nav-tab { flex: 1; padding: 10px 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: rgba(255,255,255,0.5); border: none; background: none; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; min-width: 0; }
+        .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .nav-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+        /* Accomplishments page */
+        .accom-section { margin-bottom: 14px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .accom-section-header { background: var(--primary); color: var(--accent); padding: 8px 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .accom-years { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; background: var(--card-bg); }
+        .accom-year-badge { background: var(--accent); color: var(--primary); font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+        .accom-year-badge.runner-up { background: var(--perry-gray); color: white; }
+        .accom-year-badge.champ { background: #d97706; color: white; }
+        .accom-individual-list { padding: 6px 10px; background: var(--card-bg); }
+        .accom-individual-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+        .accom-individual-row:last-child { border-bottom: none; }
+        .accom-individual-name { font-weight: 700; color: var(--text); }
+        .accom-individual-years { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+        .accom-star { color: #d97706; font-size: 11px; margin-left: 2px; }
+        body.dark-mode .accom-section { border-color: var(--border); }
+        body.dark-mode .accom-year-badge { background: var(--accent); color: #000; }
+
+        /* Year-by-year page */
+        .ybyr-year-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        .ybyr-year-header { background: var(--primary); color: var(--accent); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        .ybyr-year-label { font-size: 14px; font-weight: 800; }
+        .ybyr-year-meta { font-size: 10px; font-weight: 700; color: rgba(255,221,0,0.7); text-align: right; }
+        .ybyr-chevron { width: 16px; height: 16px; fill: var(--accent); transition: transform 0.2s; flex-shrink: 0; margin-left: 8px; }
+        .ybyr-year-card.expanded .ybyr-chevron { transform: rotate(180deg); }
+        .ybyr-body { display: none; background: var(--card-bg); }
+        .ybyr-year-card.expanded .ybyr-body { display: block; }
+        .ybyr-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-bottom: 1px dashed var(--border); font-size: 12px; }
+        .ybyr-row:last-child { border-bottom: none; }
+        .ybyr-row-label { font-weight: 700; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; flex: 1; }
+        .ybyr-row-value { font-weight: 700; color: var(--text); text-align: right; flex: 2; }
+        .ybyr-highlight { color: #d97706; font-weight: 800; }
+        .ybyr-search { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--card-bg); color: var(--text); outline: none; margin-bottom: 12px; }
+        .ybyr-search:focus { border-color: var(--accent); }
+        body.dark-mode .ybyr-search { background: var(--card-bg); color: var(--text); }
+
+        /* History doc page */
+        .history-doc-content { font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .history-year-block { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        .history-year-header { background: var(--primary); color: var(--accent); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        .history-year-title { font-size: 14px; font-weight: 800; }
+        .history-year-body { display: none; padding: 12px; background: var(--card-bg); font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+        .history-year-block.expanded .history-year-body { display: block; }
+        .history-year-block.expanded .ybyr-chevron { transform: rotate(180deg); }
+        .history-search { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--card-bg); color: var(--text); outline: none; margin-bottom: 12px; }
+        .history-search:focus { border-color: var(--accent); }
         @media print {
             body * { visibility: hidden; }
             header, .search-trigger-fab, .filter-container, .progression-overlay, .drawer-overlay,
@@ -391,6 +452,9 @@
 
     <header>
         <div class="dark-mode-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()" id="darkModeBtn">🌙</div>
+        <div class="hamburger-btn" title="Menu" onclick="openNavMenu()">
+            <span></span><span></span><span></span>
+        </div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
         </div>
@@ -399,6 +463,23 @@
         <h1>Perry Boys Distance Times</h1>
         <p>XC & Track Career Leaderboards</p>
     </header>
+
+    <!-- ── Nav Menu Overlay ───────────────────────────────────────── -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-header">
+            <span class="nav-header-title">☰ PXC Menu</span>
+            <button class="nav-close-btn" onclick="closeNavMenu()">✕ Close</button>
+        </div>
+        <div class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="switchNavTab('leaderboards', this)">📊 Leaderboards</button>
+            <button class="nav-tab" onclick="switchNavTab('accomplishments', this)">🏆 Accomplishments</button>
+            <button class="nav-tab" onclick="switchNavTab('history', this)">📜 History</button>
+            <button class="nav-tab" onclick="switchNavTab('yearbyyear', this)">📅 Year by Year</button>
+        </div>
+        <div class="nav-body" id="navBody">
+            <!-- content rendered by JS -->
+        </div>
+    </div>
 
     <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawerMode(event)">
         <div class="drawer-content">
@@ -2315,6 +2396,393 @@
             fetchLiveGoogleSheets(false);
             getXCHistoryData(); 
         });
+
+
+        // ── URLs for nav pages ───────────────────────────────────────────
+        const ACCOMPLISHMENTS_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQ42RxEHuwZCdBfGsb_iT4LmYcNO8Zhc51yZI7W45vUx04jYx9PLI9FlgaMH8E6hpaaXh51XkyAwN4q/pub';
+        const HISTORY_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQt21HnSOUr_eqbjH8s65XM1H0spgK9Ynge2S0rMx6dCZuYxKOYi3Hnog2B6kQRe0NMI-aW6cosE0rm/pub';
+        const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
+
+        // Appends a 5-minute cachebust param, using "?" or "&" depending on
+        // whether the URL already has a query string (the /pub doc URLs don't).
+        function cacheBustUrl(url) {
+            const sep = url.includes('?') ? '&' : '?';
+            return url + sep + 'cachebust=' + Math.floor(Date.now() / 300000);
+        }
+
+        let navCache = { accomplishments: null, history: null, yearbyyear: null };
+        let currentNavTab = 'leaderboards';
+
+        function openNavMenu() {
+            document.getElementById('navOverlay').classList.add('open');
+            if (currentNavTab !== 'leaderboards') {
+                renderNavTab(currentNavTab);
+            }
+        }
+
+        function closeNavMenu() {
+            document.getElementById('navOverlay').classList.remove('open');
+        }
+
+        function switchNavTab(tab, btnEl) {
+            currentNavTab = tab;
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            renderNavTab(tab);
+        }
+
+        function renderNavTab(tab) {
+            const body = document.getElementById('navBody');
+            if (tab === 'leaderboards') {
+                body.innerHTML = `<div style="text-align:center;padding:30px;">
+                    <div style="font-size:40px;margin-bottom:12px;">📊</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px;">Leaderboards</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">View career rankings, season bests, and the virtual meet simulator.</div>
+                    <button onclick="closeNavMenu()" style="background:var(--primary);color:var(--accent);border:3px solid var(--accent);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:800;cursor:pointer;text-transform:uppercase;">Go to Leaderboards</button>
+                </div>`;
+                return;
+            }
+            if (tab === 'accomplishments') { renderAccomplishmentsPage(body); return; }
+            if (tab === 'history') { renderHistoryPage(body); return; }
+            if (tab === 'yearbyyear') { renderYearByYearPage(body); return; }
+        }
+
+        // ── ACCOMPLISHMENTS (parsed once, shared with History page badges) ──
+        const ACCOMPLISHMENT_SECTIONS = [
+            { key: 'State Qualifying Teams',    icon: '\ud83c\udf85', badgeClass: 'champ' },
+            { key: 'Regional Qualifying Teams', icon: '\ud83c\udfc3', badgeClass: '' },
+            { key: 'Regional Runner-up',        icon: '\ud83e\udd48', badgeClass: 'runner-up' },
+            { key: 'District Champion',         icon: '\ud83c\udfc6', badgeClass: 'champ' },
+            { key: 'District Runner-up',        icon: '\ud83e\udd48', badgeClass: 'runner-up' },
+            { key: 'Federal League Champion',   icon: '\u2b50', badgeClass: 'champ' },
+            { key: 'Federal League Runner-up',  icon: '\ud83e\udd48', badgeClass: 'runner-up' },
+            { key: 'Stark County Champion',     icon: '\ud83c\udfc6', badgeClass: 'champ' },
+            { key: 'Stark County Runner-up',    icon: '\ud83e\udd48', badgeClass: 'runner-up' },
+        ];
+        const INDIVIDUAL_QUALIFIERS_HEADING = 'Individual State Meet Qualifiers';
+
+        let accomplishmentsDataCache = null;
+        let accomplishmentsDataPromise = null;
+
+        // Fetches + parses the PXC Accomplishments doc once, caching the result.
+        // Returns { sectionYears: { [sectionKey]: ['1988','1993',...] }, individuals: [{name, years:[{year,allOhio}]}] }
+        async function getAccomplishmentsData() {
+            if (accomplishmentsDataCache) return accomplishmentsDataCache;
+            if (accomplishmentsDataPromise) return accomplishmentsDataPromise;
+            accomplishmentsDataPromise = (async () => {
+                const res = await fetch(cacheBustUrl(ACCOMPLISHMENTS_DOC_URL));
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const text = doc.body.innerText || doc.body.textContent || '';
+                const data = parseAccomplishmentsText(text);
+                accomplishmentsDataCache = data;
+                return data;
+            })();
+            try {
+                return await accomplishmentsDataPromise;
+            } catch(e) {
+                accomplishmentsDataPromise = null;
+                throw e;
+            }
+        }
+
+        // Line-based parser for the Accomplishments doc.
+        // Team sections list years separated by "*" (sometimes wrapping onto multiple
+        // lines) — "*" here is purely a separator, not an All-Ohio marker.
+        // The Individual State Meet Qualifiers section lists "Name YYYY[*] YYYY[*]..."
+        // where a trailing "*" directly after a year DOES mean All-Ohio.
+        function parseAccomplishmentsText(text) {
+            const lines = text.split('\n').map(l => l.trim());
+            const sectionKeys = ACCOMPLISHMENT_SECTIONS.map(s => s.key);
+            const sectionYears = {};
+            sectionKeys.forEach(k => sectionYears[k] = []);
+            const individuals = [];
+
+            let currentSection = null;
+            let inIndividuals = false;
+
+            for (const line of lines) {
+                if (!line) continue;
+
+                if (inIndividuals) {
+                    const yearMatches = line.match(/\d{4}\*?/g);
+                    const namePart = line.replace(/\d{4}\*?/g, '').trim();
+                    if (namePart && yearMatches) {
+                        individuals.push({
+                            name: namePart,
+                            years: yearMatches.map(y => ({ year: y.replace('*', ''), allOhio: y.includes('*') }))
+                        });
+                    }
+                    continue;
+                }
+
+                if (line.startsWith(INDIVIDUAL_QUALIFIERS_HEADING)) {
+                    inIndividuals = true;
+                    continue;
+                }
+
+                const matchedKey = sectionKeys.find(k => line.startsWith(k));
+                if (matchedKey) {
+                    currentSection = matchedKey;
+                    const remainder = line.substring(matchedKey.length);
+                    const years = remainder.match(/\d{4}/g);
+                    if (years) sectionYears[currentSection].push(...years);
+                    continue;
+                }
+
+                // Continuation line: just more years (and "*" separators) for the
+                // current section, possibly wrapped onto its own line(s).
+                if (currentSection && /^[\d*\s]+$/.test(line)) {
+                    const years = line.match(/\d{4}/g);
+                    if (years) sectionYears[currentSection].push(...years);
+                }
+            }
+
+            return { sectionYears, individuals };
+        }
+
+        // Derives the year-sets used to badge History page year cards.
+        function getHistoryBadgeYearSets(accData) {
+            const stateSet = new Set(accData.sectionYears['State Qualifying Teams'] || []);
+            (accData.individuals || []).forEach(({ years }) => years.forEach(({ year }) => stateSet.add(year)));
+            return {
+                stateSet,
+                fedChampSet: new Set(accData.sectionYears['Federal League Champion'] || []),
+                distChampSet: new Set(accData.sectionYears['District Champion'] || []),
+                countyChampSet: new Set(accData.sectionYears['Stark County Champion'] || []),
+            };
+        }
+
+        async function renderAccomplishmentsPage(container) {
+            if (navCache.accomplishments) {
+                container.innerHTML = navCache.accomplishments;
+                return;
+            }
+            container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">\u23f3 Loading accomplishments\u2026</p>';
+            try {
+                const data = await getAccomplishmentsData();
+                let html_out = '';
+
+                ACCOMPLISHMENT_SECTIONS.forEach(({ key, icon, badgeClass }) => {
+                    const years = data.sectionYears[key];
+                    if (!years || years.length === 0) return;
+                    const badgeHtml = years.map(yr =>
+                        `<span class="accom-year-badge ${badgeClass}">${yr}</span>`
+                    ).join('');
+                    html_out += `
+                        <div class="accom-section">
+                            <div class="accom-section-header">${icon} ${key}</div>
+                            <div class="accom-years">${badgeHtml}</div>
+                        </div>`;
+                });
+
+                if (data.individuals.length) {
+                    let indivHtml = '';
+                    data.individuals.forEach(({ name, years }) => {
+                        const yearsDisplay = years.map(({ year, allOhio }) =>
+                            allOhio
+                                ? `<span style="background:#d97706;color:white;font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;white-space:nowrap;">${year} \u2605</span>`
+                                : `<span style="background:var(--primary);color:var(--accent);font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;white-space:nowrap;">${year}</span>`
+                        ).join(' ');
+                        indivHtml += `
+                            <div class="accom-individual-row">
+                                <span class="accom-individual-name">${name}</span>
+                                <span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;">${yearsDisplay}</span>
+                            </div>`;
+                    });
+                    html_out += `
+                        <div class="accom-section">
+                            <div class="accom-section-header">\ud83c\udfbd Individual State Qualifiers <span style="font-size:10px;font-weight:600;opacity:0.8;">(\u2605 = All-Ohio)</span></div>
+                            <div class="accom-individual-list">${indivHtml}</div>
+                        </div>`;
+                }
+
+                navCache.accomplishments = html_out;
+                container.innerHTML = html_out;
+            } catch(e) {
+                container.innerHTML = '<p style="text-align:center;padding:20px;color:#991b1b;font-weight:600;">Could not load accomplishments. Check connection.</p>';
+            }
+        }
+
+        // ── HISTORY DOC ──────────────────────────────────────────────────
+        async function renderHistoryPage(container) {
+            if (navCache.history) {
+                container.innerHTML = navCache.history;
+                return;
+            }
+            container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">\u23f3 Loading history\u2026</p>';
+            try {
+                const [accData, historyRes] = await Promise.all([
+                    getAccomplishmentsData().catch(() => ({ sectionYears: {}, individuals: [] })),
+                    fetch(cacheBustUrl(HISTORY_DOC_URL))
+                ]);
+                const html = await historyRes.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const text = doc.body.innerText || doc.body.textContent || '';
+
+                const badgeSets = getHistoryBadgeYearSets(accData);
+
+                // Split into year blocks — each begins with a 4-digit year followed
+                // somewhere on that line by "Coach" (e.g. "1988 Coach Jeff Greenfelder").
+                const blocks = text.split(/(?=\n{0,2}(?:19|20)\d{2}[^\n]*Coach)/);
+
+                let searchHtml = `<input type="text" class="history-search" id="historySearch" placeholder="Search year, coach, or runner\u2026" oninput="filterHistoryBlocks(this.value)">`;
+                let blocksHtml = '';
+
+                blocks.forEach(block => {
+                    block = block.trim();
+                    if (!block) return;
+                    const yearMatch = block.match(/^((?:19|20)\d{2})/);
+                    if (!yearMatch) return;
+                    const year = yearMatch[1];
+
+                    // Coach name — strip trailing "(...)" notes and "- Assistant Coach ..." parts
+                    const coachMatch = block.match(/Coach\s+([^\n(]+)/);
+                    let coach = coachMatch ? coachMatch[1].trim() : '';
+                    coach = coach.replace(/\s*[-,]\s*(Assistant|Volunteer).*$/i, '').trim();
+
+                    let badges = '';
+                    if (badgeSets.stateSet.has(year)) badges += '<span style="background:#d97706;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">STATE</span>';
+                    if (badgeSets.fedChampSet.has(year)) badges += '<span style="background:var(--accent);color:var(--primary);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">FED CHAMP</span>';
+                    if (badgeSets.distChampSet.has(year)) badges += '<span style="background:#166534;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">DIST CHAMP</span>';
+                    if (badgeSets.countyChampSet.has(year)) badges += '<span style="background:#1d4ed8;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">COUNTY CHAMP</span>';
+
+                    blocksHtml += `
+                        <div class="history-year-block" data-year="${year}">
+                            <div class="history-year-header" onclick="this.parentElement.classList.toggle('expanded')">
+                                <span class="history-year-title">${year}${badges}</span>
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <span style="font-size:10px;font-weight:600;color:rgba(255,221,0,0.7);">${coach}</span>
+                                    <svg class="ybyr-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                                </span>
+                            </div>
+                            <div class="history-year-body">${block.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                        </div>`;
+                });
+
+                const fullHtml = searchHtml + blocksHtml;
+                navCache.history = fullHtml;
+                container.innerHTML = fullHtml;
+            } catch(e) {
+                container.innerHTML = '<p style="text-align:center;padding:20px;color:#991b1b;font-weight:600;">Could not load history. Check connection.</p>';
+            }
+        }
+
+        function filterHistoryBlocks(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.history-year-block').forEach(block => {
+                const year = block.dataset.year || '';
+                const text = (block.querySelector('.history-year-body') || {}).textContent || '';
+                const match = !q || year.includes(q) || text.toLowerCase().includes(q);
+                block.style.display = match ? '' : 'none';
+                if (q && q.length > 1 && match) block.classList.add('expanded');
+            });
+        }
+
+        // ── YEAR BY YEAR ─────────────────────────────────────────────────
+        async function renderYearByYearPage(container) {
+            if (navCache.yearbyyear) {
+                container.innerHTML = navCache.yearbyyear;
+                return;
+            }
+            container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading year by year data…</p>';
+            try {
+                const res = await fetch(cacheBustUrl(YEAR_BY_YEAR_CSV_URL));
+                const text = await res.text();
+                const rows = parseCSVText(text);
+                if (rows.length < 2) throw new Error('no data');
+
+                const headers = rows[0].map(h => h.trim());
+                
+                // Find column indices
+                const col = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
+                const yearCol = col('year') !== -1 ? col('year') : 0;
+                const coachCol = col('coach');
+                const recordCol = col('record') !== -1 ? col('record') : col('dual');
+                const starkCol = col('stark');
+                const fedCol = col('federal') !== -1 ? col('federal') : col('fed');
+                const distCol = col('district') !== -1 ? col('district') : col('dist');
+                const regCol = col('regional') !== -1 ? col('regional') : col('reg');
+                const stateCol = col('state');
+                const notesCol = col('note') !== -1 ? col('note') : col('accomplishment') !== -1 ? col('accomplishment') : col('honors');
+
+                const dataRows = rows.slice(1).filter(r => r[yearCol] && r[yearCol].trim() && /\d{4}/.test(r[yearCol]));
+                // Sort descending
+                dataRows.sort((a, b) => parseInt(b[yearCol]) - parseInt(a[yearCol]));
+
+                const fieldDef = [
+                    { label: 'Coach', col: coachCol },
+                    { label: 'Record', col: recordCol },
+                    { label: 'Stark County', col: starkCol },
+                    { label: 'Federal League', col: fedCol },
+                    { label: 'District', col: distCol },
+                    { label: 'Regional', col: regCol },
+                    { label: 'State', col: stateCol },
+                    { label: 'Notes / Honors', col: notesCol },
+                ].filter(f => f.col !== -1 && f.col !== undefined);
+
+                let html = `<input type="text" class="ybyr-search" id="ybyrSearch" placeholder="Search year, coach, or result…" oninput="filterYearCards(this.value)">`;
+
+                dataRows.forEach(row => {
+                    const year = row[yearCol].trim();
+                    const coach = coachCol !== -1 ? (row[coachCol] || '').trim() : '';
+                    const state = stateCol !== -1 ? (row[stateCol] || '').trim() : '';
+                    const dist = distCol !== -1 ? (row[distCol] || '').trim() : '';
+                    const fed = fedCol !== -1 ? (row[fedCol] || '').trim() : '';
+
+                    // Achievement badges for header
+                    let badges = '';
+                    if (/state/i.test(state) && !/did not|no team|DNQ/i.test(state)) badges += '<span style="background:#d97706;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">STATE</span>';
+                    if (/^1st|champion|1st place/i.test(fed)) badges += '<span style="background:var(--accent);color:var(--primary);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">FED CHAMP</span>';
+                    if (/^1st|champion|1st place/i.test(dist)) badges += '<span style="background:#166534;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;">DIST CHAMP</span>';
+
+                    let rowsHtml = '';
+                    fieldDef.forEach(({ label, col: c }) => {
+                        const val = (row[c] || '').trim();
+                        if (!val || val === '--' || val === '0') return;
+                        const isHighlight = /1st|champion|state/i.test(val);
+                        rowsHtml += `
+                            <div class="ybyr-row" data-search="${val.toLowerCase()}">
+                                <span class="ybyr-row-label">${label}</span>
+                                <span class="ybyr-row-value ${isHighlight ? 'ybyr-highlight' : ''}">${val}</span>
+                            </div>`;
+                    });
+
+                    if (!rowsHtml) return;
+
+                    html += `
+                        <div class="ybyr-year-card" data-year="${year}" data-coach="${coach.toLowerCase()}">
+                            <div class="ybyr-year-header" onclick="this.parentElement.classList.toggle('expanded')">
+                                <span class="ybyr-year-label">${year}${badges}</span>
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <span class="ybyr-year-meta">${coach}</span>
+                                    <svg class="ybyr-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                                </span>
+                            </div>
+                            <div class="ybyr-body">${rowsHtml}</div>
+                        </div>`;
+                });
+
+                navCache.yearbyyear = html;
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<p style="text-align:center;padding:20px;color:#991b1b;font-weight:600;">Could not load year by year data. Check connection.</p>';
+            }
+        }
+
+        function filterYearCards(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.ybyr-year-card').forEach(card => {
+                const year = card.dataset.year || '';
+                const coach = card.dataset.coach || '';
+                const values = Array.from(card.querySelectorAll('.ybyr-row-value')).map(el => el.textContent.toLowerCase()).join(' ');
+                const match = !q || year.includes(q) || coach.includes(q) || values.includes(q);
+                card.style.display = match ? '' : 'none';
+                if (q && match) card.classList.add('expanded');
+            });
+        }
 
         // Register service worker for PWA offline support
         if ('serviceWorker' in navigator) {
