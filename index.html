@@ -97,7 +97,7 @@
         body.dark-mode .prog-val { color: #e8eaf0; }
         body.dark-mode .prog-label { color: #a0a4a8; border-bottom-color: var(--border); }
         /* Collegiate Runners page */
-        body.dark-mode .alumni-breakdown-toggle, body.dark-mode .alumni-breakdown-body { background: var(--card-bg); border-color: var(--border); }
+        body.dark-mode .collapsible-toggle, body.dark-mode .collapsible-body { background: var(--card-bg); border-color: var(--border); }
         body.dark-mode .alumni-breakdown-spacer { background: #16191f; }
 
         /* ── Compare mode ─────────────────────────────────────────────── */
@@ -457,12 +457,16 @@
         body.dark-mode .ybyr-meet-time { color:#000; }
         .ybyr-no-meets { padding:10px 12px; font-size:11px; color:var(--text-muted); text-align:center; }
 
+        /* Generic collapsible toggle + body (used by the Collegiate Runners
+           "Colleges Represented" breakdown and the Year by Year "Program
+           Timeline" section) */
+        .collapsible-toggle { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text); background:var(--card-bg); border:1px solid var(--border); border-radius:10px; cursor:pointer; user-select:none; margin-bottom:10px; }
+        .collapsible-toggle .ybyr-chevron { fill: var(--text-muted); }
+        .collapsible-toggle.expanded .ybyr-chevron { transform: rotate(180deg); }
+        .collapsible-body { display:none; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; margin:-4px 0 10px; padding:4px 10px; }
+        .collapsible-body.expanded { display:block; }
+
         /* ── Collegiate Runners page ───────────────────────────────────── */
-        .alumni-breakdown-toggle { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text); background:var(--card-bg); border:1px solid var(--border); border-radius:10px; cursor:pointer; user-select:none; margin-bottom:10px; }
-        .alumni-breakdown-toggle .ybyr-chevron { fill: var(--text-muted); }
-        .alumni-breakdown-toggle.expanded .ybyr-chevron { transform: rotate(180deg); }
-        .alumni-breakdown-body { display:none; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; margin:-4px 0 10px; padding:4px 10px; }
-        .alumni-breakdown-body.expanded { display:block; }
         .alumni-breakdown-row { display:flex; align-items:center; gap:10px; padding:6px 2px; border-bottom:1px dashed var(--border); font-size:12px; }
         .alumni-breakdown-row:last-child { border-bottom:none; }
         .alumni-breakdown-name { flex:1; font-weight:700; color:var(--text); }
@@ -526,14 +530,13 @@
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
     <div class="nav-overlay" id="navOverlay">
         <div class="nav-header">
-            <span class="nav-header-title" id="navHeaderTitle">📅 Year by Year</span>
+            <span class="nav-header-title" id="navHeaderTitle">📅 XC Year by Year</span>
             <button class="nav-close-btn" onclick="closeNavMenu()">✕ Close</button>
         </div>
         <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
-            <button class="nav-tab active" id="navTabYBY" onclick="switchNavTab('yearbyyear')">📅 Year by Year</button>
             <button class="nav-tab" id="navTabAccomp" onclick="switchNavTab('accomplishments')">🏆 Accomplishments</button>
             <button class="nav-tab" id="navTabAlumni" onclick="switchNavTab('alumni')">🎓 Collegiate</button>
-            <button class="nav-tab" id="navTabTimeline" onclick="switchNavTab('timeline')">📜 Timeline</button>
+            <button class="nav-tab active" id="navTabYBY" onclick="switchNavTab('yearbyyear')">📅 Year by Year</button>
         </div>
         <div class="nav-body" id="navBody">
             <!-- content rendered by JS -->
@@ -2785,7 +2788,7 @@
             }
         }
 
-        let navCache = { yearbyyear: null, alumni: null, timeline: null };
+        let navCache = { yearbyyear: null, alumni: null };
 
         // Delegated click handler for expandable cards rendered inside the
         // nav drawer (currently just the Collegiate Runners list). Attached
@@ -2804,8 +2807,7 @@
             document.getElementById('navTabYBY').classList.add('active');
             document.getElementById('navTabAccomp').classList.remove('active');
             document.getElementById('navTabAlumni').classList.remove('active');
-            document.getElementById('navTabTimeline').classList.remove('active');
-            document.getElementById('navHeaderTitle').textContent = '📅 Year by Year';
+            document.getElementById('navHeaderTitle').textContent = '📅 XC Year by Year';
             renderYearByYearPage(document.getElementById('navBody'));
         }
 
@@ -2828,19 +2830,17 @@
             document.getElementById('navTabYBY').classList.toggle('active', tab === 'yearbyyear');
             document.getElementById('navTabAccomp').classList.toggle('active', tab === 'accomplishments');
             document.getElementById('navTabAlumni').classList.toggle('active', tab === 'alumni');
-            document.getElementById('navTabTimeline').classList.toggle('active', tab === 'timeline');
-            document.getElementById('navHeaderTitle').textContent = tab === 'yearbyyear' ? '📅 Year by Year' : tab === 'accomplishments' ? '🏆 Accomplishments' : tab === 'alumni' ? '🎓 Collegiate Runners' : '📜 Program Timeline';
+            document.getElementById('navHeaderTitle').textContent = tab === 'yearbyyear' ? '📅 XC Year by Year' : tab === 'accomplishments' ? '🏆 XC Accomplishments' : '🎓 XC Collegiate Runners';
             const container = document.getElementById('navBody');
             if (tab === 'yearbyyear') {
                 renderYearByYearPage(container);
             } else if (tab === 'accomplishments') {
                 renderAccomplishmentsPage(container);
-            } else if (tab === 'alumni') {
-                renderAlumniPage(container);
             } else {
-                renderProgramTimelinePage(container);
+                renderAlumniPage(container);
             }
         }
+
 
         function renderAccomplishmentsPage(container) {
             if (navCache.accomplishments) { container.innerHTML = navCache.accomplishments; return; }
@@ -2987,11 +2987,11 @@
                 </div>`;
 
             html += `
-                <div class="alumni-breakdown-toggle" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded')">
+                <div class="collapsible-toggle" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded')">
                     <span>📊 Colleges Represented</span>
                     <svg class="ybyr-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                 </div>
-                <div class="alumni-breakdown-body">
+                <div class="collapsible-body">
                     ${collegeList.map(([college, count]) => `
                         <div class="alumni-breakdown-row">
                             ${COLLEGE_LOGOS[college] ? `<img src="${COLLEGE_LOGOS[college]}" class="college-logo-mini" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'alumni-breakdown-spacer'}))">` : '<span class="alumni-breakdown-spacer"></span>'}
@@ -3132,13 +3132,12 @@
                 }));
         }
 
-        function renderProgramTimelinePage(container) {
-            if (navCache.timeline) { container.innerHTML = navCache.timeline; return; }
-
+        // Renders the timeline as an HTML string for embedding inside the
+        // collapsible "Program Timeline" section on the Year by Year page.
+        function buildProgramTimelineHtml() {
             const timeline = buildProgramTimeline();
             if (!timeline.length) {
-                container.innerHTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No timeline data found.</p>`;
-                return;
+                return `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No timeline data found.</p>`;
             }
 
             let html = `<p class="program-timeline-intro">🌟 = a first for the program &nbsp;·&nbsp; ↩️ = a return after a 10+ year gap</p>`;
@@ -3158,9 +3157,7 @@
                     </div>`;
             });
             html += `</div>`;
-
-            navCache.timeline = html;
-            container.innerHTML = html;
+            return html;
         }
 
 
@@ -3286,6 +3283,15 @@
                 dataRows.sort((a, b) => parseInt(b[yearCol]) - parseInt(a[yearCol]));
 
                 let html = `<input type="text" class="ybyr-search" id="ybyrSearch" placeholder="Search year, coach, or result…" oninput="filterYearCards(this.value)">`;
+
+                html += `
+                    <div class="collapsible-toggle" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('expanded')">
+                        <span>📜 Program Timeline</span>
+                        <svg class="ybyr-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="collapsible-body">
+                        ${buildProgramTimelineHtml()}
+                    </div>`;
 
                 dataRows.forEach(row => {
                     const year    = row[yearCol].trim();
