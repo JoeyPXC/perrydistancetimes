@@ -285,8 +285,8 @@
         .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; }
         .athlete-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
-        .athlete-college-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
-        .athlete-college-name { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+        .athlete-college-row { display: flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 10px; flex-shrink: 0; }
+        .athlete-college-name { font-size: 10px; font-weight: 700; color: var(--text-muted); text-align: right; max-width: 90px; line-height: 1.2; }
         .college-logo-mini { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; background: white; flex-shrink: 0; padding: 2px; }
         
         .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
@@ -1429,7 +1429,7 @@
         // any that don't resolve, so a wrong guess just silently shows no logo.
         const COLLEGE_LOGOS = {
             'Walsh University': 'https://logos.tfrrs.org/walsh.png',
-            'University of Mount Union': 'https://logos.tfrrs.org/mount-union.png',
+            'University of Mount Union': 'https://logos.tfrrs.org/svgs/mount-union.svg',
             'Malone University': 'https://logos.tfrrs.org/malone.png',
             'University of Akron': 'https://logos.tfrrs.org/akron.png',
             'University of Cincinnati': 'https://logos.tfrrs.org/cincinnati.png',
@@ -1531,8 +1531,8 @@
                     }).join('');
                     collegeRowHtml = `
                         <span class="athlete-college-row">
-                            ${logosHtml}
                             <span class="athlete-college-name">${collegeInfo.colleges.join(' & ')}</span>
+                            ${logosHtml}
                         </span>`;
                 }
 
@@ -1543,8 +1543,8 @@
                         <div class="athlete-meta-box">
                             <span class="athlete-name">${athlete.name}</span>
                             <span class="athlete-grad-text">${gradDisplay}</span>
-                            ${collegeRowHtml}
                         </div>
+                        ${collegeRowHtml}
                         <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                     </div>
                     <div class="card-expand-body">
