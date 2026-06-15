@@ -3143,6 +3143,8 @@
 
         function openNavMenu() {
             document.getElementById('navOverlay').classList.add('open');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
             navCurrentTab = 'accomplishments';
             document.getElementById('navTabAccomp').classList.add('active');
             document.getElementById('navTabAlumni').classList.remove('active');
@@ -3153,6 +3155,8 @@
 
         function closeNavMenu() {
             document.getElementById('navOverlay').classList.remove('open');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
         }
 
         // ── YEAR BY YEAR ─────────────────────────────────────────────────
