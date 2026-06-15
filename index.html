@@ -866,135 +866,186 @@
             '2007': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcyiand-gd8ctBFgS4ywM2zfYatOM7ekd-YJNPaecXm63vIfHxEweaU1MVHehN0SmwHaZXCf73jn-g/pub?gid=2046217055&single=true&output=csv'
         };
 
+        // Girls equivalent of TRACK_HISTORY_CSV_URLS. Sparser than the boys
+        // set for now — 2006 is currently a blank placeholder tab the coach
+        // plans to fill in from old records, but is included now so it picks
+        // up automatically once populated (a season with <2 rows is simply
+        // skipped by fetchTrackHistorySeasons below).
+        const GIRLS_TRACK_HISTORY_CSV_URLS = {
+            '2017': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcwrCB-bbEenKq1HltCOaNYMhpQStPj7qWwXum2djQqjpIUoUvR0yep6LfW9M_pkd8TaBdcKsJlRG7/pub?gid=201241079&single=true&output=csv',
+            '2015': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcwrCB-bbEenKq1HltCOaNYMhpQStPj7qWwXum2djQqjpIUoUvR0yep6LfW9M_pkd8TaBdcKsJlRG7/pub?gid=1115689377&single=true&output=csv',
+            '2014': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcwrCB-bbEenKq1HltCOaNYMhpQStPj7qWwXum2djQqjpIUoUvR0yep6LfW9M_pkd8TaBdcKsJlRG7/pub?gid=2098353710&single=true&output=csv',
+            '2013': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcwrCB-bbEenKq1HltCOaNYMhpQStPj7qWwXum2djQqjpIUoUvR0yep6LfW9M_pkd8TaBdcKsJlRG7/pub?gid=1404477024&single=true&output=csv',
+            '2006': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcwrCB-bbEenKq1HltCOaNYMhpQStPj7qWwXum2djQqjpIUoUvR0yep6LfW9M_pkd8TaBdcKsJlRG7/pub?gid=398386083&single=true&output=csv'
+        };
+
         // Matches "800 - 2:01.32", "1600 - 4:34.4", "3200 - 10:23.65", "4x800 - 2:10.2"
         // Also matches prelim/final suffixes: "800p - 2:03.1", "800f - 2:01.3", "1600f - 4:30.2"
         // Capture groups: (1) base event, (2) suffix p/f or empty, (3) time
         // Tolerates a stray ';' instead of ':' (a known data-entry typo), and a trailing
         // '?' on a real time (e.g. "2:11?" -> "2:11") when the tenths weren't certain.
         //
-        // The separator between the event name and the time can be a dash OR a
-        // colon ("4x800 - 2:31.0" or "4x800: 2:31.0") — some season sheets use
-        // a colon. This doesn't conflict with the colon already inside the time
-        // itself (e.g. "2:31.0"), since that's matched by the time group, not
-        // the separator.
+        // The separator between the event name and the time can be a dash, a
+        // colon, or a semicolon ("4x800 - 2:31.0", "4x800: 2:31.0", or
+        // "3200;13:03") — some season sheets use a colon or semicolon. This
+        // doesn't conflict with the colon/semicolon already inside the time
+        // itself (e.g. "2:31.0" or "5;49"), since that's matched by the time
+        // group, not the separator.
+        //
+        // The whole pattern is case-insensitive, so "dmr1200", "DMR-1200",
+        // "800P", and "800p" are all recognized and normalized the same way
+        // below. The distance can also carry an optional trailing "m"
+        // ("800m - 2:46", "400m: 1:09") which is simply dropped.
+        //
+        // Global (no ^/$ anchors) and used with matchAll per line, rather than
+        // requiring the whole piece to match exactly. This tolerates extra
+        // spacing before the time ("4x800 -  2:29") and trailing junk like a
+        // stray points annotation that leaked into a times cell ("3200-12:52.2
+        // (1)" still extracts "3200" -> "12:52.2"). It also means a prefix like
+        // "(P)800-2:33.6" still finds "800-2:33.6" even though "(P)" itself
+        // isn't part of the event-name alternatives.
         //
         // Also covers relay/DMR legs and sub-minute events, which are often
         // written without a "minutes:" part: "400 - 52.30", "DMR400 - 53.1",
-        // "DMR 1600 - 4:48.0", "4x1600 - 18:20.0", "4x400 - 0:51.2", "200 -
-        // 24.50", "300h - 45.20", "110h - 15.20", "100 - 11.50", "100h -
-        // 14.80". Also covers "1500 - 4:15.30" and a track 5000/5k, written
-        // either way: "5000 - 16:30.0" or "5k - 16:30.0". The DMR base event
-        // tolerates an optional space ("DMR800" or "DMR 800"); hurdles
-        // tolerate either case ("300h"/"300H", "110h"/"110H", "100h"/"100H").
-        // All of these are normalized (space stripped, trailing h -> H,
-        // 5k/5K -> 5000) before use as a lookup key.
-        const TRACK_EVENT_TIME_RE = /^(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x800|4x1600|4x400|DMR\s?1600|DMR\s?1200|DMR\s?800|DMR\s?400)([pf]?)\s*[-:]\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?|\d{1,3}(?:\.\d{1,2})?)\??\s*$/;
+        // "DMR 1600 - 4:48.0", "DMR-1600 - 5:59", "4x1600 - 18:20.0", "4x400 -
+        // 0:51.2", "200 - 24.50", "300h - 45.20", "110h - 15.20", "100 -
+        // 11.50", "100h - 14.80". Also covers "1500 - 4:15.30", "4x200 -
+        // 2:07.8", and a track 5000/5k, written either way: "5000 - 16:30.0"
+        // or "5k - 16:30.0". The DMR base event tolerates an optional space or
+        // dash before the number ("DMR800", "DMR 800", or "DMR-800").
+        // All of these are normalized (space/dash stripped from "DMR ...",
+        // trailing "m" dropped, trailing h -> H, 5k/5K -> 5000, suffix
+        // lowercased) before use as a lookup key.
+        const TRACK_EVENT_TIME_RE = /(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x200|4x800|4x1600|4x400|DMR[\s-]?1600|DMR[\s-]?1200|DMR[\s-]?800|DMR[\s-]?400)(?:m)?([pf]?)\s*[-:;]\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?|\d{1,3}(?:\.\d{1,2})?)\??/gi;
 
         // Field events, which record a mark (height/distance) instead of a
         // time. Currently just High Jump: "HJ - 6'0\"", "HJ - 5-10", "HJ - 6'0",
-        // or with a colon separator: "HJ: 6'0\"".
+        // or with a colon/semicolon separator: "HJ: 6'0\"", "hj;5-10". Also
+        // global/non-anchored per line, for the same reasons as above.
         // Capture groups: (1) base event, (2) mark as written.
-        const FIELD_EVENT_MARK_RE = /^(HJ)\s*[-:]\s*([\d'"\-.]+)\??\s*$/;
+        const FIELD_EVENT_MARK_RE = /(HJ)\s*[-:;]\s*([\d'"\-.]+)\??/gi;
 
         let trackHistoryCache = null;
         let trackHistoryFetchPromise = null;
+
+        // Fetches and parses one set of season tabs (year -> CSV URL) into
+        // { lookupKey: { originalName, seasons: { year: [{meet, ...events}] } } }.
+        // Used for both the boys and girls season-tab sets.
+        async function fetchTrackHistorySeasons(urlsMap) {
+            let parsed = {};
+
+            const yearEntries = Object.entries(urlsMap);
+            const results = await Promise.all(yearEntries.map(async ([year, url]) => {
+                try {
+                    let res = await fetch(url + '&cachebust=' + Math.floor(Date.now() / 60000));
+                    if (!res.ok) throw new Error('fetch failed for ' + year);
+                    let text = await res.text();
+                    return { year, rows: parseCSVText(text) };
+                } catch (e) {
+                    console.error('Track history fetch error (' + year + '):', e);
+                    return null;
+                }
+            }));
+
+            results.forEach(result => {
+                if (!result) return;
+                let { year, rows } = result;
+                if (!rows || rows.length < 2) return;
+
+                let header = rows[0];
+
+                // Find the marker row where column A contains "Points" — everything
+                // from there down is the duplicated points section, which we skip.
+                let markerIdx = rows.length;
+                for (let i = 1; i < rows.length; i++) {
+                    let a = rows[i][0] || '';
+                    if (a.includes('Points')) { markerIdx = i; break; }
+                }
+
+                for (let i = 1; i < markerIdx; i++) {
+                    let row = rows[i];
+                    if (!row) continue;
+                    let rawName = (row[0] || '').trim();
+                    if (!rawName) continue;
+
+                    let lookupKey = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (!lookupKey) continue;
+
+                    if (!parsed[lookupKey]) {
+                        parsed[lookupKey] = { originalName: rawName, seasons: {} };
+                    }
+                    if (!parsed[lookupKey].seasons[year]) {
+                        parsed[lookupKey].seasons[year] = [];
+                    }
+
+                    for (let c = 2; c < row.length; c++) {
+                        let cell = row[c];
+                        if (!cell) continue;
+                        let meetName = (header[c] || '').trim();
+                        if (!meetName) continue;
+
+                        let entry = null;
+                        // Cells can have multiple events on separate lines.
+                        // Scan each line for any number of event-time (or
+                        // field-event-mark) patterns, ignoring extra spacing
+                        // and any trailing junk that doesn't match.
+                        cell.split('\n').forEach(line => {
+                            for (const m of line.matchAll(TRACK_EVENT_TIME_RE)) {
+                                // Normalize "DMR 800"/"dmr-800"/"DMR-800" -> "DMR800",
+                                // any "...h"/"...H" hurdles suffix -> "...H" (covers
+                                // 100H/110H/300H), and "5k"/"5K" -> "5000" so all of
+                                // these match the lookup key used in
+                                // EVENT_DISPLAY_ORDER regardless of how they were typed.
+                                let baseEvent = m[1].replace(/\s+/g, '');
+                                baseEvent = baseEvent.replace(/^dmr[\s-]?/i, 'DMR');
+                                baseEvent = baseEvent.replace(/h$/i, 'H');
+                                if (/^5[kK]$/.test(baseEvent)) baseEvent = '5000';
+                                let suffix = m[2].toLowerCase(); // "p" for prelim, "f" for final, "" for plain
+                                let time = m[3].replace(';', ':');
+                                // Key: "800p", "800f", "800", "1600f", "4x800", "DMR1600", "300H", etc.
+                                let eventKey = suffix ? (baseEvent + suffix) : baseEvent;
+                                if (!entry) entry = { meet: meetName };
+                                entry[eventKey] = time;
+                            }
+
+                            for (const fm of line.matchAll(FIELD_EVENT_MARK_RE)) {
+                                if (!entry) entry = { meet: meetName };
+                                entry[fm[1].toUpperCase()] = fm[2];
+                            }
+                        });
+
+                        if (entry) {
+                            parsed[lookupKey].seasons[year].push(entry);
+                        }
+                    }
+                }
+            });
+
+            return parsed;
+        }
 
         async function getTrackHistoryData() {
             if (trackHistoryCache) return trackHistoryCache;
             if (trackHistoryFetchPromise) return trackHistoryFetchPromise;
 
             trackHistoryFetchPromise = (async () => {
-                let parsed = {};
+                const [boysParsed, girlsParsed] = await Promise.all([
+                    fetchTrackHistorySeasons(TRACK_HISTORY_CSV_URLS),
+                    fetchTrackHistorySeasons(GIRLS_TRACK_HISTORY_CSV_URLS)
+                ]);
 
-                const yearEntries = Object.entries(TRACK_HISTORY_CSV_URLS);
-                const results = await Promise.all(yearEntries.map(async ([year, url]) => {
-                    try {
-                        let res = await fetch(url + '&cachebust=' + Math.floor(Date.now() / 60000));
-                        if (!res.ok) throw new Error('fetch failed for ' + year);
-                        let text = await res.text();
-                        return { year, rows: parseCSVText(text) };
-                    } catch (e) {
-                        console.error('Track history fetch error (' + year + '):', e);
-                        return null;
-                    }
-                }));
+                let parsed = boysParsed;
 
-                results.forEach(result => {
-                    if (!result) return;
-                    let { year, rows } = result;
-                    if (!rows || rows.length < 2) return;
-
-                    let header = rows[0];
-
-                    // Find the marker row where column A contains "Points" — everything
-                    // from there down is the duplicated points section, which we skip.
-                    let markerIdx = rows.length;
-                    for (let i = 1; i < rows.length; i++) {
-                        let a = rows[i][0] || '';
-                        if (a.includes('Points')) { markerIdx = i; break; }
-                    }
-
-                    for (let i = 1; i < markerIdx; i++) {
-                        let row = rows[i];
-                        if (!row) continue;
-                        let rawName = (row[0] || '').trim();
-                        if (!rawName) continue;
-
-                        let lookupKey = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        if (!lookupKey) continue;
-
-                        if (!parsed[lookupKey]) {
-                            parsed[lookupKey] = { originalName: rawName, seasons: {} };
-                        }
-                        if (!parsed[lookupKey].seasons[year]) {
-                            parsed[lookupKey].seasons[year] = [];
-                        }
-
-                        for (let c = 2; c < row.length; c++) {
-                            let cell = row[c];
-                            if (!cell) continue;
-                            let meetName = (header[c] || '').trim();
-                            if (!meetName) continue;
-
-                            let entry = null;
-                            // Cells can have multiple events separated by line breaks
-                            // and/or runs of 2+ spaces on the same line.
-                            cell.split('\n').forEach(line => {
-                                line.split(/\s{2,}/).forEach(piece => {
-                                    piece = piece.trim();
-
-                                    let m = TRACK_EVENT_TIME_RE.exec(piece);
-                                    if (m) {
-                                        // Normalize "DMR 800" -> "DMR800", any "...h"/"...H"
-                                        // hurdles suffix -> "...H" (covers 100H/110H/300H),
-                                        // and "5k"/"5K" -> "5000" so all of these match the
-                                        // lookup key used in EVENT_DISPLAY_ORDER regardless
-                                        // of how they were typed.
-                                        let baseEvent = m[1].replace(/\s+/g, '');
-                                        baseEvent = baseEvent.replace(/h$/i, 'H');
-                                        if (/^5[kK]$/.test(baseEvent)) baseEvent = '5000';
-                                        let suffix = m[2];     // "p" for prelim, "f" for final, "" for plain
-                                        let time = m[3].replace(';', ':');
-                                        // Key: "800p", "800f", "800", "1600f", "4x800", "DMR1600", "300H", etc.
-                                        let eventKey = suffix ? (baseEvent + suffix) : baseEvent;
-                                        if (!entry) entry = { meet: meetName };
-                                        entry[eventKey] = time;
-                                        return;
-                                    }
-
-                                    let fm = FIELD_EVENT_MARK_RE.exec(piece);
-                                    if (fm) {
-                                        if (!entry) entry = { meet: meetName };
-                                        entry[fm[1]] = fm[2];
-                                    }
-                                });
-                            });
-
-
-                            if (entry) {
-                                parsed[lookupKey].seasons[year].push(entry);
-                            }
-                        }
+                Object.entries(girlsParsed).forEach(([key, val]) => {
+                    if (parsed[key]) {
+                        // Name collision (rare) — merge seasons rather than
+                        // overwrite the existing entry, same as getXCHistoryData.
+                        Object.entries(val.seasons).forEach(([yr, entries]) => {
+                            if (!parsed[key].seasons[yr]) parsed[key].seasons[yr] = [];
+                            parsed[key].seasons[yr].push(...entries);
+                        });
+                    } else {
+                        parsed[key] = val;
                     }
                 });
 
@@ -3223,7 +3274,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             fetchLiveGoogleSheets(false);
             getXCHistoryData();
-            getTrackHistoryData(); // prefetch all 19 tabs so cards open instantly
+            getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
         });
 
 
