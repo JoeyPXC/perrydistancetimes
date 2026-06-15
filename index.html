@@ -492,6 +492,8 @@
         .col-sq-event { width:26%; font-weight:800; }
         .col-sq-athletes { width:auto; }
         .col-sq-place { width:78px; text-align:center; white-space:nowrap; }
+        .records-place-first { font-weight:900; color:var(--success); }
+        .records-note { font-size:10px; font-style:italic; color:var(--text-muted); margin-top:3px; line-height:1.3; }
         .records-link-row { margin-bottom:12px; }
 
         .accomp-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:white; padding:6px 12px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
@@ -3021,6 +3023,7 @@
             let yearIdx = headers.indexOf('year');
             let eventIdx = headers.indexOf('event');
             let placeIdx = headers.indexOf('place');
+            let notesIdx = headers.findIndex(h => h.includes('note'));
             if (nameIdx === -1) nameIdx = 0;
             if (yearIdx === -1) yearIdx = 1;
             if (eventIdx === -1) eventIdx = 2;
@@ -3035,8 +3038,9 @@
                 const names = (row[nameIdx] || '').split(/[,\n]+/).map(n => n.trim()).filter(Boolean);
                 const event = (row[eventIdx] || '').trim();
                 const place = (row[placeIdx] || '').trim();
+                const notes = notesIdx !== -1 ? (row[notesIdx] || '').trim() : '';
 
-                records.push({ names, year, event, place });
+                records.push({ names, year, event, place, notes });
             }
 
             return records;
@@ -4071,13 +4075,15 @@
 
             const rowsHtml = sorted.map(r => {
                 const namesHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
+                const notesHtml = r.notes ? `<div class="records-note">📝 ${r.notes}</div>` : '';
                 const place = r.place || '—';
+                const placeClass = /^1st/i.test(r.place) ? 'col-sq-place records-place-first' : 'col-sq-place';
                 return `
                     <tr>
                         <td class="col-sq-year">${r.year}</td>
                         <td class="col-sq-event">${r.event}</td>
-                        <td class="col-sq-athletes">${namesHtml}</td>
-                        <td class="col-sq-place">${place}</td>
+                        <td class="col-sq-athletes">${namesHtml}${notesHtml}</td>
+                        <td class="${placeClass}">${place}</td>
                     </tr>`;
             }).join('');
 
