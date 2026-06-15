@@ -477,6 +477,8 @@
         .col-record-mark { width:78px; text-align:center; font-weight:800; white-space:nowrap; }
         .col-record-year { width:48px; text-align:center; color:var(--text-muted); }
         .records-name-line { display:block; line-height:1.4; }
+        .records-video-link { text-decoration:none; }
+        .records-video-link:hover { opacity:0.7; }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -2920,6 +2922,7 @@
             let nameIdx = headers.indexOf('name');
             let recordIdx = headers.indexOf('record');
             let yearIdx = headers.indexOf('year');
+            let videoIdx = headers.findIndex(h => h.includes('video') || h.includes('youtube'));
             if (eventIdx === -1) eventIdx = 0;
             if (nameIdx === -1) nameIdx = 1;
             if (recordIdx === -1) recordIdx = 2;
@@ -2934,8 +2937,9 @@
                 const names = (row[nameIdx] || '').split(/\r?\n/).map(n => n.trim()).filter(Boolean);
                 const record = (row[recordIdx] || '').trim();
                 const year = (row[yearIdx] || '').trim();
+                const video = videoIdx !== -1 ? (row[videoIdx] || '').trim() : '';
 
-                records.push({ event, names, record, year });
+                records.push({ event, names, record, year, video });
             }
 
             return records;
@@ -3885,11 +3889,12 @@
 
             const rowsHtml = records.map(r => {
                 const holderHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
+                const videoHtml = r.video ? ` <a href="${r.video}" target="_blank" rel="noopener" class="records-video-link" title="Watch the record">▶️</a>` : '';
                 return `
                     <tr>
                         <td class="col-record-event">${r.event}</td>
                         <td class="col-record-holder">${holderHtml}</td>
-                        <td class="col-record-mark">${r.record}</td>
+                        <td class="col-record-mark">${r.record}${videoHtml}</td>
                         <td class="col-record-year">${r.year}</td>
                     </tr>`;
             }).join('');
