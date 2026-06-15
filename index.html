@@ -464,6 +464,25 @@
         .accomp-section { margin-bottom:18px; }
         .accomp-gender-divider { font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px; color:var(--text); padding:4px 2px 10px; margin-bottom:10px; border-bottom:3px solid var(--accent); }
         .accomp-gender-divider:not(:first-child) { margin-top:22px; }
+
+        /* ── Track Records ────────────────────────────────────────────── */
+        .records-table-wrapper { border-radius:12px; overflow:hidden; border:1px solid var(--border); box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom:8px; }
+        .records-table { width:100%; border-collapse:collapse; background:var(--card-bg); }
+        .records-table th { background:var(--primary); color:white; padding:8px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; }
+        .records-table td { padding:8px; font-size:13px; vertical-align:middle; border-bottom:1px solid var(--border); color:var(--text); }
+        .records-table tr:last-child td { border-bottom:none; }
+        .records-table tbody tr:nth-child(even) td { background:var(--bg); }
+        .col-record-event { width:24%; font-weight:800; }
+        .col-record-holder { width:auto; }
+        .col-record-mark { width:78px; text-align:center; font-weight:800; white-space:nowrap; }
+        .col-record-year { width:48px; text-align:center; color:var(--text-muted); }
+        .records-name-line { display:block; line-height:1.4; }
+        @media (max-width: 480px) {
+            .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
+            .col-record-mark { width:64px; font-size:11px; }
+            .col-record-year { width:38px; font-size:11px; }
+        }
+
         .accomp-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:white; padding:6px 12px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
         .accomp-years { display:flex; flex-wrap:wrap; gap:5px; padding:0 2px; }
         .accomp-year-chip { font-size:12px; font-weight:800; padding:4px 10px; border-radius:6px; }
@@ -600,6 +619,25 @@
         </div>
     </div>
 
+    <!-- ── Track Records Overlay ─────────────────────────────────── -->
+    <div class="nav-overlay" id="recordsOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" title="Back to Leaderboards" onclick="closeRecordsOverlay()">🏃</div>
+            <span class="nav-header-title" id="recordsHeaderTitle">🏅 Boys Track Records</span>
+            <button class="nav-close-btn" onclick="closeRecordsOverlay()">✕ Close</button>
+        </div>
+        <div class="nav-gender-toggle-row">
+            <div class="gender-toggle-group">
+                <button class="gender-toggle-btn active" data-gender="M" onclick="setGenderFilter('M')">Boys</button>
+                <button class="gender-toggle-btn" data-gender="F" onclick="setGenderFilter('F')">Girls</button>
+                <button class="gender-toggle-btn" data-gender="ALL" onclick="setGenderFilter('ALL')">All</button>
+            </div>
+        </div>
+        <div class="nav-body" id="recordsBody">
+            <!-- content rendered by JS -->
+        </div>
+    </div>
+
 
     <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawerMode(event)">
         <div class="drawer-content">
@@ -657,6 +695,9 @@
             </div>
             <div class="filter-row" id="printRow">
                 <button class="action-btn" id="printResultsBtn" onclick="window.print()" style="flex:1;">🖨️ Print / Save as PDF</button>
+            </div>
+            <div class="filter-row">
+                <button class="action-btn" onclick="openRecordsOverlay()" style="flex:1;">🏅 View Track Records</button>
             </div>
         </div>
         
@@ -1076,6 +1117,10 @@
             } else if (navCurrentTab === 'yearbyyear') {
                 document.getElementById('navHeaderTitle').textContent = yearByYearPageTitle();
                 renderYearByYearPage(document.getElementById('navBody'));
+            }
+            if (document.getElementById('recordsOverlay').classList.contains('open')) {
+                document.getElementById('recordsHeaderTitle').textContent = trackRecordsPageTitle();
+                renderTrackRecordsPage(document.getElementById('recordsBody'));
             }
             try { localStorage.setItem('perry_gender_filter', g); } catch(e) {}
         }
@@ -2858,6 +2903,71 @@
             return rows;
         }
 
+        // ── Track Records ────────────────────────────────────────────────
+        let trackRecordsCache = { M: null, F: null };
+        let trackRecordsFetchPromise = { M: null, F: null };
+
+        // Parses an "EVENT, NAME, RECORD, YEAR" track records sheet. NAME may
+        // contain several newline-separated names for relay events — the CSV
+        // parser above preserves embedded newlines inside quoted fields, so
+        // each relay leg ends up on its own line within row[nameIdx].
+        function parseTrackRecordsRows(rows) {
+            const records = [];
+            if (!rows || rows.length < 2) return records;
+
+            const headers = rows[0].map(h => String(h).toLowerCase().trim());
+            let eventIdx = headers.indexOf('event');
+            let nameIdx = headers.indexOf('name');
+            let recordIdx = headers.indexOf('record');
+            let yearIdx = headers.indexOf('year');
+            if (eventIdx === -1) eventIdx = 0;
+            if (nameIdx === -1) nameIdx = 1;
+            if (recordIdx === -1) recordIdx = 2;
+            if (yearIdx === -1) yearIdx = 3;
+
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || !row[eventIdx]) continue;
+                const event = row[eventIdx].trim();
+                if (!event || event.toLowerCase() === 'event') continue;
+
+                const names = (row[nameIdx] || '').split(/\r?\n/).map(n => n.trim()).filter(Boolean);
+                const record = (row[recordIdx] || '').trim();
+                const year = (row[yearIdx] || '').trim();
+
+                records.push({ event, names, record, year });
+            }
+
+            return records;
+        }
+
+        // Fetches and caches one gender's track records sheet. Returns null
+        // (rather than throwing) on failure.
+        async function getTrackRecordsData(gender) {
+            if (trackRecordsCache[gender]) return trackRecordsCache[gender];
+            if (trackRecordsFetchPromise[gender]) return trackRecordsFetchPromise[gender];
+
+            const url = gender === 'F' ? GIRLS_TRACK_RECORDS_CSV_URL : BOYS_TRACK_RECORDS_CSV_URL;
+
+            trackRecordsFetchPromise[gender] = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(url));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    const parsed = parseTrackRecordsRows(rows);
+                    trackRecordsCache[gender] = parsed;
+                    return parsed;
+                } catch(e) {
+                    console.error('Track Records fetch error:', e);
+                    trackRecordsFetchPromise[gender] = null;
+                    return null;
+                }
+            })();
+
+            return trackRecordsFetchPromise[gender];
+        }
+
         async function fetchLiveGoogleSheets(isManualClick = false) {
             let updatedAthletes = {}; 
             let count = 0;
@@ -3011,6 +3121,10 @@
         // so partial data renders fine.
         const GIRLS_YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAPTTz6Ju-5bWdVr0o7k023IeIsB3Iulfeoil4omH82uQ79UDixFQfFO7pAPndrhPcALXKPghxK9n/pub?output=csv';
 
+        // Outdoor track records — one spreadsheet, separate Boys/Girls tabs.
+        const BOYS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1137153465&single=true&output=csv';
+        const GIRLS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1497978196&single=true&output=csv';
+
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
         function cacheBustUrl(url) {
@@ -3140,7 +3254,7 @@
             }
         }
 
-        let navCache = { yearbyyear: { M: null, F: null, ALL: null }, alumni: { M: null, F: null, ALL: null }, accomplishments: { M: null, F: null, ALL: null } };
+        let navCache = { yearbyyear: { M: null, F: null, ALL: null }, alumni: { M: null, F: null, ALL: null }, accomplishments: { M: null, F: null, ALL: null }, trackrecords: { M: null, F: null, ALL: null } };
 
         // Delegated click handler for expandable cards rendered inside the
         // nav drawer (currently just the Collegiate Runners list). Attached
@@ -3167,6 +3281,20 @@
 
         function closeNavMenu() {
             document.getElementById('navOverlay').classList.remove('open');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+
+        function openRecordsOverlay() {
+            document.getElementById('recordsOverlay').classList.add('open');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            document.getElementById('recordsHeaderTitle').textContent = trackRecordsPageTitle();
+            renderTrackRecordsPage(document.getElementById('recordsBody'));
+        }
+
+        function closeRecordsOverlay() {
+            document.getElementById('recordsOverlay').classList.remove('open');
             document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
         }
@@ -3200,6 +3328,13 @@
             if (genderFilter === 'F') return '🎓 Girls Collegiate Runners';
             if (genderFilter === 'M') return '🎓 Boys Collegiate Runners';
             return '🎓 Collegiate Runners';
+        }
+
+        // Records tab title reflects the current Boys/Girls/All toggle.
+        function trackRecordsPageTitle() {
+            if (genderFilter === 'F') return '🏅 Girls Track Records';
+            if (genderFilter === 'M') return '🏅 Boys Track Records';
+            return '🏅 Track Records';
         }
 
         function switchNavTab(tab) {
@@ -3739,6 +3874,62 @@
                 if (q && match) card.classList.add('expanded');
             });
         }
+
+        // ── Track Records ────────────────────────────────────────────────
+        // Builds a simple records table for one program (boys or girls).
+        // Relay rows show all 4 names stacked in the holder cell.
+        async function buildTrackRecordsTableHtml(gender) {
+            const NO_DATA_HTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No track records available yet.</p>`;
+            const records = await getTrackRecordsData(gender);
+            if (!records || !records.length) return NO_DATA_HTML;
+
+            const rowsHtml = records.map(r => {
+                const holderHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
+                return `
+                    <tr>
+                        <td class="col-record-event">${r.event}</td>
+                        <td class="col-record-holder">${holderHtml}</td>
+                        <td class="col-record-mark">${r.record}</td>
+                        <td class="col-record-year">${r.year}</td>
+                    </tr>`;
+            }).join('');
+
+            return `
+                <div class="records-table-wrapper">
+                    <table class="records-table">
+                        <thead><tr><th class="col-record-event">Event</th><th class="col-record-holder">Record Holder</th><th class="col-record-mark">Record</th><th class="col-record-year">Year</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>`;
+        }
+
+        async function renderTrackRecordsPage(container) {
+            if (navCache.trackrecords[genderFilter]) {
+                container.innerHTML = navCache.trackrecords[genderFilter];
+                return;
+            }
+            container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading track records…</p>';
+            try {
+                let inner;
+                if (genderFilter === 'M') {
+                    inner = await buildTrackRecordsTableHtml('M');
+                } else if (genderFilter === 'F') {
+                    inner = await buildTrackRecordsTableHtml('F');
+                } else {
+                    const [boysHtml, girlsHtml] = await Promise.all([
+                        buildTrackRecordsTableHtml('M'),
+                        buildTrackRecordsTableHtml('F')
+                    ]);
+                    inner = `<div class="accomp-gender-divider">🏆 Boys</div>${boysHtml}<div class="accomp-gender-divider">🏆 Girls</div>${girlsHtml}`;
+                }
+
+                navCache.trackrecords[genderFilter] = inner;
+                container.innerHTML = inner;
+            } catch(e) {
+                renderLoadError(container, 'track records', e);
+            }
+        }
+
 
         // Register service worker for PWA offline support
         if ('serviceWorker' in navigator) {
