@@ -483,7 +483,16 @@
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
             .col-record-year { width:38px; font-size:11px; }
+            .col-sq-year { width:42px; font-size:11px; }
+            .col-sq-place { width:64px; font-size:11px; }
         }
+
+        /* ── Track State Qualifiers ──────────────────────────────────── */
+        .col-sq-year { width:52px; text-align:center; color:var(--text-muted); }
+        .col-sq-event { width:26%; font-weight:800; }
+        .col-sq-athletes { width:auto; }
+        .col-sq-place { width:78px; text-align:center; white-space:nowrap; }
+        .records-link-row { margin-bottom:12px; }
 
         .accomp-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:white; padding:6px 12px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
         .accomp-years { display:flex; flex-wrap:wrap; gap:5px; padding:0 2px; }
@@ -636,6 +645,25 @@
             </div>
         </div>
         <div class="nav-body" id="recordsBody">
+            <!-- content rendered by JS -->
+        </div>
+    </div>
+
+    <!-- ── Track State Qualifiers Overlay ────────────────────────── -->
+    <div class="nav-overlay" id="stateQualifiersOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" title="Back to Leaderboards" onclick="closeStateQualifiersOverlay()">🏃</div>
+            <span class="nav-header-title" id="stateQualifiersHeaderTitle">🎟️ Boys State Qualifiers</span>
+            <button class="nav-close-btn" onclick="closeStateQualifiersOverlay()">✕ Close</button>
+        </div>
+        <div class="nav-gender-toggle-row">
+            <div class="gender-toggle-group">
+                <button class="gender-toggle-btn active" data-gender="M" onclick="setGenderFilter('M')">Boys</button>
+                <button class="gender-toggle-btn" data-gender="F" onclick="setGenderFilter('F')">Girls</button>
+                <button class="gender-toggle-btn" data-gender="ALL" onclick="setGenderFilter('ALL')">All</button>
+            </div>
+        </div>
+        <div class="nav-body" id="stateQualifiersBody">
             <!-- content rendered by JS -->
         </div>
     </div>
@@ -1123,6 +1151,10 @@
             if (document.getElementById('recordsOverlay').classList.contains('open')) {
                 document.getElementById('recordsHeaderTitle').textContent = trackRecordsPageTitle();
                 renderTrackRecordsPage(document.getElementById('recordsBody'));
+            }
+            if (document.getElementById('stateQualifiersOverlay').classList.contains('open')) {
+                document.getElementById('stateQualifiersHeaderTitle').textContent = stateQualifiersPageTitle();
+                renderStateQualifiersPage(document.getElementById('stateQualifiersBody'));
             }
             try { localStorage.setItem('perry_gender_filter', g); } catch(e) {}
         }
@@ -2972,6 +3004,71 @@
             return trackRecordsFetchPromise[gender];
         }
 
+        // ── Track State Qualifiers ──────────────────────────────────────
+        let stateQualifiersCache = { M: null, F: null };
+        let stateQualifiersFetchPromise = { M: null, F: null };
+
+        // Parses an "Athlete(s), Year, Event, Place" state qualifiers sheet.
+        // Relay rows list multiple names in one cell, separated by commas
+        // and/or newlines (unlike the Track Records sheet's newline-only
+        // relay names), so this splits on either.
+        function parseStateQualifiersRows(rows) {
+            const records = [];
+            if (!rows || rows.length < 2) return records;
+
+            const headers = rows[0].map(h => String(h).toLowerCase().trim());
+            let nameIdx = headers.findIndex(h => h.includes('athlete'));
+            let yearIdx = headers.indexOf('year');
+            let eventIdx = headers.indexOf('event');
+            let placeIdx = headers.indexOf('place');
+            if (nameIdx === -1) nameIdx = 0;
+            if (yearIdx === -1) yearIdx = 1;
+            if (eventIdx === -1) eventIdx = 2;
+            if (placeIdx === -1) placeIdx = 3;
+
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || !row[yearIdx]) continue;
+                const year = row[yearIdx].trim();
+                if (!year || year.toLowerCase() === 'year' || !/^\d{4}$/.test(year)) continue;
+
+                const names = (row[nameIdx] || '').split(/[,\n]+/).map(n => n.trim()).filter(Boolean);
+                const event = (row[eventIdx] || '').trim();
+                const place = (row[placeIdx] || '').trim();
+
+                records.push({ names, year, event, place });
+            }
+
+            return records;
+        }
+
+        // Fetches and caches one gender's state qualifiers sheet. Returns
+        // null (rather than throwing) on failure.
+        async function getStateQualifiersData(gender) {
+            if (stateQualifiersCache[gender]) return stateQualifiersCache[gender];
+            if (stateQualifiersFetchPromise[gender]) return stateQualifiersFetchPromise[gender];
+
+            const url = gender === 'F' ? GIRLS_STATE_QUALIFIERS_CSV_URL : BOYS_STATE_QUALIFIERS_CSV_URL;
+
+            stateQualifiersFetchPromise[gender] = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(url));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    const parsed = parseStateQualifiersRows(rows);
+                    stateQualifiersCache[gender] = parsed;
+                    return parsed;
+                } catch(e) {
+                    console.error('State Qualifiers fetch error:', e);
+                    stateQualifiersFetchPromise[gender] = null;
+                    return null;
+                }
+            })();
+
+            return stateQualifiersFetchPromise[gender];
+        }
+
         async function fetchLiveGoogleSheets(isManualClick = false) {
             let updatedAthletes = {}; 
             let count = 0;
@@ -3129,6 +3226,10 @@
         const BOYS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1137153465&single=true&output=csv';
         const GIRLS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1497978196&single=true&output=csv';
 
+        // Track & Field State Qualifiers — one spreadsheet, separate Boys/Girls tabs.
+        const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
+        const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
+
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
         function cacheBustUrl(url) {
@@ -3258,7 +3359,7 @@
             }
         }
 
-        let navCache = { yearbyyear: { M: null, F: null, ALL: null }, alumni: { M: null, F: null, ALL: null }, accomplishments: { M: null, F: null, ALL: null }, trackrecords: { M: null, F: null, ALL: null } };
+        let navCache = { yearbyyear: { M: null, F: null, ALL: null }, alumni: { M: null, F: null, ALL: null }, accomplishments: { M: null, F: null, ALL: null }, trackrecords: { M: null, F: null, ALL: null }, statequalifiers: { M: null, F: null, ALL: null } };
 
         // Delegated click handler for expandable cards rendered inside the
         // nav drawer (currently just the Collegiate Runners list). Attached
@@ -3303,6 +3404,20 @@
             document.body.style.overflow = '';
         }
 
+        function openStateQualifiersOverlay() {
+            document.getElementById('stateQualifiersOverlay').classList.add('open');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            document.getElementById('stateQualifiersHeaderTitle').textContent = stateQualifiersPageTitle();
+            renderStateQualifiersPage(document.getElementById('stateQualifiersBody'));
+        }
+
+        function closeStateQualifiersOverlay() {
+            document.getElementById('stateQualifiersOverlay').classList.remove('open');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+
         // ── YEAR BY YEAR ─────────────────────────────────────────────────
         // CSV-driven as before, but now also fetches the History doc stats so
         // each card can show: (1) the Dual/Invitational Record for that
@@ -3339,6 +3454,13 @@
             if (genderFilter === 'F') return '🏅 Girls Track Records';
             if (genderFilter === 'M') return '🏅 Boys Track Records';
             return '🏅 Track Records';
+        }
+
+        // State Qualifiers overlay title reflects the current Boys/Girls/All toggle.
+        function stateQualifiersPageTitle() {
+            if (genderFilter === 'F') return '🎟️ Girls State Qualifiers';
+            if (genderFilter === 'M') return '🎟️ Boys State Qualifiers';
+            return '🎟️ State Qualifiers';
         }
 
         function switchNavTab(tab) {
@@ -3928,10 +4050,70 @@
                     inner = `<div class="accomp-gender-divider">🏆 Boys</div>${boysHtml}<div class="accomp-gender-divider">🏆 Girls</div>${girlsHtml}`;
                 }
 
+                const stateQualBtn = `<div class="filter-row records-link-row"><button class="action-btn" onclick="openStateQualifiersOverlay()" style="width:100%;">🎟️ Track State Qualifiers</button></div>`;
+                inner = stateQualBtn + inner;
+
                 navCache.trackrecords[genderFilter] = inner;
                 container.innerHTML = inner;
             } catch(e) {
                 renderLoadError(container, 'track records', e);
+            }
+        }
+
+        // Builds a state-qualifiers table for one program (boys or girls),
+        // most recent year first. Relay rows show all athletes stacked.
+        async function buildStateQualifiersTableHtml(gender) {
+            const NO_DATA_HTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No state qualifiers data available yet.</p>`;
+            const records = await getStateQualifiersData(gender);
+            if (!records || !records.length) return NO_DATA_HTML;
+
+            const sorted = records.slice().sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
+
+            const rowsHtml = sorted.map(r => {
+                const namesHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
+                const place = r.place || '—';
+                return `
+                    <tr>
+                        <td class="col-sq-year">${r.year}</td>
+                        <td class="col-sq-event">${r.event}</td>
+                        <td class="col-sq-athletes">${namesHtml}</td>
+                        <td class="col-sq-place">${place}</td>
+                    </tr>`;
+            }).join('');
+
+            return `
+                <div class="records-table-wrapper">
+                    <table class="records-table">
+                        <thead><tr><th class="col-sq-year">Year</th><th class="col-sq-event">Event</th><th class="col-sq-athletes">Athlete(s)</th><th class="col-sq-place">Place</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>`;
+        }
+
+        async function renderStateQualifiersPage(container) {
+            if (navCache.statequalifiers[genderFilter]) {
+                container.innerHTML = navCache.statequalifiers[genderFilter];
+                return;
+            }
+            container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading state qualifiers…</p>';
+            try {
+                let inner;
+                if (genderFilter === 'M') {
+                    inner = await buildStateQualifiersTableHtml('M');
+                } else if (genderFilter === 'F') {
+                    inner = await buildStateQualifiersTableHtml('F');
+                } else {
+                    const [boysHtml, girlsHtml] = await Promise.all([
+                        buildStateQualifiersTableHtml('M'),
+                        buildStateQualifiersTableHtml('F')
+                    ]);
+                    inner = `<div class="accomp-gender-divider">🏆 Boys</div>${boysHtml}<div class="accomp-gender-divider">🏆 Girls</div>${girlsHtml}`;
+                }
+
+                navCache.statequalifiers[genderFilter] = inner;
+                container.innerHTML = inner;
+            } catch(e) {
+                renderLoadError(container, 'state qualifiers', e);
             }
         }
 
