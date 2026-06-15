@@ -417,9 +417,10 @@
         body.dark-mode .program-snapshot-link:hover { background: #20242c !important; }
 
         /* ── Hamburger / Nav Menu ─────────────────────────────────────── */
-        .hamburger-btn { position: absolute; top: 12px; left: 60px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; flex-direction: column; gap: 4px; padding: 10px; }
+        .hamburger-btn { position: absolute; top: 12px; left: 60px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; }
         .hamburger-btn:hover { background: rgba(255,255,255,0.2); }
-        .hamburger-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; transition: all 0.2s; }
+        .hamburger-icon-main { font-size: 18px; line-height: 1; }
+        .hamburger-icon-badge { position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 1; }
 
         /* Full-screen nav overlay */
         .nav-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: none; flex-direction: column; overflow: hidden; }
@@ -540,8 +541,9 @@
 
     <header>
         <div class="dark-mode-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()" id="darkModeBtn">🌙</div>
-        <div class="hamburger-btn" title="Year by Year History" onclick="openNavMenu()">
-            <span></span><span></span><span></span>
+        <div class="hamburger-btn" title="Team History & Records" onclick="openNavMenu()">
+            <span class="hamburger-icon-main">🏆</span>
+            <span class="hamburger-icon-badge">📅</span>
         </div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
@@ -2300,12 +2302,13 @@
         }
 
         function buildVirtualMeetHytekHtml() {
-            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\npx`;
-            output += ` Virtual Meet Simulator                                      HY-TEK's Meet Manager\n`;
+            let output = `\n<HTML>\n<BODY>\n<P>\n<PRE>\nPXC`;
+            output += ` Virtual Meet Simulator                                     HY-TEK's Meet Manager\n`;
             output += `                  All-Time Cross Country Championship Rankings                  \n`;
             output += `                               Perry High School                                \n`;
             output += `                               Last Completed Event                               \n \n`;
-            output += `Event 1  Boys 5k Run CC Varsity\n`;
+            const eventGenderLabel = genderFilter === 'F' ? 'Girls' : genderFilter === 'ALL' ? 'Boys/Girls' : 'Boys';
+            output += `Event 1  ${eventGenderLabel} 5k Run CC Varsity\n`;
             output += `======================================================================================\n`;
             output += `    Name                      Yr School                     Finals    Pts   Avg Mile\n`;
             output += `======================================================================================\n`;
