@@ -872,6 +872,12 @@
         // Tolerates a stray ';' instead of ':' (a known data-entry typo), and a trailing
         // '?' on a real time (e.g. "2:11?" -> "2:11") when the tenths weren't certain.
         //
+        // The separator between the event name and the time can be a dash OR a
+        // colon ("4x800 - 2:31.0" or "4x800: 2:31.0") — some season sheets use
+        // a colon. This doesn't conflict with the colon already inside the time
+        // itself (e.g. "2:31.0"), since that's matched by the time group, not
+        // the separator.
+        //
         // Also covers relay/DMR legs and sub-minute events, which are often
         // written without a "minutes:" part: "400 - 52.30", "DMR400 - 53.1",
         // "DMR 1600 - 4:48.0", "4x1600 - 18:20.0", "4x400 - 0:51.2", "200 -
@@ -882,12 +888,13 @@
         // tolerate either case ("300h"/"300H", "110h"/"110H", "100h"/"100H").
         // All of these are normalized (space stripped, trailing h -> H,
         // 5k/5K -> 5000) before use as a lookup key.
-        const TRACK_EVENT_TIME_RE = /^(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x800|4x1600|4x400|DMR\s?1600|DMR\s?1200|DMR\s?800|DMR\s?400)([pf]?)\s*-\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?|\d{1,3}(?:\.\d{1,2})?)\??\s*$/;
+        const TRACK_EVENT_TIME_RE = /^(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x800|4x1600|4x400|DMR\s?1600|DMR\s?1200|DMR\s?800|DMR\s?400)([pf]?)\s*[-:]\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?|\d{1,3}(?:\.\d{1,2})?)\??\s*$/;
 
         // Field events, which record a mark (height/distance) instead of a
-        // time. Currently just High Jump: "HJ - 6'0\"", "HJ - 5-10", "HJ - 6'0".
+        // time. Currently just High Jump: "HJ - 6'0\"", "HJ - 5-10", "HJ - 6'0",
+        // or with a colon separator: "HJ: 6'0\"".
         // Capture groups: (1) base event, (2) mark as written.
-        const FIELD_EVENT_MARK_RE = /^(HJ)\s*-\s*([\d'"\-.]+)\??\s*$/;
+        const FIELD_EVENT_MARK_RE = /^(HJ)\s*[-:]\s*([\d'"\-.]+)\??\s*$/;
 
         let trackHistoryCache = null;
         let trackHistoryFetchPromise = null;
