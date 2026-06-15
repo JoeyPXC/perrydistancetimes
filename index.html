@@ -164,6 +164,7 @@
         .gender-toggle-btn { border: none; background: none; color: var(--text); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 22px; cursor: pointer; transition: all 0.15s; }
         .gender-toggle-btn + .gender-toggle-btn { border-left: 2px solid var(--primary); }
         .gender-toggle-btn.active { background: var(--primary); color: var(--accent); }
+        .nav-gender-toggle-row { display: flex; justify-content: center; padding: 10px 12px; background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0; }
 
         /* Site footer — Panther mark, program name, and social links.
            Bookends the checkerboard strip from the header. */
@@ -569,6 +570,13 @@
             <button class="nav-tab active" id="navTabAccomp" onclick="switchNavTab('accomplishments')">🏆 Accomplishments</button>
             <button class="nav-tab" id="navTabAlumni" onclick="switchNavTab('alumni')">🎓 Collegiate</button>
             <button class="nav-tab" id="navTabYBY" onclick="switchNavTab('yearbyyear')">📅 Year by Year</button>
+        </div>
+        <div class="nav-gender-toggle-row">
+            <div class="gender-toggle-group">
+                <button class="gender-toggle-btn active" data-gender="M" onclick="setGenderFilter('M')">Boys</button>
+                <button class="gender-toggle-btn" data-gender="F" onclick="setGenderFilter('F')">Girls</button>
+                <button class="gender-toggle-btn" data-gender="ALL" onclick="setGenderFilter('ALL')">All</button>
+            </div>
         </div>
         <div class="nav-body" id="navBody">
             <!-- content rendered by JS -->
