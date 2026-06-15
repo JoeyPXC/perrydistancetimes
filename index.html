@@ -494,6 +494,9 @@
         .col-sq-place { width:78px; text-align:center; white-space:nowrap; }
         .records-place-first { font-weight:900; color:var(--success); }
         .records-note { font-size:10px; font-style:italic; color:var(--text-muted); margin-top:3px; line-height:1.3; }
+        .records-note-hidden { display:none; }
+        .records-note-toggle { cursor:pointer; font-size:11px; }
+        .records-note-toggle:hover { opacity:0.7; }
         .records-link-row { margin-bottom:12px; }
 
         .accomp-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:white; padding:6px 12px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
@@ -4075,7 +4078,8 @@
 
             const rowsHtml = sorted.map(r => {
                 const namesHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
-                const notesHtml = r.notes ? `<div class="records-note">📝 ${r.notes}</div>` : '';
+                const notesHtml = r.notes ? `<div class="records-note records-note-hidden">📝 ${r.notes}</div>` : '';
+                const noteToggle = r.notes ? ` <span class="records-note-toggle" onclick="toggleRecordNote(this)" title="View note">📝</span>` : '';
                 const place = r.place || '—';
                 const placeClass = /^1st/i.test(r.place) ? 'col-sq-place records-place-first' : 'col-sq-place';
                 return `
@@ -4083,7 +4087,7 @@
                         <td class="col-sq-year">${r.year}</td>
                         <td class="col-sq-event">${r.event}</td>
                         <td class="col-sq-athletes">${namesHtml}${notesHtml}</td>
-                        <td class="${placeClass}">${place}</td>
+                        <td class="${placeClass}">${place}${noteToggle}</td>
                     </tr>`;
             }).join('');
 
@@ -4094,6 +4098,13 @@
                         <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>`;
+        }
+
+        // Toggles a state-qualifier row's note between hidden and visible
+        // when the 📝 icon next to Place is clicked.
+        function toggleRecordNote(btn) {
+            const note = btn.closest('tr').querySelector('.records-note');
+            if (note) note.classList.toggle('records-note-hidden');
         }
 
         async function renderStateQualifiersPage(container) {
