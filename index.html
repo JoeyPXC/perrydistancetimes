@@ -541,9 +541,9 @@
 
     <header>
         <div class="dark-mode-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()" id="darkModeBtn">🌙</div>
-        <div class="hamburger-btn" title="Team History & Records" onclick="openNavMenu()">
-            <span class="hamburger-icon-main">🏆</span>
-            <span class="hamburger-icon-badge">📅</span>
+        <div class="hamburger-btn" id="historyMenuBtn" title="Team History & Records" onclick="toggleNavMenu()">
+            <span class="hamburger-icon-main" id="historyMenuIcon">🏆</span>
+            <span class="hamburger-icon-badge" id="historyMenuBadge">📅</span>
         </div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
@@ -3146,10 +3146,31 @@
             document.getElementById('navTabYBY').classList.remove('active');
             document.getElementById('navHeaderTitle').textContent = accomplishmentsPageTitle();
             renderAccomplishmentsPage(document.getElementById('navBody'));
+
+            // While the history menu is open, this same corner button becomes
+            // a one-click way back to the leaderboards — no need to reach for
+            // the "Close" button in the opposite corner.
+            const btn = document.getElementById('historyMenuBtn');
+            btn.title = 'Back to Leaderboards';
+            document.getElementById('historyMenuIcon').textContent = '🏃';
+            document.getElementById('historyMenuBadge').style.display = 'none';
         }
 
         function closeNavMenu() {
             document.getElementById('navOverlay').classList.remove('open');
+
+            const btn = document.getElementById('historyMenuBtn');
+            btn.title = 'Team History & Records';
+            document.getElementById('historyMenuIcon').textContent = '🏆';
+            document.getElementById('historyMenuBadge').style.display = '';
+        }
+
+        function toggleNavMenu() {
+            if (document.getElementById('navOverlay').classList.contains('open')) {
+                closeNavMenu();
+            } else {
+                openNavMenu();
+            }
         }
 
         // ── YEAR BY YEAR ─────────────────────────────────────────────────
