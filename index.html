@@ -734,13 +734,13 @@
                 <select id="leaderboardCourse" class="leaderboard-select" onchange="renderLeaderboard()">
                     <option value="avon_lake">Avon Lake</option>
                     <option value="boardman">Boardman / Regional</option>
-                    <option value="glenoak">GlenOak / District (2007+)</option>
+                    <option value="glenoak">GlenOak</option>
                     <option value="jackson">Jackson MS / Federal League</option>
                     <option value="legends">Legends — Trumbull County Fairgrounds</option>
                     <option value="malone">Malone / District (pre-2017)</option>
                     <option value="pickerington">Pickerington</option>
                     <option value="slippery_rock">Slippery Rock</option>
-                    <option value="stow">Stow</option>
+                    <option value="stow">Stow (2009–2014)</option>
                     <option value="strongsville">Strongsville</option>
                     <option value="walsh">Walsh Jesuit</option>
                     <option value="walsh_university">Walsh University</option>
@@ -1567,13 +1567,19 @@
                 note: 'Includes OHSAA Regional Championship meets; Federal League held here in 2003, 2007, 2011',
                 match: [/boardman/i, /regional/i],
                 exclude: [],
+                excludeFn: (meet, year) => /regional/i.test(meet) && parseInt(year) === 2008,
                 extraMatch: (meet, year) => /federal\s*league|fed.*league/i.test(meet) && ['2003','2007','2011'].includes(String(year)),
             },
             glenoak: {
                 label: 'GlenOak',
-                note: 'Includes Stark County Championship (2007–present) and OHSAA District Championship (2017–present)',
+                note: 'Includes Stark County Championship (2007–present), OHSAA District Championship (2017–present), and 2008 Regional',
                 match: [/glenoak/i, /glen\s*oak/i, /district/i],
-                extraMatch: (meet, year) => /stark\s*county/i.test(meet) && parseInt(year) >= 2007,
+                extraMatch: (meet, year) => {
+                    const y = parseInt(year);
+                    if (/stark\s*county|\bstark\b/i.test(meet) && y >= 2007) return true;
+                    if (/regional/i.test(meet) && y === 2008) return true;
+                    return false;
+                },
                 exclude: [],
             },
             malone: {
@@ -1641,8 +1647,9 @@
             },
             stow: {
                 label: 'Stow',
-                note: '',
+                note: '2009–2014',
                 match: [/stow/i],
+                excludeFn: (meet, year) => { const y = parseInt(year); return y < 2009 || y > 2014; },
                 exclude: [],
             },
             pickerington: {
@@ -1704,6 +1711,7 @@
                 if (gender !== 'ALL' && athlete.gender !== gender) return;
                 Object.entries(athlete.seasons).forEach(([year, meets]) => {
                     meets.forEach(entry => {
+                        if (parseInt(year) < 1982) return; // pre-1982 races were shorter distances
                         if (!meetMatchesCourse(entry.meet, year, courseKey)) return;
                         const ms = timeToMs(entry.time);
                         if (!ms || ms <= 0) return;
