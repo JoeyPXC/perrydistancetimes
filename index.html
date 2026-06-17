@@ -1799,9 +1799,7 @@
                     : r.rank <= 3
                         ? 'color:var(--perry-gray);font-size:13px;font-weight:700;'
                         : 'color:var(--text-muted);';
-                const timeStyle = r.rank === 1
-                    ? 'font-family:monospace;font-weight:700;color:var(--primary);'
-                    : 'font-family:monospace;font-weight:600;';
+                const timeStyle = 'font-family:monospace;font-weight:600;';
                 const safeName = r.name.replace(/"/g, '&quot;');
                 return `<tr class="${highlightedAthlete === r.name ? 'highlighted-row' : ''}" style="cursor:pointer;"
                     onclick="highlightedAthlete='${safeName}'; renderCourseRankings(); openDrawerToAthlete('${safeName}');">
