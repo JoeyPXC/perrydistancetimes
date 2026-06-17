@@ -1710,7 +1710,6 @@
             const def = COURSE_DEFS[courseKey];
             const gender = window.currentGenderFilter || 'M';
             const tbody = document.getElementById('leaderboardBody');
-            const banner = document.getElementById('recordBannerLabel');
 
             // Update table header for course view — no Meet column
             const thead = document.querySelector('#standardRankTable thead tr');
@@ -1719,11 +1718,6 @@
                 <th class="col-athlete">Athlete</th>
                 <th class="col-time" style="text-align:center;">Time</th>
                 <th class="col-grad" style="text-align:center;">Year</th>`;
-
-            const eraLabel = courseKey === 'boardman' && boardmanEra !== 'all'
-                ? (boardmanEra === 'classic' ? ' — Classic (≤2008)' : ' — Current (2009+)')
-                : '';
-            banner.textContent = `📍 ${def.label} Course Rankings${eraLabel}${def.note ? ' — ' + def.note : ''}`;
 
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">Loading…</td></tr>';
 
