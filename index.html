@@ -1645,11 +1645,14 @@
                 excludeFn: (meet, year) => {
                     const y = parseInt(year);
                     if (/walsh.*jv/i.test(meet) || /jv.*walsh/i.test(meet)) return true;
-                    const wuYears = new Set([1993,1994,1995,1996,1997,1998,1999,2000,2001,2003,2004,2005,2006,2010]);
-                    // For Stark meets, only include Walsh University years
-                    if (/\bstark\b/i.test(meet)) return !wuYears.has(y);
-                    // For Walsh meets, same restriction
-                    return !wuYears.has(y);
+                    // Stark County meets: only 1993–2001 and 2003–2006 were at Walsh University
+                    if (/\bstark\b/i.test(meet)) {
+                        const starkYears = new Set([1993,1994,1995,1996,1997,1998,1999,2000,2001,2003,2004,2005,2006]);
+                        return !starkYears.has(y);
+                    }
+                    // Walsh-named meets: 1993–2001, 2003–2006, and 2010
+                    const walshYears = new Set([1993,1994,1995,1996,1997,1998,1999,2000,2001,2003,2004,2005,2006,2010]);
+                    return !walshYears.has(y);
                 },
             },
             legends: {
