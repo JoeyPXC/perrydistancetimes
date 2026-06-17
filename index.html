@@ -732,6 +732,7 @@
             </div>
             <div class="filter-row" id="courseRow" style="display:none;">
                 <select id="leaderboardCourse" class="leaderboard-select" onchange="handleCourseChange()">
+                    <option value="ashland">Ashland</option>
                     <option value="avon_lake">Avon Lake</option>
                     <option value="boardman">Boardman / Regional</option>
                     <option value="glenoak">GlenOak</option>
@@ -1629,7 +1630,6 @@
                 },
                 athleteExclude: [
                     { name: /gaige\s*werner/i, year: 2021 },
-                    { name: /chloe\s*dostal/i, year: 2024 },
                 ],
                 // For District/Walsh entries, exclude times under 15:00 (those are 2-mile)
                 timeFilter: (meet, timeMs) => {
@@ -1668,7 +1668,12 @@
                 match: [/strongsville/i],
                 exclude: [],
             },
-            avon_lake: {
+            ashland: {
+                label: 'Ashland',
+                note: '',
+                match: [/ashland/i],
+                exclude: [],
+            },
                 label: 'Avon Lake',
                 note: '',
                 match: [/avon\s*lake/i],
@@ -1690,7 +1695,7 @@
             jackson: {
                 label: 'Jackson MS / Federal League',
                 note: 'Federal League Championship at Jackson MS: 2015 and 2017–present',
-                match: [/jackson.*ms/i, /federal\s*league/i, /fed.*league/i],
+                match: [/jackson.*ms/i, /federal/i, /fed\s*league/i, /\bfed\b/i],
                 excludeFn: (meet, year) => {
                     const y = parseInt(year);
                     return !(y === 2015 || y >= 2017);
