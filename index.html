@@ -1625,9 +1625,11 @@
                 excludeFn: (meet, year) => {
                     const y = parseInt(year);
                     if (/walsh.*jv/i.test(meet) || /jv.*walsh/i.test(meet)) return true;
-                    // Only Walsh Jesuit years (2007+ excluding 2010 which was Walsh University)
                     return y < 2007 || y === 2010;
                 },
+                athleteExclude: [
+                    { name: /gaige\s*werner/i, year: 2021 },
+                ],
                 // For District/Walsh entries, exclude times under 15:00 (those are 2-mile)
                 timeFilter: (meet, timeMs) => {
                     if (/district.*walsh|walsh.*district/i.test(meet)) {
@@ -1749,6 +1751,9 @@
                         if (!ms || ms <= 0) return;
                         // Apply per-course time filter (e.g. District/Walsh 2-mile exclusion)
                         if (def.timeFilter && !def.timeFilter(entry.meet, ms)) return;
+                        // Per-course specific athlete exclusions
+                        if (def.athleteExclude && def.athleteExclude.some(ex =>
+                            ex.name.test(athlete.originalName) && parseInt(year) === ex.year)) return;
                         runs.push({
                             name: athlete.originalName,
                             year,
