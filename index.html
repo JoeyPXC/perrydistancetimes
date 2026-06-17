@@ -1715,15 +1715,15 @@
             const thead = document.querySelector('#standardRankTable thead tr');
             thead.innerHTML = `
                 <th class="col-rank">#</th>
+                <th class="col-grad" style="text-align:center;">Year</th>
                 <th class="col-athlete">Athlete</th>
-                <th class="col-time" style="text-align:center;">Time</th>
-                <th class="col-grad" style="text-align:center;">Year</th>`;
+                <th id="rankHeaderTime" class="col-time" style="text-align:center;">Time</th>`;
 
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">Loading…</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;">Loading…</td></tr>';
 
             const xcHistory = await getXCHistoryData();
             if (!xcHistory) {
-                tbody.innerHTML = '<tr><td colspan="5">Could not load data.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4">Could not load data.</td></tr>';
                 return;
             }
 
@@ -1797,10 +1797,10 @@
                 const safeName = r.name.replace(/"/g, '&quot;');
                 return `<tr class="${highlightedAthlete === r.name ? 'highlighted-row' : ''}" style="cursor:pointer;"
                     onclick="highlightedAthlete='${safeName}'; renderCourseRankings(); openDrawerToAthlete('${safeName}');">
-                    <td style="text-align:center;font-family:monospace;${rankStyle}">${r.rank}</td>
-                    <td>${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${r.name}</span></td>
-                    <td style="text-align:center;${timeStyle}">${r.time}</td>
-                    <td style="text-align:center;color:var(--text-muted);font-size:12px;">${r.year}</td>
+                    <td class="col-rank" style="text-align:center;font-family:monospace;${rankStyle}">${r.rank}</td>
+                    <td class="col-grad" style="text-align:center;color:var(--text-muted);font-size:12px;">${r.year}</td>
+                    <td class="col-athlete">${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${r.name}</span></td>
+                    <td class="col-time" style="text-align:center;${timeStyle}">${r.time}</td>
                 </tr>`;
             }).join('');
         }
