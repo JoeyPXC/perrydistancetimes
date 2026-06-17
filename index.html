@@ -736,7 +736,7 @@
                     <option value="boardman">Boardman / Regional</option>
                     <option value="glenoak">GlenOak / District (2007+)</option>
                     <option value="jackson">Jackson MS / Federal League</option>
-                    <option value="legends">Legends of the Foothills</option>
+                    <option value="legends">Legends — Trumbull County Fairgrounds</option>
                     <option value="malone">Malone / District (pre-2017)</option>
                     <option value="pickerington">Pickerington</option>
                     <option value="slippery_rock">Slippery Rock</option>
@@ -1578,8 +1578,9 @@
             },
             malone: {
                 label: 'Malone',
-                note: 'Includes OHSAA District Championship (pre-2017)',
+                note: 'Includes OHSAA District Championship (pre-2017); 5K distance from 1982 onward',
                 match: [/malone/i],
+                excludeFn: (meet, year) => parseInt(year) < 1982,
                 exclude: [],
             },
             slippery_rock: {
@@ -1611,9 +1612,9 @@
                 },
             },
             legends: {
-                label: 'Legends of the Foothills',
+                label: 'Legends — Trumbull County Fairgrounds',
                 note: '',
-                match: [/legends/i, /foothills/i],
+                match: [/legends/i, /trumbull/i],
                 exclude: [],
             },
             strongsville: {
@@ -1642,8 +1643,12 @@
             },
             jackson: {
                 label: 'Jackson MS / Federal League',
-                note: 'Includes 2015 Federal League meet and 2017–present Federal League meets',
+                note: 'Federal League Championship at Jackson MS: 2015 and 2017–present',
                 match: [/jackson.*ms/i, /federal\s*league/i, /fed.*league/i],
+                excludeFn: (meet, year) => {
+                    const y = parseInt(year);
+                    return !(y === 2015 || y >= 2017);
+                },
                 exclude: [],
             },
         };
@@ -1665,14 +1670,13 @@
             const tbody = document.getElementById('leaderboardBody');
             const banner = document.getElementById('recordBannerLabel');
 
-            // Update table header for course view
+            // Update table header for course view — no Meet column
             const thead = document.querySelector('#standardRankTable thead tr');
             thead.innerHTML = `
                 <th class="col-rank">#</th>
                 <th class="col-athlete">Athlete</th>
                 <th class="col-time" style="text-align:center;">Time</th>
-                <th class="col-grad" style="text-align:center;">Year</th>
-                <th style="text-align:left;font-size:11px;color:var(--text-muted);">Meet</th>`;
+                <th class="col-grad" style="text-align:center;">Year</th>`;
 
             banner.textContent = `📍 ${def.label} Course Rankings${def.note ? ' — ' + def.note : ''}`;
 
@@ -1706,7 +1710,7 @@
             });
 
             if (!runs.length) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">No runs found at ${def.label}.<br><small>Make sure meet names in your data match this course.</small></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No runs found at ${def.label}.<br><small>Make sure meet names in your data match this course.</small></td></tr>`;
                 return;
             }
 
@@ -1732,13 +1736,22 @@
             tbody.innerHTML = ranked.map(r => {
                 const gBadge = gender === 'ALL'
                     ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;margin-right:4px;background:${r.gender==='M'?'#dbeafe':'#fce7f3'};color:${r.gender==='M'?'#1e40af':'#9d174d'};">${r.gender==='M'?'M':'F'}</span>` : '';
-                const rankStyle = r.rank === 1 ? 'color:var(--accent);font-size:15px;' : r.rank <= 3 ? 'color:var(--accent);opacity:0.7;' : 'color:var(--text-muted);';
-                return `<tr>
-                    <td style="text-align:center;font-weight:700;font-family:monospace;${rankStyle}">${r.rank}</td>
+                // Use primary (black/white) for rank 1 so it's readable on both themes
+                const rankStyle = r.rank === 1
+                    ? 'color:var(--primary);font-size:15px;font-weight:900;'
+                    : r.rank <= 3
+                        ? 'color:var(--perry-gray);font-size:13px;font-weight:700;'
+                        : 'color:var(--text-muted);';
+                const timeStyle = r.rank === 1
+                    ? 'font-family:monospace;font-weight:700;color:var(--primary);'
+                    : 'font-family:monospace;font-weight:600;';
+                const safeName = r.name.replace(/"/g, '&quot;');
+                return `<tr class="${highlightedAthlete === r.name ? 'highlighted-row' : ''}" style="cursor:pointer;"
+                    onclick="highlightedAthlete='${safeName}'; renderCourseRankings(); openDrawerToAthlete('${safeName}');">
+                    <td style="text-align:center;font-family:monospace;${rankStyle}">${r.rank}</td>
                     <td>${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${r.name}</span></td>
-                    <td style="text-align:center;font-family:monospace;font-weight:600;${r.rank===1?'color:var(--accent);':''}">${r.time}</td>
+                    <td style="text-align:center;${timeStyle}">${r.time}</td>
                     <td style="text-align:center;color:var(--text-muted);font-size:12px;">${r.year}</td>
-                    <td style="color:var(--text-muted);font-size:11px;white-space:normal;">${r.meet}</td>
                 </tr>`;
             }).join('');
         }
