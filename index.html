@@ -1711,7 +1711,7 @@
         async function renderCourseRankings() {
             const courseKey = document.getElementById('leaderboardCourse').value;
             const def = COURSE_DEFS[courseKey];
-            const gender = window.currentGenderFilter || 'M';
+            const gender = genderFilter;
             const tbody = document.getElementById('leaderboardBody');
 
             // Update table header for course view — no Meet column
