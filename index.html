@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -717,6 +718,7 @@
                     <option value="PR">All-Time Best (Career PR)</option>
                     <option value="CAREER_ALL">Show Full Career Progressions 📋</option>
                     <option value="VIRTUAL_MEET">Virtual Meet Simulator ⏱️</option>
+                    <option value="COURSE">Course Rankings 📍</option>
                     <option value="9th">9th Grade Standings</option>
                     <option value="10th">10th Grade Standings</option>
                     <option value="11th">11th Grade Standings</option>
@@ -726,6 +728,22 @@
             </div>
             <div class="filter-row" id="seasonYearRow" style="display:none;">
                 <select id="leaderboardSeasonYear" class="leaderboard-select" onchange="renderLeaderboard()">
+                </select>
+            </div>
+            <div class="filter-row" id="courseRow" style="display:none;">
+                <select id="leaderboardCourse" class="leaderboard-select" onchange="renderLeaderboard()">
+                    <option value="avon_lake">Avon Lake</option>
+                    <option value="boardman">Boardman / Regional</option>
+                    <option value="glenoak">GlenOak / District (2007+)</option>
+                    <option value="jackson">Jackson MS / Federal League</option>
+                    <option value="legends">Legends of the Foothills</option>
+                    <option value="malone">Malone / District (pre-2017)</option>
+                    <option value="pickerington">Pickerington</option>
+                    <option value="slippery_rock">Slippery Rock</option>
+                    <option value="stow">Stow</option>
+                    <option value="strongsville">Strongsville</option>
+                    <option value="walsh">Walsh Jesuit</option>
+                    <option value="walsh_university">Walsh University</option>
                 </select>
             </div>
             <div class="filter-row" id="printRow">
@@ -1540,6 +1558,202 @@
             linkBtn.innerText = anyUnchecked ? "Clear All" : "Select All";
         }
 
+        // ── Course Rankings ────────────────────────────────────────────
+        // Each course has a label, a note, and regex patterns to match meet names.
+        // Exclusion patterns let us filter out e.g. Walsh JV (2-mile) meets.
+        const COURSE_DEFS = {
+            boardman: {
+                label: 'Boardman',
+                note: 'Includes OHSAA Regional Championship meets; Federal League held here in 2003, 2007, 2011',
+                match: [/boardman/i, /regional/i],
+                exclude: [],
+                extraMatch: (meet, year) => /federal\s*league|fed.*league/i.test(meet) && ['2003','2007','2011'].includes(String(year)),
+            },
+            glenoak: {
+                label: 'GlenOak',
+                note: 'Includes Stark County Championship (2007–present) and OHSAA District Championship (2017–present)',
+                match: [/glenoak/i, /glen\s*oak/i, /district/i],
+                extraMatch: (meet, year) => /stark\s*county/i.test(meet) && parseInt(year) >= 2007,
+                exclude: [],
+            },
+            malone: {
+                label: 'Malone',
+                note: 'Includes OHSAA District Championship (pre-2017)',
+                match: [/malone/i],
+                exclude: [],
+            },
+            slippery_rock: {
+                label: 'Slippery Rock',
+                note: '',
+                match: [/slippery\s*rock/i, /s\.?\s*rock/i],
+                exclude: [],
+            },
+            walsh: {
+                label: 'Walsh Jesuit',
+                note: 'Excludes Walsh JV meet (2-mile, 2022–present), 2010, and pre-2007 years',
+                match: [/walsh/i],
+                excludeFn: (meet, year) => {
+                    const y = parseInt(year);
+                    if (/walsh.*jv/i.test(meet) || /jv.*walsh/i.test(meet)) return true;
+                    // Only Walsh Jesuit years (2007+ excluding 2010 which was Walsh University)
+                    return y < 2007 || y === 2010;
+                },
+            },
+            walsh_university: {
+                label: 'Walsh University',
+                note: 'Stark County Championship 1993–2001, 2003–2006; also 2010 Walsh meet',
+                match: [/walsh/i],
+                excludeFn: (meet, year) => {
+                    const y = parseInt(year);
+                    if (/walsh.*jv/i.test(meet) || /jv.*walsh/i.test(meet)) return true;
+                    const wuYears = new Set([1993,1994,1995,1996,1997,1998,1999,2000,2001,2003,2004,2005,2006,2010]);
+                    return !wuYears.has(y);
+                },
+            },
+            legends: {
+                label: 'Legends of the Foothills',
+                note: '',
+                match: [/legends/i, /foothills/i],
+                exclude: [],
+            },
+            strongsville: {
+                label: 'Strongsville',
+                note: '',
+                match: [/strongsville/i],
+                exclude: [],
+            },
+            avon_lake: {
+                label: 'Avon Lake',
+                note: '',
+                match: [/avon\s*lake/i],
+                exclude: [],
+            },
+            stow: {
+                label: 'Stow',
+                note: '',
+                match: [/stow/i],
+                exclude: [],
+            },
+            pickerington: {
+                label: 'Pickerington',
+                note: '',
+                match: [/pickerington/i],
+                exclude: [],
+            },
+            jackson: {
+                label: 'Jackson MS / Federal League',
+                note: 'Includes 2015 Federal League meet and 2017–present Federal League meets',
+                match: [/jackson.*ms/i, /federal\s*league/i, /fed.*league/i],
+                exclude: [],
+            },
+        };
+
+        function meetMatchesCourse(meetName, year, courseKey) {
+            const def = COURSE_DEFS[courseKey];
+            if (!def) return false;
+            if (def.excludeFn && def.excludeFn(meetName, year)) return false;
+            if (def.exclude && def.exclude.some(re => re.test(meetName))) return false;
+            if (def.match.some(re => re.test(meetName))) return true;
+            if (def.extraMatch && def.extraMatch(meetName, year)) return true;
+            return false;
+        }
+
+        async function renderCourseRankings() {
+            const courseKey = document.getElementById('leaderboardCourse').value;
+            const def = COURSE_DEFS[courseKey];
+            const gender = window.currentGenderFilter || 'M';
+            const tbody = document.getElementById('leaderboardBody');
+            const banner = document.getElementById('recordBannerLabel');
+
+            // Update table header for course view
+            const thead = document.querySelector('#standardRankTable thead tr');
+            thead.innerHTML = `
+                <th class="col-rank">#</th>
+                <th class="col-athlete">Athlete</th>
+                <th class="col-time" style="text-align:center;">Time</th>
+                <th class="col-grad" style="text-align:center;">Year</th>
+                <th style="text-align:left;font-size:11px;color:var(--text-muted);">Meet</th>`;
+
+            banner.textContent = `📍 ${def.label} Course Rankings${def.note ? ' — ' + def.note : ''}`;
+
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">Loading…</td></tr>';
+
+            const xcHistory = await getXCHistoryData();
+            if (!xcHistory) {
+                tbody.innerHTML = '<tr><td colspan="5">Could not load data.</td></tr>';
+                return;
+            }
+
+            // Collect all runs at this course
+            const runs = [];
+            Object.values(xcHistory).forEach(athlete => {
+                if (gender !== 'ALL' && athlete.gender !== gender) return;
+                Object.entries(athlete.seasons).forEach(([year, meets]) => {
+                    meets.forEach(entry => {
+                        if (!meetMatchesCourse(entry.meet, year, courseKey)) return;
+                        const ms = timeToMs(entry.time);
+                        if (!ms || ms <= 0) return;
+                        runs.push({
+                            name: athlete.originalName,
+                            year,
+                            meet: entry.meet,
+                            time: entry.time,
+                            timeMs: ms,
+                            gender: athlete.gender,
+                        });
+                    });
+                });
+            });
+
+            if (!runs.length) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">No runs found at ${def.label}.<br><small>Make sure meet names in your data match this course.</small></td></tr>`;
+                return;
+            }
+
+            // Best run per athlete at this course
+            const bestByAthlete = {};
+            runs.forEach(r => {
+                const key = r.name.toLowerCase().replace(/[^a-z0-9]/g,'');
+                if (!bestByAthlete[key] || r.timeMs < bestByAthlete[key].timeMs) {
+                    bestByAthlete[key] = r;
+                }
+            });
+
+            const sorted = Object.values(bestByAthlete).sort((a,b) => a.timeMs - b.timeMs);
+
+            // Assign ranks with tie handling
+            let rank = 1;
+            const ranked = sorted.map((r, i) => {
+                if (i > 0 && r.timeMs === sorted[i-1].timeMs) { /* tie */ }
+                else rank = i + 1;
+                return { ...r, rank };
+            });
+
+            tbody.innerHTML = ranked.map(r => {
+                const gBadge = gender === 'ALL'
+                    ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;margin-right:4px;background:${r.gender==='M'?'#dbeafe':'#fce7f3'};color:${r.gender==='M'?'#1e40af':'#9d174d'};">${r.gender==='M'?'M':'F'}</span>` : '';
+                const rankStyle = r.rank === 1 ? 'color:var(--accent);font-size:15px;' : r.rank <= 3 ? 'color:var(--accent);opacity:0.7;' : 'color:var(--text-muted);';
+                return `<tr>
+                    <td style="text-align:center;font-weight:700;font-family:monospace;${rankStyle}">${r.rank}</td>
+                    <td>${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${r.name}</span></td>
+                    <td style="text-align:center;font-family:monospace;font-weight:600;${r.rank===1?'color:var(--accent);':''}">${r.time}</td>
+                    <td style="text-align:center;color:var(--text-muted);font-size:12px;">${r.year}</td>
+                    <td style="color:var(--text-muted);font-size:11px;white-space:normal;">${r.meet}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function timeToMs(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(':');
+            if (parts.length === 2) {
+                return (parseInt(parts[0]) * 60 + parseFloat(parts[1])) * 1000;
+            }
+            if (parts.length === 3) {
+                return (parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])) * 1000;
+            }
+            return parseFloat(timeStr) * 1000;
+        }
         function handleRankTypeChange() {
             const rankType = document.getElementById('leaderboardRankType').value;
             const eventRow = document.getElementById('eventSelectorRow');
@@ -1550,8 +1764,9 @@
             const meetResultsArea = document.getElementById('virtualMeetResultsArea');
             
             document.getElementById('seasonYearRow').style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
+            document.getElementById('courseRow').style.display = (rankType === 'COURSE') ? 'block' : 'none';
             document.getElementById('printRow').style.display = (rankType === 'CAREER_ALL' || rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
-            eventRow.style.display = (rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
+            eventRow.style.display = (rankType === 'VIRTUAL_MEET' || rankType === 'COURSE') ? 'none' : 'block';
             meetDashboard.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
             meetResultsArea.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
 
@@ -1565,6 +1780,11 @@
                 standardTable.style.display = 'table';
                 careerView.style.display = 'none';
                 executeVirtualMeetCalculation();
+                return;
+            } else if (rankType === 'COURSE') {
+                standardTable.style.display = 'table';
+                careerView.style.display = 'none';
+                renderCourseRankings();
                 return;
             } else {
                 standardTable.style.display = 'table';
@@ -2563,6 +2783,19 @@
                 if (leftoverStrip) leftoverStrip.remove();
                 return;
             }
+
+            if (rankType === 'COURSE') {
+                renderCourseRankings();
+                return;
+            }
+
+            // Restore standard table header when leaving course mode
+            const thead = document.querySelector('#standardRankTable thead tr');
+            thead.innerHTML = `
+                <th class="col-rank">#</th>
+                <th class="col-grad" style="text-align:center;">Year</th>
+                <th class="col-athlete">Athlete</th>
+                <th id="rankHeaderTime" class="col-time" style="text-align:center;">Time</th>`;
 
             tbody.innerHTML = '';
             careerContainer.innerHTML = '';
