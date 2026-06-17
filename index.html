@@ -1591,7 +1591,7 @@
             },
             walsh: {
                 label: 'Walsh Jesuit',
-                note: 'Excludes Walsh JV meet (2-mile, 2022–present), 2010, and pre-2007 years',
+                note: 'Excludes Walsh JV meet (2-mile, 2021–present), 2010, and pre-2007 years',
                 match: [/walsh/i],
                 excludeFn: (meet, year) => {
                     const y = parseInt(year);
@@ -1599,15 +1599,25 @@
                     // Only Walsh Jesuit years (2007+ excluding 2010 which was Walsh University)
                     return y < 2007 || y === 2010;
                 },
+                // For District/Walsh entries, exclude times under 15:00 (those are 2-mile)
+                timeFilter: (meet, timeMs) => {
+                    if (/district.*walsh|walsh.*district/i.test(meet)) {
+                        return timeMs >= 15 * 60 * 1000; // keep only 15:00 or slower
+                    }
+                    return true;
+                },
             },
             walsh_university: {
                 label: 'Walsh University',
                 note: 'Stark County Championship 1993–2001, 2003–2006; also 2010 Walsh meet',
-                match: [/walsh/i],
+                match: [/walsh/i, /\bstark\b/i],
                 excludeFn: (meet, year) => {
                     const y = parseInt(year);
                     if (/walsh.*jv/i.test(meet) || /jv.*walsh/i.test(meet)) return true;
                     const wuYears = new Set([1993,1994,1995,1996,1997,1998,1999,2000,2001,2003,2004,2005,2006,2010]);
+                    // For Stark meets, only include Walsh University years
+                    if (/\bstark\b/i.test(meet)) return !wuYears.has(y);
+                    // For Walsh meets, same restriction
                     return !wuYears.has(y);
                 },
             },
@@ -1697,6 +1707,8 @@
                         if (!meetMatchesCourse(entry.meet, year, courseKey)) return;
                         const ms = timeToMs(entry.time);
                         if (!ms || ms <= 0) return;
+                        // Apply per-course time filter (e.g. District/Walsh 2-mile exclusion)
+                        if (def.timeFilter && !def.timeFilter(entry.meet, ms)) return;
                         runs.push({
                             name: athlete.originalName,
                             year,
