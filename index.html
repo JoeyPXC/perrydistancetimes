@@ -731,7 +731,7 @@
                 </select>
             </div>
             <div class="filter-row" id="courseRow" style="display:none;">
-                <select id="leaderboardCourse" class="leaderboard-select" onchange="renderLeaderboard()">
+                <select id="leaderboardCourse" class="leaderboard-select" onchange="handleCourseChange()">
                     <option value="avon_lake">Avon Lake</option>
                     <option value="boardman">Boardman / Regional</option>
                     <option value="glenoak">GlenOak</option>
@@ -745,6 +745,13 @@
                     <option value="walsh">Walsh Jesuit</option>
                     <option value="walsh_university">Walsh University</option>
                 </select>
+            </div>
+            <div class="filter-row" id="boardmanEraRow" style="display:none;">
+                <div class="gender-toggle-group" style="width:100%;">
+                    <button class="gender-toggle-btn active" data-era="all" onclick="setBoardmanEra('all')">All</button>
+                    <button class="gender-toggle-btn" data-era="classic" onclick="setBoardmanEra('classic')">Classic (≤2008)</button>
+                    <button class="gender-toggle-btn" data-era="current" onclick="setBoardmanEra('current')">Current (2009+)</button>
+                </div>
             </div>
             <div class="filter-row" id="printRow">
                 <button class="action-btn" id="printResultsBtn" onclick="window.print()" style="flex:1;">🖨️ Print / Save as PDF</button>
@@ -1558,7 +1565,22 @@
             linkBtn.innerText = anyUnchecked ? "Clear All" : "Select All";
         }
 
-        // ── Course Rankings ────────────────────────────────────────────
+        let boardmanEra = 'all'; // 'all' | 'classic' | 'current'
+
+        function handleCourseChange() {
+            const course = document.getElementById('leaderboardCourse').value;
+            const eraRow = document.getElementById('boardmanEraRow');
+            eraRow.style.display = course === 'boardman' ? 'block' : 'none';
+            renderLeaderboard();
+        }
+
+        function setBoardmanEra(era) {
+            boardmanEra = era;
+            document.querySelectorAll('#boardmanEraRow .gender-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.era === era);
+            });
+            renderCourseRankings();
+        }
         // Each course has a label, a note, and regex patterns to match meet names.
         // Exclusion patterns let us filter out e.g. Walsh JV (2-mile) meets.
         const COURSE_DEFS = {
@@ -1573,7 +1595,7 @@
             glenoak: {
                 label: 'GlenOak',
                 note: 'Includes Stark County Championship (2007–present), OHSAA District Championship (2017–present), and 2008 Regional',
-                match: [/glenoak/i, /glen\s*oak/i, /district/i],
+                match: [/glenoak/i, /glen\s*oak/i],
                 extraMatch: (meet, year) => {
                     const y = parseInt(year);
                     if (/stark\s*county|\bstark\b/i.test(meet) && y >= 2007) return true;
@@ -1586,6 +1608,7 @@
                 label: 'Malone',
                 note: 'Includes OHSAA District Championship (pre-2017); 5K distance from 1982 onward',
                 match: [/malone/i],
+                extraMatch: (meet, year) => /district/i.test(meet) && parseInt(year) < 2017,
                 excludeFn: (meet, year) => parseInt(year) < 1982,
                 exclude: [],
             },
@@ -1695,7 +1718,10 @@
                 <th class="col-time" style="text-align:center;">Time</th>
                 <th class="col-grad" style="text-align:center;">Year</th>`;
 
-            banner.textContent = `📍 ${def.label} Course Rankings${def.note ? ' — ' + def.note : ''}`;
+            const eraLabel = courseKey === 'boardman' && boardmanEra !== 'all'
+                ? (boardmanEra === 'classic' ? ' — Classic (≤2008)' : ' — Current (2009+)')
+                : '';
+            banner.textContent = `📍 ${def.label} Course Rankings${eraLabel}${def.note ? ' — ' + def.note : ''}`;
 
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">Loading…</td></tr>';
 
@@ -1713,6 +1739,12 @@
                     meets.forEach(entry => {
                         if (parseInt(year) < 1982) return; // pre-1982 races were shorter distances
                         if (!meetMatchesCourse(entry.meet, year, courseKey)) return;
+                        // Boardman era filter
+                        if (courseKey === 'boardman' && boardmanEra !== 'all') {
+                            const y = parseInt(year);
+                            if (boardmanEra === 'classic' && y >= 2009) return;
+                            if (boardmanEra === 'current' && y < 2009) return;
+                        }
                         const ms = timeToMs(entry.time);
                         if (!ms || ms <= 0) return;
                         // Apply per-course time filter (e.g. District/Walsh 2-mile exclusion)
@@ -1798,6 +1830,7 @@
             
             document.getElementById('seasonYearRow').style.display = (rankType === 'SEASON_YEAR') ? 'block' : 'none';
             document.getElementById('courseRow').style.display = (rankType === 'COURSE') ? 'block' : 'none';
+            document.getElementById('boardmanEraRow').style.display = (rankType === 'COURSE' && document.getElementById('leaderboardCourse').value === 'boardman') ? 'block' : 'none';
             document.getElementById('printRow').style.display = (rankType === 'CAREER_ALL' || rankType === 'VIRTUAL_MEET') ? 'none' : 'block';
             eventRow.style.display = (rankType === 'VIRTUAL_MEET' || rankType === 'COURSE') ? 'none' : 'block';
             meetDashboard.style.display = (rankType === 'VIRTUAL_MEET') ? 'block' : 'none';
