@@ -862,6 +862,9 @@
     </footer>
 
     <script>
+        // VERSION: videos-fix-v2
+        const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+
         const GOOGLE_SHEET_CSV_URLS = {
             'XC 5K': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=1993866337&single=true&output=csv', 
             '800m': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH-y7sfLRFZnu0Q4FMVJLHoCvLgchZtoN_ytMKileZFBioqWeczHnzFEiO8ztzh89PUh-GYF8bHjL2/pub?gid=1993866337&single=true&output=csv',
@@ -2439,16 +2442,12 @@
                     const res = await fetch(cacheBustUrl(ATHLETE_VIDEOS_CSV_URL));
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     const text = await res.text();
-                    console.log('Videos CSV raw:', text.substring(0, 300));
                     const rows = parseCSVText(text);
-                    console.log('Videos rows parsed:', rows.length, 'first row:', rows[0]);
                     if (rows.length < 2) return {};
                     const headers = rows[0].map(h => h.toLowerCase().trim());
-                    console.log('Videos headers:', headers);
                     const athleteIdx = headers.findIndex(h => h.includes('athlete'));
                     const labelIdx   = headers.findIndex(h => h.includes('label'));
                     const urlIdx     = headers.findIndex(h => h.includes('url'));
-                    console.log('Videos col indices — athlete:', athleteIdx, 'label:', labelIdx, 'url:', urlIdx);
                     if (athleteIdx === -1 || urlIdx === -1) return {};
                     const map = {};
                     for (let r = 1; r < rows.length; r++) {
@@ -2462,7 +2461,7 @@
                         map[key].push({ label, url });
                     }
                     athleteVideosCache = map;
-                    console.log('Videos map built:', Object.keys(map));
+                    console.log('Videos map built, keys:', Object.keys(map));
                     return map;
                 } catch(e) {
                     console.error('Athlete videos fetch error:', e);
@@ -2478,7 +2477,6 @@
             if (!videosMap) return '';
             const key = (athleteName || '').toLowerCase().trim();
             const videos = videosMap[key];
-            console.log('buildAthleteVideosHtml:', athleteName, '-> key:', key, '-> videos:', videos);
             if (!videos || !videos.length) return '';
             const rowsHtml = videos.map(v => `
                 <div class="card-video-row">
@@ -3698,9 +3696,6 @@
         // Track & Field State Qualifiers — one spreadsheet, separate Boys/Girls tabs.
         const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
         const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
-
-        // Athlete profile videos — columns: Athlete | Label | URL
-        const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
 
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
