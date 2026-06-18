@@ -872,6 +872,13 @@
 
     <script>
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+        const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
+        const GIRLS_YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAPTTz6Ju-5bWdVr0o7k023IeIsB3Iulfeoil4omH82uQ79UDixFQfFO7pAPndrhPcALXKPghxK9n/pub?output=csv';
+        const HISTORY_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQt21HnSOUr_eqbjH8s65XM1H0spgK9Ynge2S0rMx6dCZuYxKOYi3Hnog2B6kQRe0NMI-aW6cosE0rm/pub';
+        const BOYS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1137153465&single=true&output=csv';
+        const GIRLS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1497978196&single=true&output=csv';
+        const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
+        const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
 
         const GOOGLE_SHEET_CSV_URLS = {
             'XC 5K': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=1993866337&single=true&output=csv', 
@@ -3806,23 +3813,6 @@
             getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
         });
 
-
-        // ── URLs for nav pages ───────────────────────────────────────────
-        const HISTORY_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQt21HnSOUr_eqbjH8s65XM1H0spgK9Ynge2S0rMx6dCZuYxKOYi3Hnog2B6kQRe0NMI-aW6cosE0rm/pub';
-        const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
-
-        // Girls equivalent. Sparser than the boys sheet for now (per the
-        // coach), but the parser below skips any column/year with no data,
-        // so partial data renders fine.
-        const GIRLS_YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAPTTz6Ju-5bWdVr0o7k023IeIsB3Iulfeoil4omH82uQ79UDixFQfFO7pAPndrhPcALXKPghxK9n/pub?output=csv';
-
-        // Outdoor track records — one spreadsheet, separate Boys/Girls tabs.
-        const BOYS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1137153465&single=true&output=csv';
-        const GIRLS_TRACK_RECORDS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcgNkYDxUyeHu1x9yc8CeF57ppj--gDz8X46J_sfnsy6Yudu1JeCD_VwoZVWh65ahAcU82gRCAu_z/pub?gid=1497978196&single=true&output=csv';
-
-        // Track & Field State Qualifiers — one spreadsheet, separate Boys/Girls tabs.
-        const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
-        const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
 
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
