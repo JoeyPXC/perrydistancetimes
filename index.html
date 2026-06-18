@@ -483,14 +483,22 @@
         .records-video-link:hover { opacity:0.7; }
 
         /* Videos section inside athlete profile cards */
-        .card-videos-section { margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
-        .card-videos-title { font-size:11px; text-transform:uppercase; color:var(--perry-gray); margin-bottom:6px; letter-spacing:0.3px; font-weight:800; }
+        .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
+        .card-videos-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom:6px; }
+        .card-videos-title { font-size:11px; text-transform:uppercase; color:var(--perry-gray); letter-spacing:0.3px; font-weight:800; }
+        .card-videos-chevron { fill:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
+        .card-videos-section.expanded .card-videos-chevron { transform:rotate(180deg); }
+        .card-videos-body { display:none; }
+        .card-videos-section.expanded .card-videos-body { display:block; }
         .card-video-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:12px; }
         .card-video-row:last-child { border-bottom:none; }
         .card-video-label { flex:1; font-weight:600; color:var(--text); }
         .card-video-btn { font-size:11px; font-weight:800; background:var(--primary); color:var(--accent); border-radius:6px; padding:3px 9px; text-decoration:none; white-space:nowrap; flex-shrink:0; }
         .card-video-btn:hover { opacity:0.85; }
         body.dark-mode .card-video-btn { border:1px solid var(--border); }
+
+        /* Video column on state qualifiers table */
+        .col-sq-video { width:44px; text-align:center; }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -2419,9 +2427,7 @@
 
         // ── Athlete Profile Videos ───────────────────────────────────────
         // Fetches the athlete videos sheet once and builds a normalized-name
-        // lookup map: { 'josh tormasi': [{label, url}, ...], ... }
-        // Cards call buildAthleteVideosHtml(athleteName) to get their section.
-
+        // lookup: { 'josh tormasi': [{label, url}, ...], ... }
         let athleteVideosCache = null;
         let athleteVideosFetchPromise = null;
 
@@ -2435,13 +2441,11 @@
                     const text = await res.text();
                     const rows = parseCSVText(text);
                     if (rows.length < 2) return {};
-
                     const headers = rows[0].map(h => h.toLowerCase().trim());
                     const athleteIdx = headers.findIndex(h => h.includes('athlete'));
                     const labelIdx   = headers.findIndex(h => h.includes('label'));
                     const urlIdx     = headers.findIndex(h => h.includes('url'));
                     if (athleteIdx === -1 || urlIdx === -1) return {};
-
                     const map = {};
                     for (let r = 1; r < rows.length; r++) {
                         const row = rows[r];
@@ -2464,29 +2468,28 @@
             return athleteVideosFetchPromise;
         }
 
-        // Returns the HTML for a "📹 Videos" section for a given athlete name,
-        // or an empty string if they have no entries in the sheet.
-        // videosMap is the already-fetched map from getAthleteVideosMap().
+        // Returns an expandable "📹 Videos" section for a card, or '' if none.
         function buildAthleteVideosHtml(athleteName, videosMap) {
             if (!videosMap) return '';
             const key = (athleteName || '').toLowerCase().trim();
             const videos = videosMap[key];
             if (!videos || !videos.length) return '';
-
             const rowsHtml = videos.map(v => `
                 <div class="card-video-row">
                     <span class="card-video-label">${v.label || 'Watch'}</span>
                     <a href="${v.url}" target="_blank" rel="noopener" class="card-video-btn">▶ Watch</a>
                 </div>`).join('');
-
             return `
                 <div class="card-videos-section">
-                    <h4 class="card-videos-title">📹 Videos</h4>
-                    ${rowsHtml}
+                    <div class="card-videos-toggle" onclick="this.closest('.card-videos-section').classList.toggle('expanded')">
+                        <span class="card-videos-title">📹 Videos (${videos.length})</span>
+                        <svg class="card-videos-chevron" width="16" height="16" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="card-videos-body">${rowsHtml}</div>
                 </div>`;
         }
 
-        // Pre-fetch videos map so it's ready when cards are opened.
+        // Pre-fetch so videos are ready when a card is first opened.
         getAthleteVideosMap();
 
         async function renderRoster() {
@@ -3690,8 +3693,7 @@
         const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
         const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
 
-        // Athlete profile videos — one sheet, all genders.
-        // Columns: Athlete | Label | URL
+        // Athlete profile videos — columns: Athlete | Label | URL
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
 
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
