@@ -220,9 +220,9 @@
         .rank-table th, .rank-table td { padding: 10px 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
         @media (max-width: 480px) {
             .col-grad { display: none; }
-            .col-rank { width: 36px; }
-            .col-time { width: 80px; font-size: 12px; }
-            .rank-table th, .rank-table td { padding: 8px 5px; }
+            .col-rank { width: 32px; }
+            .col-time { width: 74px; font-size: 12px; }
+            .rank-table th, .rank-table td { padding: 8px 4px; }
             .lbd-name { font-size: 12px; }
             .mobile-grade-inline { display: inline !important; }
         }
@@ -340,7 +340,7 @@
 
         .athlete-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; }
         .card-toggle-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; cursor: pointer; background: white; }
-        .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; }
+        .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
         .athlete-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
         .athlete-college-row { display: flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 10px; flex-shrink: 0; }
@@ -3146,7 +3146,7 @@
                     </td>
                     <td class="col-grad" style="text-align:center;"><span style="font-size:11px;font-weight:700;color:var(--perry-gray);">${runner.team.replace(' PXC Team','')}</span></td>
                     <td class="col-athlete">
-                        <div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${vmClassLabel}${runner.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span></div>
+                        <div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${vmClassLabel}${runner.name}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span></div>
                         <span class="squad-subname">${isNonScoring ? runner.team + (isJVMode ? ' (JV Exhibition)' : ' (Exhibition)') : (runner.rosterRank === 6 || runner.rosterRank === 7 ? runner.team + (isJVMode ? ' (JV Pusher)' : ' (Pusher)') : runner.team)}</span>
                     </td>
                     <td class="col-time" style="text-align:center;">
@@ -3549,7 +3549,7 @@
                 row.innerHTML = `
                     <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
                     ${gradCell}
-                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;text-overflow:ellipsis;overflow:hidden;">${namePrefix}${athlete.name} <span class="lbd-yr" style="font-size:11px;font-weight:600;">${yrDisp}</span><span class="mobile-grade-inline" style="font-size:10px;font-weight:700;color:var(--perry-gray);margin-left:4px;">${rankType==='SEASON_YEAR' && classLabel ? '·&nbsp;'+(['Fr','So','Jr','Sr'].find(g=>classLabel.includes(g))||'') : markYear ? '·&nbsp;'+markYear : ''}</span></div></td>
+                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;""><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${namePrefix}${athlete.name}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span><span class="mobile-grade-inline" style="font-size:10px;font-weight:700;color:var(--perry-gray);flex-shrink:0;">${rankType==='SEASON_YEAR' && classLabel ? '·&nbsp;'+(['Fr','So','Jr','Sr'].find(g=>classLabel.includes(g))||'') : markYear ? '·&nbsp;'+markYear : ''}</span></div></td>
                     <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${timeHtml}</span></td>
                 `;
                 tbody.appendChild(row);
