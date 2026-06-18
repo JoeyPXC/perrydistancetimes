@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -493,6 +494,7 @@
         .col-sq-event { width:26%; font-weight:800; }
         .col-sq-athletes { width:auto; }
         .col-sq-place { width:78px; text-align:center; white-space:nowrap; }
+        .col-sq-video { width:44px; text-align:center; }
         .records-place-first { font-weight:900; color:var(--success); }
         .records-note { font-size:10px; font-style:italic; color:var(--text-muted); margin-top:3px; line-height:1.3; }
         .records-note-hidden { display:none; }
@@ -3391,6 +3393,7 @@
             let eventIdx = headers.indexOf('event');
             let placeIdx = headers.indexOf('place');
             let notesIdx = headers.findIndex(h => h.includes('note'));
+            let videoIdx = headers.findIndex(h => h.includes('video') || h.includes('youtube'));
             if (nameIdx === -1) nameIdx = 0;
             if (yearIdx === -1) yearIdx = 1;
             if (eventIdx === -1) eventIdx = 2;
@@ -3406,8 +3409,9 @@
                 const event = (row[eventIdx] || '').trim();
                 const place = (row[placeIdx] || '').trim();
                 const notes = notesIdx !== -1 ? (row[notesIdx] || '').trim() : '';
+                const video = videoIdx !== -1 ? (row[videoIdx] || '').trim() : '';
 
-                records.push({ names, year, event, place, notes });
+                records.push({ names, year, event, place, notes, video });
             }
 
             return records;
@@ -4444,6 +4448,7 @@
                 const namesHtml = r.names.map(n => `<span class="records-name-line">${n}</span>`).join('');
                 const notesHtml = r.notes ? `<div class="records-note records-note-hidden">📝 ${r.notes}</div>` : '';
                 const noteToggle = r.notes ? ` <span class="records-note-toggle" onclick="toggleRecordNote(this)" title="View note">📝</span>` : '';
+                const videoHtml = r.video ? `<a href="${r.video}" target="_blank" rel="noopener" class="records-video-link" title="Watch on YouTube">▶️</a>` : '';
                 const place = r.place || '—';
                 const placeClass = /^1st/i.test(r.place) ? 'col-sq-place records-place-first' : 'col-sq-place';
                 return `
@@ -4452,13 +4457,14 @@
                         <td class="col-sq-event">${r.event}</td>
                         <td class="col-sq-athletes">${namesHtml}${notesHtml}</td>
                         <td class="${placeClass}">${place}${noteToggle}</td>
+                        <td class="col-sq-video">${videoHtml}</td>
                     </tr>`;
             }).join('');
 
             return `
                 <div class="records-table-wrapper">
                     <table class="records-table">
-                        <thead><tr><th class="col-sq-year">Year</th><th class="col-sq-event">Event</th><th class="col-sq-athletes">Athlete(s)</th><th class="col-sq-place">Place</th></tr></thead>
+                        <thead><tr><th class="col-sq-year">Year</th><th class="col-sq-event">Event</th><th class="col-sq-athletes">Athlete(s)</th><th class="col-sq-place">Place</th><th class="col-sq-video">Video</th></tr></thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>`;
