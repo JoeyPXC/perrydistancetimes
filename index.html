@@ -490,6 +490,7 @@
         .badge-fed-champ   { background:#991b1b; color:#fff; }
         .badge-all-federal { background:#1d4ed8; color:#fff; }
         .badge-all-county  { background:#b45309; color:#fff; }
+        .badge-all-ohio    { background:#4a1d96; color:#fff; }
 
         /* Videos section inside athlete profile cards */
         .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
@@ -2482,19 +2483,21 @@
                             const year = (row[yearCol] || '').trim();
                             if (!year || !/^\d{4}$/.test(year)) continue;
                             const splitNames = (val) => (val || '').split(/[\n,]+/).map(n => n.replace(/\s*\(\d+\)\s*$/, '').trim()).filter(Boolean);
-                            const rawAllFed = allFedCol !== -1 ? splitNames(row[allFedCol]) : [];
+                            const rawAllFed   = allFedCol       !== -1 ? splitNames(row[allFedCol])       : [];
+                            const rawStateQual = stateQualIndCol !== -1 ? splitNames(row[stateQualIndCol]) : [];
                             const honorMap = {
                                 fedChamp:  rawAllFed.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
-                                allFed:    rawAllFed.map(n => n.replace(/\*$/,''). trim()),
-                                allCounty: allCountyCol   !== -1 ? splitNames(row[allCountyCol])    : [],
-                                regQual:   regQualIndCol  !== -1 ? splitNames(row[regQualIndCol])   : [],
-                                stateQual: stateQualIndCol!== -1 ? splitNames(row[stateQualIndCol]) : [],
+                                allFed:    rawAllFed.map(n => n.replace(/\*$/,'').trim()),
+                                allCounty: allCountyCol   !== -1 ? splitNames(row[allCountyCol])  : [],
+                                regQual:   regQualIndCol  !== -1 ? splitNames(row[regQualIndCol])  : [],
+                                stateQual: rawStateQual.map(n => n.replace(/\*$/,'').trim()),
+                                allOhio:   rawStateQual.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
                             };
                             Object.entries(honorMap).forEach(([honor, names]) => {
                                 names.forEach(name => {
                                     const key = name.toLowerCase().trim();
                                     if (!key) return;
-                                    if (!map[key]) map[key] = { fedChamp:[], allFed:[], allCounty:[], regQual:[], stateQual:[] };
+                                    if (!map[key]) map[key] = { fedChamp:[], allFed:[], allCounty:[], regQual:[], stateQual:[], allOhio:[] };
                                     if (!map[key][honor]) map[key][honor] = [];
                                     if (!map[key][honor].includes(parseInt(year))) map[key][honor].push(parseInt(year));
                                 });
@@ -2520,6 +2523,7 @@
             const h = honorsMap[key];
             if (!h) return '';
             let badges = '';
+            if (h.allOhio   && h.allOhio.length)    badges += `<span class="card-honor-badge badge-all-ohio">All-Ohio</span>`;
             if (h.stateQual && h.stateQual.length)  badges += `<span class="card-honor-badge badge-state">XC State</span>`;
             if (h.regQual   && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
             if (h.fedChamp  && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">FL Champ</span>`;
@@ -2535,6 +2539,7 @@
             const h = honorsMap[key];
             if (!h) return '';
             const rows = [
+                { label: 'All-Ohio',              years: h.allOhio,   cls: 'badge-all-ohio' },
                 { label: 'XC State Qualifier',    years: h.stateQual, cls: 'badge-state' },
                 { label: 'XC Regional Qualifier', years: h.regQual,   cls: 'badge-regional' },
                 { label: 'Federal League Champ',  years: h.fedChamp,  cls: 'badge-fed-champ' },
@@ -2543,7 +2548,7 @@
             ].filter(r => r.years && r.years.length);
             if (!rows.length) return '';
             const rowsHtml = rows.map(r => {
-                const yearsStr = r.years.slice().sort((a,b) => b-a).join(', ');
+                const yearsStr = r.years.slice().sort((a,b) => a-b).join(', ');
                 return `<div class="card-video-row">
                     <span class="card-video-label"><span class="card-honor-badge ${r.cls}" style="margin-right:6px;">${r.label}</span></span>
                     <span style="font-size:11px;color:var(--text-muted);font-weight:700;">${yearsStr}</span>
