@@ -862,7 +862,6 @@
     </footer>
 
     <script>
-        // VERSION: videos-fix-v2
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
 
         const GOOGLE_SHEET_CSV_URLS = {
@@ -2461,7 +2460,6 @@
                         map[key].push({ label, url });
                     }
                     athleteVideosCache = map;
-                    console.log('Videos map built, keys:', Object.keys(map));
                     return map;
                 } catch(e) {
                     console.error('Athlete videos fetch error:', e);
