@@ -482,6 +482,14 @@
         .records-video-link { text-decoration:none; }
         .records-video-link:hover { opacity:0.7; }
 
+        /* XC honor badges on athlete card headers */
+        .card-honor-badges { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+        .card-honor-badge { font-size:9px; font-weight:800; padding:2px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; }
+        .badge-all-federal { background:#1d4ed8; color:#fff; }
+        .badge-all-county  { background:#b45309; color:#fff; }
+        .badge-regional    { background:#166534; color:#fff; }
+        .badge-state       { background:#166534; color:#fff; }
+
         /* Videos section inside athlete profile cards */
         .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
         .card-videos-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom:6px; }
@@ -862,8 +870,6 @@
     </footer>
 
     <script>
-        const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
-
         const GOOGLE_SHEET_CSV_URLS = {
             'XC 5K': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb2bSDnf7t82eum6cnZcu-VTriEiqQFo5rkK5UsXujL7Qv3cpNFf2pLFYvDD0aNHRvbn3aWl5cEu8z/pub?gid=1993866337&single=true&output=csv', 
             '800m': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH-y7sfLRFZnu0Q4FMVJLHoCvLgchZtoN_ytMKileZFBioqWeczHnzFEiO8ztzh89PUh-GYF8bHjL2/pub?gid=1993866337&single=true&output=csv',
@@ -2494,6 +2500,126 @@
         // Pre-fetch so videos are ready when a card is first opened.
         getAthleteVideosMap();
 
+        // ── XC Honors Map ────────────────────────────────────────────────
+        // Parses both year-by-year sheets and builds a per-athlete honors map:
+        // { 'josh tormasi': { allFed:[2009,2008], allCounty:[2009], regQual:[2009], stateQual:[] }, ... }
+        let xcHonorsCache = null;
+        let xcHonorsFetchPromise = null;
+
+        async function getXCHonorsMap() {
+            if (xcHonorsCache) return xcHonorsCache;
+            if (xcHonorsFetchPromise) return xcHonorsFetchPromise;
+            xcHonorsFetchPromise = (async () => {
+                try {
+                    const [boysRes, girlsRes] = await Promise.all([
+                        fetch(cacheBustUrl(YEAR_BY_YEAR_CSV_URL)),
+                        fetch(cacheBustUrl(GIRLS_YEAR_BY_YEAR_CSV_URL))
+                    ]);
+                    const [boysText, girlsText] = await Promise.all([
+                        boysRes.ok ? boysRes.text() : Promise.resolve(''),
+                        girlsRes.ok ? girlsRes.text() : Promise.resolve('')
+                    ]);
+
+                    const map = {};
+
+                    function processSheet(text) {
+                        if (!text) return;
+                        const rows = parseCSVText(text);
+                        if (rows.length < 2) return;
+                        const headers = rows[0].map(h => h.toLowerCase().trim());
+                        const yearCol        = headers.indexOf('year') !== -1 ? headers.indexOf('year') : 0;
+                        const allFedCol      = headers.findIndex(h => h.includes('all-federal') || (h.includes('1st') && h.includes('federal')));
+                        const allCountyCol   = headers.findIndex(h => h.includes('county'));
+                        const regQualIndCol  = headers.findIndex(h => h.includes('individual') && h.includes('regional'));
+                        const stateQualIndCol= headers.findIndex(h => h.includes('individual') && h.includes('state'));
+
+                        for (let r = 1; r < rows.length; r++) {
+                            const row = rows[r];
+                            const year = (row[yearCol] || '').trim();
+                            if (!year || !/^\d{4}$/.test(year)) continue;
+
+                            const splitNames = (val) => (val || '').split(/[\n,]+/).map(n => n.trim()).filter(Boolean);
+
+                            const honorMap = {
+                                allFed:    allFedCol      !== -1 ? splitNames(row[allFedCol])       : [],
+                                allCounty: allCountyCol   !== -1 ? splitNames(row[allCountyCol])    : [],
+                                regQual:   regQualIndCol  !== -1 ? splitNames(row[regQualIndCol])   : [],
+                                stateQual: stateQualIndCol!== -1 ? splitNames(row[stateQualIndCol]) : [],
+                            };
+
+                            Object.entries(honorMap).forEach(([honor, names]) => {
+                                names.forEach(name => {
+                                    const key = name.toLowerCase().trim();
+                                    if (!key) return;
+                                    if (!map[key]) map[key] = { allFed:[], allCounty:[], regQual:[], stateQual:[] };
+                                    if (!map[key][honor].includes(parseInt(year))) {
+                                        map[key][honor].push(parseInt(year));
+                                    }
+                                });
+                            });
+                        }
+                    }
+
+                    processSheet(boysText);
+                    processSheet(girlsText);
+                    xcHonorsCache = map;
+                    return map;
+                } catch(e) {
+                    console.error('XC honors fetch error:', e);
+                    xcHonorsFetchPromise = null;
+                    return {};
+                }
+            })();
+            return xcHonorsFetchPromise;
+        }
+
+        // Returns badge HTML for the collapsed card header.
+        function buildCardHonorBadgesHtml(athleteName, honorsMap) {
+            if (!honorsMap) return '';
+            const key = (athleteName || '').toLowerCase().trim();
+            const h = honorsMap[key];
+            if (!h) return '';
+            let badges = '';
+            if (h.stateQual  && h.stateQual.length)  badges += `<span class="card-honor-badge badge-state">XC State</span>`;
+            if (h.regQual    && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
+            if (h.allFed     && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
+            if (h.allCounty  && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
+            if (!badges) return '';
+            return `<div class="card-honor-badges">${badges}</div>`;
+        }
+
+        // Returns a detailed honors section for inside the expanded card.
+        function buildCardHonorsDetailHtml(athleteName, honorsMap) {
+            if (!honorsMap) return '';
+            const key = (athleteName || '').toLowerCase().trim();
+            const h = honorsMap[key];
+            if (!h) return '';
+            const rows = [
+                { label: 'XC State Qualifier',     years: h.stateQual, cls: 'badge-state' },
+                { label: 'XC Regional Qualifier',  years: h.regQual,   cls: 'badge-regional' },
+                { label: '1st Team All-Federal',   years: h.allFed,    cls: 'badge-all-federal' },
+                { label: '1st Team All-County',    years: h.allCounty, cls: 'badge-all-county' },
+            ].filter(r => r.years && r.years.length);
+            if (!rows.length) return '';
+            const rowsHtml = rows.map(r => {
+                const yearsStr = r.years.slice().sort((a,b) => b-a).join(', ');
+                return `<div class="card-video-row">
+                    <span class="card-video-label"><span class="card-honor-badge ${r.cls}" style="margin-right:6px;">${r.label}</span></span>
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:700;">${yearsStr}</span>
+                </div>`;
+            }).join('');
+            return `<div class="card-videos-section">
+                <div class="card-videos-toggle" onclick="this.closest('.card-videos-section').classList.toggle('expanded')">
+                    <span class="card-videos-title">🏅 XC Honors</span>
+                    <svg class="card-videos-chevron" width="16" height="16" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                </div>
+                <div class="card-videos-body">${rowsHtml}</div>
+            </div>`;
+        }
+
+        // Pre-fetch so honors are ready when cards load.
+        getXCHonorsMap();
+
         async function renderRoster() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const container = document.getElementById('rosterList');
@@ -2508,6 +2634,7 @@
             items.sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
 
             const videosMap = await getAthleteVideosMap();
+            const honorsMap = await getXCHonorsMap();
 
             let renderedCount = 0;
             for(let i=0; i<items.length; i++) {
@@ -2528,6 +2655,8 @@
                 
                 let eventsHtml = buildEventsGridHtml(athlete);
                 let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
+                let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap);
+                let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap);
 
                 let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -2555,12 +2684,14 @@
                         <div class="athlete-meta-box">
                             <span class="athlete-name">${athlete.name}</span>
                             <span class="athlete-grad-text">${gradDisplay}</span>
+                            ${honorBadgesHtml}
                         </div>
                         ${collegeRowHtml}
                         <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                     </div>
                     <div class="card-expand-body">
                         <div class="events-grid">${eventsHtml}</div>
+                        ${honorDetailHtml}
                         ${videosHtml}
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                             <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
@@ -3695,6 +3826,9 @@
         const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
         const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
 
+        // Athlete profile videos — columns: Athlete | Label | URL
+        const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
         function cacheBustUrl(url) {
@@ -4105,6 +4239,7 @@
             }
 
             const videosMap = await getAthleteVideosMap();
+            const honorsMap = await getXCHonorsMap();
 
             const years = entries.map(e => e.hsGradYear);
             const minYear = Math.min(...years);
@@ -4157,18 +4292,22 @@
                 if (hasData) {
                     const safeId = rosterAthlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
+                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap);
+                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap);
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" data-runner-name="${rosterAthlete.name.replace(/"/g, '&quot;')}">
                                 <div class="athlete-meta-box">
                                     <span class="athlete-name">${e.name}</span>
                                     <span class="athlete-grad-text">Class of ${e.hsGradYear}</span>
+                                    ${honorBadgesHtml}
                                 </div>
                                 ${collegeRowHtml}
                                 <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                             </div>
                             <div class="card-expand-body">
                                 <div class="events-grid">${buildEventsGridHtml(rosterAthlete)}</div>
+                                ${honorDetailHtml}
                                 ${videosHtml}
                                 <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                                     <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
@@ -4180,17 +4319,21 @@
                         </div>`;
                 } else {
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
+                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap);
+                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap);
+                    const hasExpandable = videosHtml || honorDetailHtml;
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
-                            <div class="card-toggle-header" ${videosHtml ? `data-runner-name="${e.name.replace(/"/g, '&quot;')}"` : 'style="cursor:default;"'}>
+                            <div class="card-toggle-header" ${hasExpandable ? `data-runner-name="${e.name.replace(/"/g, '&quot;')}"` : 'style="cursor:default;"'}>
                                 <div class="athlete-meta-box">
                                     <span class="athlete-name">${e.name}</span>
                                     <span class="athlete-grad-text">Class of ${e.hsGradYear}</span>
+                                    ${honorBadgesHtml}
                                 </div>
                                 ${collegeRowHtml}
-                                ${videosHtml ? `<svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>` : ''}
+                                ${hasExpandable ? `<svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>` : ''}
                             </div>
-                            ${videosHtml ? `<div class="card-expand-body">${videosHtml}</div>` : ''}
+                            ${hasExpandable ? `<div class="card-expand-body">${honorDetailHtml}${videosHtml}</div>` : ''}
                         </div>`;
                 }
             });
