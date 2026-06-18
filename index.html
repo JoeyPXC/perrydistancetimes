@@ -485,12 +485,14 @@
         /* XC honor badges on athlete card headers */
         .card-honor-badges { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
         .card-honor-badge { font-size:9px; font-weight:800; padding:2px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; }
-        .badge-state       { background:#166534; color:#fff; }
-        .badge-regional    { background:#6b1a2a; color:#fff; }
-        .badge-fed-champ   { background:#991b1b; color:#fff; }
-        .badge-all-federal { background:#1d4ed8; color:#fff; }
-        .badge-all-county  { background:#b45309; color:#fff; }
-        .badge-all-ohio    { background:#4a1d96; color:#fff; }
+        .badge-state        { background:#166534; color:#fff; }
+        .badge-regional     { background:#6b1a2a; color:#fff; }
+        .badge-dist-champ   { background:#0f766e; color:#fff; }
+        .badge-fed-champ    { background:#991b1b; color:#fff; }
+        .badge-all-federal  { background:#1d4ed8; color:#fff; }
+        .badge-county-champ { background:#92400e; color:#fff; }
+        .badge-all-county   { background:#b45309; color:#fff; }
+        .badge-all-ohio     { background:#4a1d96; color:#fff; }
 
         /* Videos section inside athlete profile cards */
         .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
@@ -2483,21 +2485,25 @@
                             const year = (row[yearCol] || '').trim();
                             if (!year || !/^\d{4}$/.test(year)) continue;
                             const splitNames = (val) => (val || '').split(/[\n,]+/).map(n => n.replace(/\s*\(\d+\)\s*$/, '').trim()).filter(Boolean);
-                            const rawAllFed   = allFedCol       !== -1 ? splitNames(row[allFedCol])       : [];
+                            const rawAllFed    = allFedCol       !== -1 ? splitNames(row[allFedCol])       : [];
                             const rawStateQual = stateQualIndCol !== -1 ? splitNames(row[stateQualIndCol]) : [];
+                            const rawRegQual   = regQualIndCol   !== -1 ? splitNames(row[regQualIndCol])   : [];
+                            const rawAllCounty = allCountyCol    !== -1 ? splitNames(row[allCountyCol])    : [];
                             const honorMap = {
-                                fedChamp:  rawAllFed.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
-                                allFed:    rawAllFed.map(n => n.replace(/\*$/,'').trim()),
-                                allCounty: allCountyCol   !== -1 ? splitNames(row[allCountyCol])  : [],
-                                regQual:   regQualIndCol  !== -1 ? splitNames(row[regQualIndCol])  : [],
-                                stateQual: rawStateQual.map(n => n.replace(/\*$/,'').trim()),
-                                allOhio:   rawStateQual.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
+                                fedChamp:   rawAllFed.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
+                                allFed:     rawAllFed.map(n => n.replace(/\*$/,'').trim()),
+                                countyChamp:rawAllCounty.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
+                                allCounty:  rawAllCounty.map(n => n.replace(/\*$/,'').trim()),
+                                distChamp:  rawRegQual.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
+                                regQual:    rawRegQual.map(n => n.replace(/\*$/,'').trim()),
+                                allOhio:    rawStateQual.filter(n => n.endsWith('*')).map(n => n.slice(0,-1).trim()),
+                                stateQual:  rawStateQual.map(n => n.replace(/\*$/,'').trim()),
                             };
                             Object.entries(honorMap).forEach(([honor, names]) => {
                                 names.forEach(name => {
                                     const key = name.toLowerCase().trim();
                                     if (!key) return;
-                                    if (!map[key]) map[key] = { fedChamp:[], allFed:[], allCounty:[], regQual:[], stateQual:[], allOhio:[] };
+                                    if (!map[key]) map[key] = { fedChamp:[], allFed:[], countyChamp:[], allCounty:[], distChamp:[], regQual:[], allOhio:[], stateQual:[] };
                                     if (!map[key][honor]) map[key][honor] = [];
                                     if (!map[key][honor].includes(parseInt(year))) map[key][honor].push(parseInt(year));
                                 });
@@ -2523,12 +2529,14 @@
             const h = honorsMap[key];
             if (!h) return '';
             let badges = '';
-            if (h.allOhio   && h.allOhio.length)    badges += `<span class="card-honor-badge badge-all-ohio">All-Ohio</span>`;
-            if (h.stateQual && h.stateQual.length)  badges += `<span class="card-honor-badge badge-state">XC State</span>`;
-            if (h.regQual   && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
-            if (h.fedChamp  && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">FL Champ</span>`;
-            if (h.allFed    && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
-            if (h.allCounty && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
+            if (h.allOhio     && h.allOhio.length)     badges += `<span class="card-honor-badge badge-all-ohio">All-Ohio</span>`;
+            if (h.stateQual   && h.stateQual.length)   badges += `<span class="card-honor-badge badge-state">XC State</span>`;
+            if (h.distChamp   && h.distChamp.length)   badges += `<span class="card-honor-badge badge-dist-champ">Dist Champ</span>`;
+            if (h.fedChamp    && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">FL Champ</span>`;
+            if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">County Champ</span>`;
+            if (h.regQual     && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
+            if (h.allFed      && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
+            if (h.allCounty   && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
             if (!badges) return '';
             return `<div class="card-honor-badges">${badges}</div>`;
         }
@@ -2539,12 +2547,14 @@
             const h = honorsMap[key];
             if (!h) return '';
             const rows = [
-                { label: 'All-Ohio',              years: h.allOhio,   cls: 'badge-all-ohio' },
-                { label: 'XC State Qualifier',    years: h.stateQual, cls: 'badge-state' },
-                { label: 'XC Regional Qualifier', years: h.regQual,   cls: 'badge-regional' },
-                { label: 'Federal League Champ',  years: h.fedChamp,  cls: 'badge-fed-champ' },
-                { label: '1st Team All-Federal',  years: h.allFed,    cls: 'badge-all-federal' },
-                { label: '1st Team All-County',   years: h.allCounty, cls: 'badge-all-county' },
+                { label: 'All-Ohio',              years: h.allOhio,     cls: 'badge-all-ohio' },
+                { label: 'XC State Qualifier',    years: h.stateQual,   cls: 'badge-state' },
+                { label: 'District Champion',     years: h.distChamp,   cls: 'badge-dist-champ' },
+                { label: 'Federal League Champ',  years: h.fedChamp,    cls: 'badge-fed-champ' },
+                { label: 'County Champion',       years: h.countyChamp, cls: 'badge-county-champ' },
+                { label: 'XC Regional Qualifier', years: h.regQual,     cls: 'badge-regional' },
+                { label: '1st Team All-Federal',  years: h.allFed,      cls: 'badge-all-federal' },
+                { label: '1st Team All-County',   years: h.allCounty,   cls: 'badge-all-county' },
             ].filter(r => r.years && r.years.length);
             if (!rows.length) return '';
             const rowsHtml = rows.map(r => {
