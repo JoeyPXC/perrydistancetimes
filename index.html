@@ -503,6 +503,15 @@
         .badge-t-fl-champ     { background:#7f1d1d; color:#fff; }
         .badge-t-county-champ { background:#78350f; color:#fff; }
 
+        /* Team roster expansion on accomplishments year chips */
+        .accomp-year-chip { cursor:pointer; position:relative; }
+        .accomp-chip-wrapper { display:inline-block; position:relative; }
+        .accomp-roster-popup { display:none; position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; z-index:100; min-width:160px; box-shadow:0 4px 12px rgba(0,0,0,0.15); white-space:nowrap; }
+        .accomp-chip-wrapper.open .accomp-roster-popup { display:block; }
+        .accomp-roster-popup-title { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; letter-spacing:0.3px; }
+        .accomp-roster-popup-name { font-size:12px; font-weight:600; color:var(--text); padding:2px 0; border-bottom:1px dashed var(--border); }
+        .accomp-roster-popup-name:last-child { border-bottom:none; }
+
         /* Videos section inside athlete profile cards */
         .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
         .card-videos-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom:6px; }
@@ -885,6 +894,7 @@
     <script>
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
         const TRACK_HONORS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9f9jEfQYpVOE1_fWR0_BGdgqzMei-60jxg88pIv_ea4o2ihpqfBKqmbP69AlvkmaHLqZcDeztuK3V/pub?output=csv';
+        const TEAM_ROSTERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUpLCa8UMA-PHRXmJmhenbhUDijaB2U4d2_DYKuI7LCQw5JDnQpZwCk8tuYqY2CTxE6b4P0ECYwbnK/pub?output=csv';
         const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
         const GIRLS_YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAPTTz6Ju-5bWdVr0o7k023IeIsB3Iulfeoil4omH82uQ79UDixFQfFO7pAPndrhPcALXKPghxK9n/pub?output=csv';
         const HISTORY_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQt21HnSOUr_eqbjH8s65XM1H0spgK9Ynge2S0rMx6dCZuYxKOYi3Hnog2B6kQRe0NMI-aW6cosE0rm/pub';
@@ -2461,6 +2471,57 @@
         // lookup: { 'josh tormasi': [{label, url}, ...], ... }
         let athleteVideosCache = null;
         let athleteVideosFetchPromise = null;
+
+        // ── Team Rosters Map ─────────────────────────────────────────────
+        // Builds { 'M-State-2009': ['Josh Tormasi', ...], 'M-FL-2008': [...], ... }
+        let teamRostersCache = null;
+        let teamRostersFetchPromise = null;
+
+        async function getTeamRostersMap() {
+            if (teamRostersCache) return teamRostersCache;
+            if (teamRostersFetchPromise) return teamRostersFetchPromise;
+            teamRostersFetchPromise = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(TEAM_ROSTERS_CSV_URL));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    if (rows.length < 2) return {};
+                    const headers = rows[0].map(h => h.toLowerCase().trim());
+                    const yearIdx   = headers.findIndex(h => h.includes('year'));
+                    const honorIdx  = headers.findIndex(h => h.includes('honor'));
+                    const genderIdx = headers.findIndex(h => h.includes('gender'));
+                    const athleteIdx= headers.findIndex(h => h.includes('athlete'));
+                    if (yearIdx === -1 || honorIdx === -1 || athleteIdx === -1) return {};
+                    const map = {};
+                    for (let r = 1; r < rows.length; r++) {
+                        const row = rows[r];
+                        const year   = (row[yearIdx]    || '').trim();
+                        const honor  = (row[honorIdx]   || '').trim();
+                        const gender = genderIdx !== -1 ? (row[genderIdx] || 'M').trim().toUpperCase() : 'M';
+                        const athlete= (row[athleteIdx] || '').trim();
+                        if (!year || !honor || !athlete) continue;
+                        const key = `${gender}-${honor}-${year}`;
+                        if (!map[key]) map[key] = [];
+                        if (!map[key].includes(athlete)) map[key].push(athlete);
+                    }
+                    teamRostersCache = map;
+                    return map;
+                } catch(e) {
+                    console.error('Team rosters fetch error:', e);
+                    teamRostersFetchPromise = null;
+                    return {};
+                }
+            })();
+            return teamRostersFetchPromise;
+        }
+
+        // Close any open roster popups when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.accomp-chip-wrapper.open').forEach(el => el.classList.remove('open'));
+        });
+
+        getTeamRostersMap();
 
         // ── XC Honors Map ────────────────────────────────────────────────
         let xcHonorsCache = null;
@@ -4194,8 +4255,10 @@
         }
 
 
-        function renderAccomplishmentsPage(container) {
+        async function renderAccomplishmentsPage(container) {
             if (navCache.accomplishments[genderFilter]) { container.innerHTML = navCache.accomplishments[genderFilter]; return; }
+
+            const rostersMap = await getTeamRostersMap();
 
             const OHSAA_IMG    = 'ohsaa.png';
             const REGIONAL_IMG = 'ohsaa.png';
@@ -4203,12 +4266,26 @@
             const FED_IMG      = 'Federal_League_Transparent.png';
             const STARK_IMG    = 'Stark_County_XC.png';
 
-            function chips(years, chipClass) {
-                return years.map(y => `<span class="accomp-year-chip ${chipClass}">${y}</span>`).join('');
+            function chips(years, chipClass, honorKey, gender) {
+                return years.map(y => {
+                    const key = `${gender}-${honorKey}-${y}`;
+                    const roster = rostersMap[key];
+                    if (roster && roster.length) {
+                        const namesHtml = roster.map(n => `<div class="accomp-roster-popup-name">${n}</div>`).join('');
+                        return `<span class="accomp-chip-wrapper" onclick="this.classList.toggle('open');event.stopPropagation();">
+                            <span class="accomp-year-chip ${chipClass}">${y} ▾</span>
+                            <div class="accomp-roster-popup">
+                                <div class="accomp-roster-popup-title">${y} Roster</div>
+                                ${namesHtml}
+                            </div>
+                        </span>`;
+                    }
+                    return `<span class="accomp-year-chip ${chipClass}">${y}</span>`;
+                }).join('');
             }
 
             // Section with an optional logo image on the left of the title
-            function section(title, titleBg, titleColor, yearsArr, chipClass, logoImg, runnerUpTitle, runnerUpArr) {
+            function section(title, titleBg, titleColor, yearsArr, chipClass, logoImg, runnerUpTitle, runnerUpArr, honorKey, gender) {
                 if (!yearsArr.length && !runnerUpArr?.length) return '';
                 const logoHtml = logoImg
                     ? `<img src="${logoImg}" style="height:28px;width:auto;object-fit:contain;flex-shrink:0;">`
@@ -4217,12 +4294,12 @@
                     <div class="accomp-section-title" style="background:${titleBg};color:${titleColor};">
                         ${logoHtml}<span>${title}</span>
                     </div>
-                    <div class="accomp-years">${chips(yearsArr, chipClass)}</div>`;
+                    <div class="accomp-years">${chips(yearsArr, chipClass, honorKey, gender)}</div>`;
                 if (runnerUpTitle && runnerUpArr?.length) {
                     html += `<div class="accomp-section-title" style="background:${titleBg};color:${titleColor};margin-top:8px;opacity:0.8;">
                         ${logoHtml}<span>${runnerUpTitle}</span>
                     </div>
-                    <div class="accomp-years">${chips(runnerUpArr, chipClass)}</div>`;
+                    <div class="accomp-years">${chips(runnerUpArr, chipClass, honorKey + '-RU', gender)}</div>`;
                 }
                 html += `</div>`;
                 return html;
@@ -4230,7 +4307,7 @@
 
             // Builds the Program Snapshot block + all accomplishment sections
             // for one program (boys or girls) — same markup, different data.
-            function buildProgramHtml(data) {
+            function buildProgramHtml(data, gender) {
                 const anyStarred = data.indState.some(r => r.starred && r.starred.length > 0);
                 return `
                 <div class="program-snapshot">
@@ -4270,11 +4347,11 @@
                     </div>
                 </div>
 
-                ${section('State Qualifying Teams','#166534','white',data.stateTeams,'accomp-state-chip',OHSAA_IMG,'State Runner-up / Individual Qualifiers (see below)',null)}
-                ${section('Regional Qualifying Teams','#3730a3','#e0e7ff',data.regQual,'accomp-reg-chip',REGIONAL_IMG,'Regional Runner-up',data.regRunnerup)}
-                ${section('District Champion','#14532d','#bbf7d0',data.distChamp,'accomp-dist-chip',DISTRICT_IMG,'District Runner-up',data.distRunnerup)}
-                ${section('Federal League Champion','#991b1b','#fecaca',data.fedChamp,'accomp-fed-chip',FED_IMG,'Federal League Runner-up',data.fedRunnerup)}
-                ${section('Stark County Champion','#1e3a5f','#bfdbfe',data.starkChamp,'accomp-stark-chip',STARK_IMG,'Stark County Runner-up',data.starkRunnerup)}
+                ${section('State Qualifying Teams','#166534','white',data.stateTeams,'accomp-state-chip',OHSAA_IMG,'State Runner-up / Individual Qualifiers (see below)',null,'State',gender)}
+                ${section('Regional Qualifying Teams','#3730a3','#e0e7ff',data.regQual,'accomp-reg-chip',REGIONAL_IMG,'Regional Runner-up',data.regRunnerup,'Regional',gender)}
+                ${section('District Champion','#14532d','#bbf7d0',data.distChamp,'accomp-dist-chip',DISTRICT_IMG,'District Runner-up',data.distRunnerup,'District',gender)}
+                ${section('Federal League Champion','#991b1b','#fecaca',data.fedChamp,'accomp-fed-chip',FED_IMG,'Federal League Runner-up',data.fedRunnerup,'FL',gender)}
+                ${section('Stark County Champion','#1e3a5f','#bfdbfe',data.starkChamp,'accomp-stark-chip',STARK_IMG,'Stark County Runner-up',data.starkRunnerup,'County',gender)}
 
                 <div class="accomp-section">
                     <div class="accomp-section-title" style="background:#111827;color:white;">
@@ -4309,15 +4386,15 @@
 
             let inner;
             if (genderFilter === 'M') {
-                inner = buildProgramHtml(boysData);
+                inner = buildProgramHtml(boysData, 'M');
             } else if (genderFilter === 'F') {
-                inner = buildProgramHtml(girlsData);
+                inner = buildProgramHtml(girlsData, 'F');
             } else {
                 inner = `
                     <div class="accomp-gender-divider">🏆 Boys</div>
-                    ${buildProgramHtml(boysData)}
+                    ${buildProgramHtml(boysData, 'M')}
                     <div class="accomp-gender-divider">🏆 Girls</div>
-                    ${buildProgramHtml(girlsData)}`;
+                    ${buildProgramHtml(girlsData, 'F')}`;
             }
 
             const html = `<div style="padding:12px 14px;">${inner}</div>`;
