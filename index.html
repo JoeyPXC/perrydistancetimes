@@ -486,6 +486,7 @@
         .card-honor-badges { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
         .card-honor-badge { font-size:9px; font-weight:800; padding:2px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; }
         .badge-all-federal { background:#1d4ed8; color:#fff; }
+        .badge-fed-champ   { background:#991b1b; color:#fff; }
         .badge-all-county  { background:#b45309; color:#fff; }
         .badge-regional    { background:#166534; color:#fff; }
         .badge-state       { background:#166534; color:#fff; }
@@ -2547,11 +2548,20 @@
                                 stateQual: stateQualIndCol!== -1 ? splitNames(row[stateQualIndCol]) : [],
                             };
 
+                            // Names ending with * in the allFed column are Federal League individual champs
+                            honorMap.fedChamp = honorMap.allFed
+                                .filter(n => n.endsWith('*'))
+                                .map(n => n.slice(0, -1).trim());
+
+                            // Strip * from allFed names for normal lookup
+                            honorMap.allFed = honorMap.allFed.map(n => n.replace(/\*$/, '').trim());
+
                             Object.entries(honorMap).forEach(([honor, names]) => {
                                 names.forEach(name => {
                                     const key = name.toLowerCase().trim();
                                     if (!key) return;
-                                    if (!map[key]) map[key] = { allFed:[], allCounty:[], regQual:[], stateQual:[] };
+                                    if (!map[key]) map[key] = { allFed:[], allCounty:[], regQual:[], stateQual:[], fedChamp:[] };
+                                    if (!map[key][honor]) map[key][honor] = [];
                                     if (!map[key][honor].includes(parseInt(year))) {
                                         map[key][honor].push(parseInt(year));
                                     }
@@ -2582,6 +2592,7 @@
             let badges = '';
             if (h.stateQual  && h.stateQual.length)  badges += `<span class="card-honor-badge badge-state">XC State</span>`;
             if (h.regQual    && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
+            if (h.fedChamp   && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">FL Champ</span>`;
             if (h.allFed     && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
             if (h.allCounty  && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
             if (!badges) return '';
@@ -2595,10 +2606,11 @@
             const h = honorsMap[key];
             if (!h) return '';
             const rows = [
-                { label: 'XC State Qualifier',     years: h.stateQual, cls: 'badge-state' },
-                { label: 'XC Regional Qualifier',  years: h.regQual,   cls: 'badge-regional' },
-                { label: '1st Team All-Federal',   years: h.allFed,    cls: 'badge-all-federal' },
-                { label: '1st Team All-County',    years: h.allCounty, cls: 'badge-all-county' },
+                { label: 'XC State Qualifier',        years: h.stateQual, cls: 'badge-state' },
+                { label: 'XC Regional Qualifier',     years: h.regQual,   cls: 'badge-regional' },
+                { label: 'Federal League Champ',      years: h.fedChamp,  cls: 'badge-fed-champ' },
+                { label: '1st Team All-Federal',      years: h.allFed,    cls: 'badge-all-federal' },
+                { label: '1st Team All-County',       years: h.allCounty, cls: 'badge-all-county' },
             ].filter(r => r.years && r.years.length);
             if (!rows.length) return '';
             const rowsHtml = rows.map(r => {
