@@ -2465,11 +2465,13 @@
                         const rows = parseCSVText(text);
                         if (rows.length < 2) return;
                         const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g, ' ').trim());
+                        console.log('XC Honors headers:', headers);
                         const yearCol         = headers.indexOf('year') !== -1 ? headers.indexOf('year') : 0;
                         const allFedCol       = headers.findIndex(h => h.includes('all-federal') || (h.includes('1st') && h.includes('federal')));
                         const allCountyCol    = headers.findIndex(h => h.includes('county'));
                         const regQualIndCol   = headers.findIndex(h => h.includes('individual') && h.includes('regional'));
                         const stateQualIndCol = headers.findIndex(h => h.includes('individual') && h.includes('state'));
+                        console.log('XC Honors col indices — allFed:', allFedCol, 'allCounty:', allCountyCol, 'regQual:', regQualIndCol, 'stateQual:', stateQualIndCol);
                         for (let r = 1; r < rows.length; r++) {
                             const row = rows[r];
                             const year = (row[yearCol] || '').trim();
@@ -2497,6 +2499,7 @@
                     processSheet(boysText);
                     processSheet(girlsText);
                     xcHonorsCache = map;
+                    console.log('XC Honors map keys:', Object.keys(map).slice(0,10));
                     return map;
                 } catch(e) {
                     console.error('XC honors fetch error:', e);
@@ -2511,6 +2514,7 @@
             if (!honorsMap) return '';
             const key = (athleteName || '').toLowerCase().trim();
             const h = honorsMap[key];
+            console.log('buildCardHonorBadgesHtml:', athleteName, '-> key:', key, '-> found:', !!h, h);
             if (!h) return '';
             let badges = '';
             if (h.stateQual && h.stateQual.length)  badges += `<span class="card-honor-badge badge-state">XC State</span>`;
