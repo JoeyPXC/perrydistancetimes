@@ -493,6 +493,15 @@
         .badge-county-champ { background:#92400e; color:#fff; }
         .badge-all-county   { background:#b45309; color:#fff; }
         .badge-all-ohio     { background:#4a1d96; color:#fff; }
+        .badge-t-state-champ  { background:#14532d; color:#fbbf24; }
+        .badge-t-runner-up    { background:#166534; color:#d1fae5; }
+        .badge-t-all-ohio     { background:#3b0764; color:#e9d5ff; }
+        .badge-t-state-qual   { background:#1c4a2e; color:#fff; }
+        .badge-t-reg-champ    { background:#500724; color:#fff; }
+        .badge-t-dist-champ   { background:#134e4a; color:#fff; }
+        .badge-t-reg-qual     { background:#6b1a2a; color:#fecaca; }
+        .badge-t-fl-champ     { background:#7f1d1d; color:#fff; }
+        .badge-t-county-champ { background:#78350f; color:#fff; }
 
         /* Videos section inside athlete profile cards */
         .card-videos-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
@@ -875,6 +884,7 @@
 
     <script>
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+        const TRACK_HONORS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9f9jEfQYpVOE1_fWR0_BGdgqzMei-60jxg88pIv_ea4o2ihpqfBKqmbP69AlvkmaHLqZcDeztuK3V/pub?output=csv';
         const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
         const GIRLS_YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAPTTz6Ju-5bWdVr0o7k023IeIsB3Iulfeoil4omH82uQ79UDixFQfFO7pAPndrhPcALXKPghxK9n/pub?output=csv';
         const HISTORY_DOC_URL = 'https://docs.google.com/document/d/e/2PACX-1vQt21HnSOUr_eqbjH8s65XM1H0spgK9Ynge2S0rMx6dCZuYxKOYi3Hnog2B6kQRe0NMI-aW6cosE0rm/pub';
@@ -2523,57 +2533,165 @@
             return xcHonorsFetchPromise;
         }
 
-        function buildCardHonorBadgesHtml(athleteName, honorsMap) {
-            if (!honorsMap) return '';
+        function buildCardHonorBadgesHtml(athleteName, honorsMap, trackMap) {
+            if (!honorsMap && !trackMap) return '';
             const key = (athleteName || '').toLowerCase().trim();
-            const h = honorsMap[key];
-            if (!h) return '';
+            const h = honorsMap ? (honorsMap[key] || {}) : {};
+            const t = trackMap  ? (trackMap[key]  || {}) : {};
             let badges = '';
-            if (h.allOhio     && h.allOhio.length)     badges += `<span class="card-honor-badge badge-all-ohio">All-Ohio</span>`;
+            // XC honors
+            if (h.allOhio     && h.allOhio.length)     badges += `<span class="card-honor-badge badge-all-ohio">XC All-Ohio</span>`;
             if (h.stateQual   && h.stateQual.length)   badges += `<span class="card-honor-badge badge-state">XC State</span>`;
-            if (h.distChamp   && h.distChamp.length)   badges += `<span class="card-honor-badge badge-dist-champ">Dist Champ</span>`;
-            if (h.fedChamp    && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">FL Champ</span>`;
-            if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">County Champ</span>`;
-            if (h.regQual     && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">Regional</span>`;
+            if (h.distChamp   && h.distChamp.length)   badges += `<span class="card-honor-badge badge-dist-champ">XC Dist Champ</span>`;
+            if (h.fedChamp    && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">XC FL Champ</span>`;
+            if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">XC County Champ</span>`;
+            if (h.regQual     && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">XC Regional</span>`;
             if (h.allFed      && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
             if (h.allCounty   && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
+            // Track honors
+            if (t.tStateChamp  && t.tStateChamp.length)  badges += `<span class="card-honor-badge badge-t-state-champ">Track State Champ</span>`;
+            if (t.tStateRunnerUp && t.tStateRunnerUp.length) badges += `<span class="card-honor-badge badge-t-runner-up">Track Runner-Up</span>`;
+            if (t.tAllOhio     && t.tAllOhio.length)    badges += `<span class="card-honor-badge badge-t-all-ohio">Track All-Ohio</span>`;
+            if (t.tStateQual   && t.tStateQual.length)  badges += `<span class="card-honor-badge badge-t-state-qual">Track State</span>`;
+            if (t.tRegChamp    && t.tRegChamp.length)   badges += `<span class="card-honor-badge badge-t-reg-champ">Track Reg Champ</span>`;
+            if (t.tDistChamp   && t.tDistChamp.length)  badges += `<span class="card-honor-badge badge-t-dist-champ">Track Dist Champ</span>`;
+            if (t.tFLChamp     && t.tFLChamp.length)    badges += `<span class="card-honor-badge badge-t-fl-champ">Track FL Champ</span>`;
+            if (t.tCountyChamp && t.tCountyChamp.length)badges += `<span class="card-honor-badge badge-t-county-champ">Track County Champ</span>`;
+            if (t.tRegQual     && t.tRegQual.length)    badges += `<span class="card-honor-badge badge-t-reg-qual">Track Regional</span>`;
             if (!badges) return '';
             return `<div class="card-honor-badges">${badges}</div>`;
         }
 
-        function buildCardHonorsDetailHtml(athleteName, honorsMap) {
-            if (!honorsMap) return '';
+        function buildCardHonorsDetailHtml(athleteName, honorsMap, trackMap) {
+            if (!honorsMap && !trackMap) return '';
             const key = (athleteName || '').toLowerCase().trim();
-            const h = honorsMap[key];
-            if (!h) return '';
-            const rows = [
-                { label: 'All-Ohio',              years: h.allOhio,     cls: 'badge-all-ohio' },
+            const h = honorsMap ? (honorsMap[key] || {}) : {};
+            const t = trackMap  ? (trackMap[key]  || {}) : {};
+
+            const xcRows = [
+                { label: 'XC All-Ohio',           years: h.allOhio,     cls: 'badge-all-ohio' },
                 { label: 'XC State Qualifier',    years: h.stateQual,   cls: 'badge-state' },
-                { label: 'District Champion',     years: h.distChamp,   cls: 'badge-dist-champ' },
-                { label: 'Federal League Champ',  years: h.fedChamp,    cls: 'badge-fed-champ' },
-                { label: 'County Champion',       years: h.countyChamp, cls: 'badge-county-champ' },
+                { label: 'XC District Champion',  years: h.distChamp,   cls: 'badge-dist-champ' },
+                { label: 'XC FL Champion',        years: h.fedChamp,    cls: 'badge-fed-champ' },
+                { label: 'XC County Champion',    years: h.countyChamp, cls: 'badge-county-champ' },
                 { label: 'XC Regional Qualifier', years: h.regQual,     cls: 'badge-regional' },
                 { label: '1st Team All-Federal',  years: h.allFed,      cls: 'badge-all-federal' },
                 { label: '1st Team All-County',   years: h.allCounty,   cls: 'badge-all-county' },
             ].filter(r => r.years && r.years.length);
-            if (!rows.length) return '';
-            const rowsHtml = rows.map(r => {
+
+            const trackRows = [
+                { label: 'Track State Champion', entries: t.tStateChamp,   cls: 'badge-t-state-champ' },
+                { label: 'Track State Runner-Up',entries: t.tStateRunnerUp,cls: 'badge-t-runner-up' },
+                { label: 'Track All-Ohio',        entries: t.tAllOhio,     cls: 'badge-t-all-ohio' },
+                { label: 'Track State Qualifier', entries: t.tStateQual,   cls: 'badge-t-state-qual' },
+                { label: 'Track Regional Champ',  entries: t.tRegChamp,    cls: 'badge-t-reg-champ' },
+                { label: 'Track District Champ',  entries: t.tDistChamp,   cls: 'badge-t-dist-champ' },
+                { label: 'Track FL Champion',     entries: t.tFLChamp,     cls: 'badge-t-fl-champ' },
+                { label: 'Track County Champ',    entries: t.tCountyChamp, cls: 'badge-t-county-champ' },
+                { label: 'Track Regional Qual',   entries: t.tRegQual,     cls: 'badge-t-reg-qual' },
+            ].filter(r => r.entries && r.entries.length);
+
+            if (!xcRows.length && !trackRows.length) return '';
+
+            const xcHtml = xcRows.map(r => {
                 const yearsStr = r.years.slice().sort((a,b) => a-b).join(', ');
                 return `<div class="card-video-row">
                     <span class="card-video-label"><span class="card-honor-badge ${r.cls}" style="margin-right:6px;">${r.label}</span></span>
                     <span style="font-size:11px;color:var(--text-muted);font-weight:700;">${yearsStr}</span>
                 </div>`;
             }).join('');
+
+            const trackHtml = trackRows.map(r => {
+                const entriesStr = r.entries.slice().sort().join(', ');
+                return `<div class="card-video-row">
+                    <span class="card-video-label"><span class="card-honor-badge ${r.cls}" style="margin-right:6px;">${r.label}</span></span>
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:700;">${entriesStr}</span>
+                </div>`;
+            }).join('');
+
             return `<div class="card-videos-section">
                 <div class="card-videos-toggle" onclick="this.closest('.card-videos-section').classList.toggle('expanded')">
-                    <span class="card-videos-title">🏅 XC Honors</span>
+                    <span class="card-videos-title">🏅 Honors</span>
                     <svg class="card-videos-chevron" width="16" height="16" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                 </div>
-                <div class="card-videos-body">${rowsHtml}</div>
+                <div class="card-videos-body">${xcHtml}${trackHtml}</div>
             </div>`;
         }
 
         getXCHonorsMap();
+
+        // ── Track Honors Map ─────────────────────────────────────────────
+        // Fetches the track honors sheet and builds a per-athlete map.
+        // Honors are inferred upward: State Champion → All-Ohio + State Qualifier,
+        // State Runner-Up → All-Ohio + State Qualifier, Regional Champion → Regional Qualifier,
+        // District Champion → Regional Qualifier, All-Ohio → State Qualifier.
+        let trackHonorsCache = null;
+        let trackHonorsFetchPromise = null;
+
+        async function getTrackHonorsMap() {
+            if (trackHonorsCache) return trackHonorsCache;
+            if (trackHonorsFetchPromise) return trackHonorsFetchPromise;
+            trackHonorsFetchPromise = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(TRACK_HONORS_CSV_URL));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    if (rows.length < 2) return {};
+                    const headers = rows[0].map(h => h.toLowerCase().trim());
+                    const athleteIdx = headers.findIndex(h => h.includes('athlete'));
+                    const honorIdx   = headers.findIndex(h => h.includes('honor'));
+                    const yearIdx    = headers.findIndex(h => h.includes('year'));
+                    const eventIdx   = headers.findIndex(h => h.includes('event'));
+                    if (athleteIdx === -1 || honorIdx === -1) return {};
+
+                    const map = {};
+
+                    const addHonor = (key, honor, year, event) => {
+                        if (!map[key]) map[key] = {
+                            tStateChamp:[], tStateRunnerUp:[], tAllOhio:[],
+                            tStateQual:[], tRegChamp:[], tDistChamp:[],
+                            tRegQual:[], tFLChamp:[], tCountyChamp:[]
+                        };
+                        const yr = parseInt(year);
+                        const ev = event || '';
+                        const entry = ev ? `${ev} ${yr}` : `${yr}`;
+                        if (!map[key][honor].includes(entry)) map[key][honor].push(entry);
+                    };
+
+                    for (let r = 1; r < rows.length; r++) {
+                        const row = rows[r];
+                        const name  = (row[athleteIdx] || '').trim();
+                        const honor = (row[honorIdx]   || '').trim();
+                        const year  = yearIdx  !== -1 ? (row[yearIdx]  || '').trim() : '';
+                        const event = eventIdx !== -1 ? (row[eventIdx] || '').trim() : '';
+                        if (!name || !honor || !year) continue;
+                        const key = name.toLowerCase().trim();
+
+                        const h = honor.toLowerCase();
+                        if (h.includes('state champion'))    { addHonor(key, 'tStateChamp',   year, event); addHonor(key, 'tAllOhio', year, event); addHonor(key, 'tStateQual', year, event); }
+                        else if (h.includes('runner-up') || h.includes('runner up')) { addHonor(key, 'tStateRunnerUp', year, event); addHonor(key, 'tAllOhio', year, event); addHonor(key, 'tStateQual', year, event); }
+                        else if (h.includes('all-ohio') || h.includes('all ohio'))   { addHonor(key, 'tAllOhio',  year, event); addHonor(key, 'tStateQual', year, event); }
+                        else if (h.includes('state qual'))   { addHonor(key, 'tStateQual',  year, event); }
+                        else if (h.includes('regional champ')){ addHonor(key, 'tRegChamp',  year, event); addHonor(key, 'tRegQual', year, event); }
+                        else if (h.includes('district champ')){ addHonor(key, 'tDistChamp', year, event); addHonor(key, 'tRegQual', year, event); }
+                        else if (h.includes('regional qual')) { addHonor(key, 'tRegQual',   year, event); }
+                        else if (h.includes('fl champ') || h.includes('federal league champ')) { addHonor(key, 'tFLChamp', year, event); }
+                        else if (h.includes('county champ')) { addHonor(key, 'tCountyChamp', year, event); }
+                    }
+
+                    trackHonorsCache = map;
+                    return map;
+                } catch(e) {
+                    console.error('Track honors fetch error:', e);
+                    trackHonorsFetchPromise = null;
+                    return {};
+                }
+            })();
+            return trackHonorsFetchPromise;
+        }
+
+        getTrackHonorsMap();
 
         async function getAthleteVideosMap() {
             if (athleteVideosCache) return athleteVideosCache;
@@ -2651,6 +2769,7 @@
 
             const videosMap = await getAthleteVideosMap();
             const honorsMap = await getXCHonorsMap();
+            const trackMap  = await getTrackHonorsMap();
 
             let renderedCount = 0;
             for(let i=0; i<items.length; i++) {
@@ -2671,8 +2790,8 @@
                 
                 let eventsHtml = buildEventsGridHtml(athlete);
                 let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
-                let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap);
-                let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap);
+                let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap, trackMap);
+                let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap, trackMap);
 
                 let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -4236,6 +4355,7 @@
 
             const videosMap = await getAthleteVideosMap();
             const honorsMap = await getXCHonorsMap();
+            const trackMap  = await getTrackHonorsMap();
 
             const years = entries.map(e => e.hsGradYear);
             const minYear = Math.min(...years);
@@ -4288,8 +4408,8 @@
                 if (hasData) {
                     const safeId = rosterAthlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
-                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap);
-                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap);
+                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap, trackMap);
+                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap, trackMap);
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" data-runner-name="${rosterAthlete.name.replace(/"/g, '&quot;')}">
@@ -4315,8 +4435,8 @@
                         </div>`;
                 } else {
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
-                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap);
-                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap);
+                    const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap, trackMap);
+                    const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap, trackMap);
                     const hasExpandable = videosHtml || honorDetailHtml;
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
