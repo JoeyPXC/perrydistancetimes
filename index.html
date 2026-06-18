@@ -481,6 +481,16 @@
         .records-name-line { display:block; line-height:1.4; }
         .records-video-link { text-decoration:none; }
         .records-video-link:hover { opacity:0.7; }
+
+        /* Videos section inside athlete profile cards */
+        .card-videos-section { margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
+        .card-videos-title { font-size:11px; text-transform:uppercase; color:var(--perry-gray); margin-bottom:6px; letter-spacing:0.3px; font-weight:800; }
+        .card-video-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:12px; }
+        .card-video-row:last-child { border-bottom:none; }
+        .card-video-label { flex:1; font-weight:600; color:var(--text); }
+        .card-video-btn { font-size:11px; font-weight:800; background:var(--primary); color:var(--accent); border-radius:6px; padding:3px 9px; text-decoration:none; white-space:nowrap; flex-shrink:0; }
+        .card-video-btn:hover { opacity:0.85; }
+        body.dark-mode .card-video-btn { border:1px solid var(--border); }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -2407,7 +2417,79 @@
             return eventsHtml;
         }
 
-        function renderRoster() {
+        // ── Athlete Profile Videos ───────────────────────────────────────
+        // Fetches the athlete videos sheet once and builds a normalized-name
+        // lookup map: { 'josh tormasi': [{label, url}, ...], ... }
+        // Cards call buildAthleteVideosHtml(athleteName) to get their section.
+
+        let athleteVideosCache = null;
+        let athleteVideosFetchPromise = null;
+
+        async function getAthleteVideosMap() {
+            if (athleteVideosCache) return athleteVideosCache;
+            if (athleteVideosFetchPromise) return athleteVideosFetchPromise;
+            athleteVideosFetchPromise = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(ATHLETE_VIDEOS_CSV_URL));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    if (rows.length < 2) return {};
+
+                    const headers = rows[0].map(h => h.toLowerCase().trim());
+                    const athleteIdx = headers.findIndex(h => h.includes('athlete'));
+                    const labelIdx   = headers.findIndex(h => h.includes('label'));
+                    const urlIdx     = headers.findIndex(h => h.includes('url'));
+                    if (athleteIdx === -1 || urlIdx === -1) return {};
+
+                    const map = {};
+                    for (let r = 1; r < rows.length; r++) {
+                        const row = rows[r];
+                        const name  = (row[athleteIdx] || '').trim();
+                        const label = labelIdx !== -1 ? (row[labelIdx] || '').trim() : '';
+                        const url   = (row[urlIdx] || '').trim();
+                        if (!name || !url) continue;
+                        const key = name.toLowerCase();
+                        if (!map[key]) map[key] = [];
+                        map[key].push({ label, url });
+                    }
+                    athleteVideosCache = map;
+                    return map;
+                } catch(e) {
+                    console.error('Athlete videos fetch error:', e);
+                    athleteVideosFetchPromise = null;
+                    return {};
+                }
+            })();
+            return athleteVideosFetchPromise;
+        }
+
+        // Returns the HTML for a "📹 Videos" section for a given athlete name,
+        // or an empty string if they have no entries in the sheet.
+        // videosMap is the already-fetched map from getAthleteVideosMap().
+        function buildAthleteVideosHtml(athleteName, videosMap) {
+            if (!videosMap) return '';
+            const key = (athleteName || '').toLowerCase().trim();
+            const videos = videosMap[key];
+            if (!videos || !videos.length) return '';
+
+            const rowsHtml = videos.map(v => `
+                <div class="card-video-row">
+                    <span class="card-video-label">${v.label || 'Watch'}</span>
+                    <a href="${v.url}" target="_blank" rel="noopener" class="card-video-btn">▶ Watch</a>
+                </div>`).join('');
+
+            return `
+                <div class="card-videos-section">
+                    <h4 class="card-videos-title">📹 Videos</h4>
+                    ${rowsHtml}
+                </div>`;
+        }
+
+        // Pre-fetch videos map so it's ready when cards are opened.
+        getAthleteVideosMap();
+
+        async function renderRoster() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const container = document.getElementById('rosterList');
             container.innerHTML = '';
@@ -2419,6 +2501,8 @@
             }
 
             items.sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
+
+            const videosMap = await getAthleteVideosMap();
 
             let renderedCount = 0;
             for(let i=0; i<items.length; i++) {
@@ -2438,6 +2522,7 @@
                 if (athlete.name === expandedAthleteName) card.className += ' expanded';
                 
                 let eventsHtml = buildEventsGridHtml(athlete);
+                let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
 
                 let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -2471,7 +2556,7 @@
                     </div>
                     <div class="card-expand-body">
                         <div class="events-grid">${eventsHtml}</div>
-                        
+                        ${videosHtml}
                         <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                             <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
                             <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
@@ -3605,6 +3690,10 @@
         const BOYS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=769413748&single=true&output=csv';
         const GIRLS_STATE_QUALIFIERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN9PaVUE5ruvLmir1jNRHlNRd41KvEjuTZe79pTKUGJBJOgVMeas9lRzDmCp-h45lQCaTJoDbqAy2-/pub?gid=122101465&single=true&output=csv';
 
+        // Athlete profile videos — one sheet, all genders.
+        // Columns: Athlete | Label | URL
+        const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+
         // Appends a 5-minute cachebust param, using "?" or "&" depending on
         // whether the URL already has a query string (the /pub doc URLs don't).
         function cacheBustUrl(url) {
@@ -3996,7 +4085,7 @@
         // matching roster record can be found; otherwise it's shown as a
         // simple non-expanding info row. A stats header and a collapsible
         // "colleges represented" breakdown sit above the list.
-        function renderAlumniPage(container) {
+        async function renderAlumniPage(container) {
             if (navCache.alumni[genderFilter]) { container.innerHTML = navCache.alumni[genderFilter]; return; }
 
             let rawEntries;
@@ -4013,6 +4102,8 @@
                 container.innerHTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No collegiate runners found.</p>`;
                 return;
             }
+
+            const videosMap = await getAthleteVideosMap();
 
             const years = entries.map(e => e.hsGradYear);
             const minYear = Math.min(...years);
@@ -4064,6 +4155,7 @@
 
                 if (hasData) {
                     const safeId = rosterAthlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" data-runner-name="${rosterAthlete.name.replace(/"/g, '&quot;')}">
@@ -4076,6 +4168,7 @@
                             </div>
                             <div class="card-expand-body">
                                 <div class="events-grid">${buildEventsGridHtml(rosterAthlete)}</div>
+                                ${videosHtml}
                                 <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                                     <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
                                     <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
@@ -4085,15 +4178,18 @@
                             </div>
                         </div>`;
                 } else {
+                    const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
-                            <div class="card-toggle-header" style="cursor:default;">
+                            <div class="card-toggle-header" ${videosHtml ? `data-runner-name="${e.name.replace(/"/g, '&quot;')}"` : 'style="cursor:default;"'}>
                                 <div class="athlete-meta-box">
                                     <span class="athlete-name">${e.name}</span>
                                     <span class="athlete-grad-text">Class of ${e.hsGradYear}</span>
                                 </div>
                                 ${collegeRowHtml}
+                                ${videosHtml ? `<svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>` : ''}
                             </div>
+                            ${videosHtml ? `<div class="card-expand-body">${videosHtml}</div>` : ''}
                         </div>`;
                 }
             });
