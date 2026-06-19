@@ -3869,12 +3869,13 @@
             if (anyHonors) {
                 html += `<div class="compare-event-section">`;
                 html += `<div class="compare-event-header">🏅 Honors</div>`;
-                html += `<div style="display:grid;grid-template-columns:${compareSelected.map(()=>'1fr').join(' ')};gap:8px;padding:10px;">`;
-                compareSelected.forEach(name => {
+                html += `<div style="display:grid;grid-template-columns:${compareSelected.map(()=>'1fr').join(' ')};gap:0;padding:10px 0;">`;
+                compareSelected.forEach((name, i) => {
+                    const colStyle = `padding:0 10px;${i < compareSelected.length - 1 ? 'border-right:1px solid var(--border);' : ''}`;
                     const badgesHtml = buildCardHonorBadgesHtml(name, honorsMap, trackMap);
                     const detailHtml = buildCardHonorsDetailHtml(name, honorsMap, trackMap);
                     if (!badgesHtml && !detailHtml) {
-                        html += `<div style="font-size:11px;color:var(--text-muted);">—</div>`;
+                        html += `<div style="font-size:11px;color:var(--text-muted);${colStyle}">—</div>`;
                     } else {
                         // Extract just the badge spans without the wrapper div for inline display
                         const key = name.toLowerCase();
@@ -3904,7 +3905,7 @@
                             const count = h.years.length;
                             return `<span class="card-honor-badge ${h.cls}" style="display:inline-flex;align-items:center;gap:2px;">${h.label} <span style="font-size:8px;opacity:0.85;">${count}x</span></span>`;
                         }).join('');
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;">${badges || '—'}</div>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;${colStyle}">${badges || '—'}</div>`;
                     }
                 });
                 html += `</div></div>`;
