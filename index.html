@@ -402,11 +402,57 @@
         /* Career PR star */
         .pr-star { font-size: 11px; margin-left: 2px; }
 
-        /* Dark mode toggle */
-        .dark-mode-btn { position: absolute; top: 12px; left: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; font-size: 18px; user-select: none; }
-        .dark-mode-btn:hover { background: rgba(255,255,255,0.2); }
+        /* Dark mode toggle — now lives inside hamburger menu */
+        .dark-mode-btn { display: none; }
 
-        /* Season stat summary block */
+        /* ── Hamburger button ─────────────────────────────────────────── */
+        .hamburger-btn { position: absolute; top: 12px; left: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; }
+        .hamburger-btn:hover { background: rgba(255,255,255,0.2); }
+        .hamburger-icon-main { font-size: 20px; line-height: 1; }
+
+        /* ── Slide-in hamburger menu ──────────────────────────────────── */
+        .ham-menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 600; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+        .ham-menu-overlay.open { opacity: 1; pointer-events: auto; }
+        .ham-menu-panel { position: fixed; top: 0; left: 0; width: 280px; max-width: 85vw; height: 100vh; background: var(--bg); z-index: 601; transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
+        .ham-menu-overlay.open .ham-menu-panel { transform: translateX(0); }
+        .ham-menu-header { background: var(--primary); padding: 18px 16px 14px; border-bottom: 4px solid var(--accent); }
+        .ham-menu-title { font-size: 15px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ham-menu-subtitle { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; font-weight: 600; }
+        .ham-menu-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .ham-menu-section-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 12px 16px 4px; }
+        .ham-menu-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer; transition: background 0.15s; text-decoration: none; border: none; background: none; width: 100%; text-align: left; }
+        .ham-menu-item:hover { background: var(--border); }
+        .ham-menu-item-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+        .ham-menu-item-ext { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+        .ham-menu-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+        .ham-menu-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+        .ham-menu-toggle-label { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 12px; }
+        .ham-menu-toggle-switch { width: 44px; height: 24px; background: var(--border); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .ham-menu-toggle-switch.on { background: var(--perry-gray); }
+        .ham-menu-toggle-switch::after { content:''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform 0.2s; }
+        .ham-menu-toggle-switch.on::after { transform: translateX(20px); }
+        body.dark-mode .ham-menu-toggle-switch { background: #4a5568; }
+        body.dark-mode .ham-menu-toggle-switch.on { background: #e2e8f0; }
+        body.dark-mode .ham-menu-toggle-switch.on::after { background: #1a202c; }
+
+        /* Schedule cards */
+        .sched-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .sched-card.sched-past { opacity: 0.55; }
+        .sched-card.sched-next { border: 2px solid var(--accent); box-shadow: 0 0 0 3px rgba(255,221,0,0.15); }
+        .sched-date-bar { background: var(--primary); color: white; padding: 7px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+        .sched-date-bar .sched-next-badge { background: var(--accent); color: var(--primary); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .sched-meet-name { font-size: 14px; font-weight: 800; color: var(--text); padding: 10px 14px 2px; }
+        .sched-location { font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 0 14px 8px; display: flex; align-items: center; gap: 4px; }
+        .sched-races { border-top: 1px solid var(--border); padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .sched-race-chip { display: flex; align-items: center; gap: 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; }
+        .sched-race-div { font-weight: 800; color: var(--primary); }
+        .sched-race-time { color: var(--text-muted); font-weight: 600; }
+        .sched-race-unconf { font-style: italic; color: #b45309; font-size: 10px; }
+        .sched-note { font-size: 10px; color: var(--text-muted); padding: 0 14px 8px; font-style: italic; }
+        body.dark-mode .sched-card { background: var(--card-bg); }
+        body.dark-mode .sched-race-chip { background: #16191f; }
+
+        /* Full-screen nav overlay */
         .season-stat-block { display: flex; gap: 8px; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
         .stat-item { flex: 1; background: #f8fafc; border-radius: 8px; padding: 8px 6px; text-align: center; }
         .stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 3px; }
@@ -640,10 +686,9 @@
     </div>
 
     <header>
-        <div class="dark-mode-btn" title="Toggle Dark Mode" onclick="toggleDarkMode()" id="darkModeBtn">🌙</div>
-        <div class="hamburger-btn" id="historyMenuBtn" title="Team History & Records" onclick="openNavMenu()">
-            <span class="hamburger-icon-main">🏆</span>
-            <span class="hamburger-icon-badge">📅</span>
+        <div class="dark-mode-btn" id="darkModeBtn"></div>
+        <div class="hamburger-btn" id="hamburgerBtn" title="Menu" onclick="openHamMenu()">
+            <span class="hamburger-icon-main">☰</span>
         </div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
@@ -660,6 +705,68 @@
             <button class="gender-toggle-btn" data-gender="F" onclick="setGenderFilter('F')">Girls</button>
             <button class="gender-toggle-btn" data-gender="ALL" onclick="setGenderFilter('ALL')">All</button>
         </div>
+    </div>
+
+    <!-- ── Hamburger Slide-in Menu ──────────────────────────────────── -->
+    <div class="ham-menu-overlay" id="hamMenuOverlay" onclick="if(event.target===this)closeHamMenu()">
+        <div class="ham-menu-panel">
+            <div class="ham-menu-header">
+                <div class="ham-menu-title">Perry Distance Times</div>
+                <div class="ham-menu-subtitle">XC & Track Career Leaderboards</div>
+            </div>
+            <div class="ham-menu-body">
+                <div class="ham-menu-section-label">Appearance</div>
+                <div class="ham-menu-toggle-row">
+                    <span class="ham-menu-toggle-label"><span class="ham-menu-item-icon">🌙</span> Dark Mode</span>
+                    <div class="ham-menu-toggle-switch" id="darkModeSwitch" onclick="toggleDarkMode()"></div>
+                </div>
+                <hr class="ham-menu-divider">
+                <div class="ham-menu-section-label">Program History</div>
+                <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('accomplishments')">
+                    <span class="ham-menu-item-icon">🏆</span> Accomplishments
+                </button>
+                <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('alumni')">
+                    <span class="ham-menu-item-icon">🎓</span> Collegiate Runners
+                </button>
+                <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('yearbyyear')">
+                    <span class="ham-menu-item-icon">📅</span> Year by Year
+                </button>
+                <hr class="ham-menu-divider">
+                <div class="ham-menu-section-label">External Links</div>
+                <a class="ham-menu-item" href="https://www.athletic.net/team/7900/cross-country/2026" target="_blank" rel="noopener">
+                    <span class="ham-menu-item-icon">🔗</span> Athletic.net
+                    <span class="ham-menu-item-ext">↗</span>
+                </a>
+                <a class="ham-menu-item" href="https://oh.milesplit.com/teams/9609-mass-perry" target="_blank" rel="noopener">
+                    <span class="ham-menu-item-icon">🔗</span> MileSplit
+                    <span class="ham-menu-item-ext">↗</span>
+                </a>
+                <hr class="ham-menu-divider">
+                <div class="ham-menu-section-label">Season</div>
+                <button class="ham-menu-item" onclick="closeHamMenu();openScheduleOverlay()">
+                    <span class="ham-menu-item-icon">📋</span> 2026 XC Schedule
+                </button>
+                <hr class="ham-menu-divider">
+                <div class="ham-menu-section-label">Data</div>
+                <button class="ham-menu-item" onclick="closeHamMenu();fetchLiveGoogleSheets(true)">
+                    <span class="ham-menu-item-icon">🔄</span> Force Sync
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Schedule Overlay ─────────────────────────────────────────── -->
+    <div class="nav-overlay" id="scheduleOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" onclick="closeScheduleOverlay()">←</div>
+            <span class="nav-header-title">📋 2026 XC Schedule</span>
+            <button class="nav-close-btn" onclick="closeScheduleOverlay()">✕ Close</button>
+        </div>
+        <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
+            <button class="nav-tab active" id="schedTabBoys" onclick="switchScheduleTab('M')">Boys</button>
+            <button class="nav-tab" id="schedTabGirls" onclick="switchScheduleTab('F')">Girls</button>
+        </div>
+        <div class="nav-body" id="scheduleBody"></div>
     </div>
 
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
@@ -1929,13 +2036,14 @@
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
-            const btn = document.getElementById('darkModeBtn');
-            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-            try { localStorage.setItem('perry_dark_mode', document.body.classList.contains('dark-mode') ? '1' : '0'); } catch(e) {}
+            const isDark = document.body.classList.contains('dark-mode');
+            const sw = document.getElementById('darkModeSwitch');
+            if (sw) sw.classList.toggle('on', isDark);
+            try { localStorage.setItem('perry_dark_mode', isDark ? '1' : '0'); } catch(e) {}
         }
 
         // Restore dark mode preference
-        try { if (localStorage.getItem('perry_dark_mode') === '1') { document.body.classList.add('dark-mode'); document.getElementById('darkModeBtn').textContent = '☀️'; } } catch(e) {}
+        try { if (localStorage.getItem('perry_dark_mode') === '1') { document.body.classList.add('dark-mode'); const sw = document.getElementById('darkModeSwitch'); if(sw) sw.classList.add('on'); } } catch(e) {}
 
         function recalculateAllRankings() {
             rankingsCache = {};
@@ -4147,8 +4255,122 @@
             if (card) toggleAthleteCardElement(card, header.dataset.runnerName);
         });
 
-        function openNavMenu() {
+        // ── 2026 XC Schedule ─────────────────────────────────────────────
+        const XC_SCHEDULE = {
+            M: [
+                { date: 'Sat. Aug. 29', dateVal: '2026-08-29', meet: 'Hoka Night XC Showcase',         location: 'Spire Academy — Geneva, OH',          races: [{div:'Open',time:'6:30pm'},{div:'JV',time:'7:45pm'},{div:'Var',time:'9:50pm'}] },
+                { date: 'Sat. Sept. 5', dateVal: '2026-09-05', meet: 'Ashland CC Invitational',          location: 'Freer Field — Ashland',               races: [{div:'All',time:'9:30am'}] },
+                { date: 'Sat. Sept. 12',dateVal: '2026-09-12', meet: 'Walsh Jesuit Pat Ritchie Invite',  location: 'Walsh Jesuit H.S.',                   races: [{div:'Open',time:'11:00am'},{div:'Var',time:'1:05pm'}] },
+                { date: 'Sat. Sept. 19',dateVal: '2026-09-19', meet: 'Boardman Spartan Invitational',    location: 'Boardman H.S.',                       races: [{div:'Var',time:'3:00pm'},{div:'Open',time:'3:30pm'}] },
+                { date: 'Sat. Sept. 26',dateVal: '2026-09-26', meet: 'Strongsville Invitational',        location: 'Strongsville H.S.',                   races: [{div:'Var',time:'9:30am'},{div:'Open',time:'10:40am'}] },
+                { date: 'Sat. Oct. 3',  dateVal: '2026-10-03', meet: 'Stark County Championships',       location: 'GlenOak H.S.',                        races: [{div:'Var',time:'9:30am'},{div:'JV',time:'10:50am'}], badge:'⭐ County' },
+                { date: 'Sat. Oct. 10', dateVal: '2026-10-10', meet: 'Legends Meet',                     location: 'Trumbull County Fairgrounds',          races: [{div:'Var',time:'1:45pm'},{div:'Open',time:'2:15pm'}] },
+                { date: 'Sat. Oct. 17', dateVal: '2026-10-17', meet: 'Federal League Meet',              location: 'Jackson M.S.',                        races: [{div:'Var',time:'10:30am'},{div:'JV',time:'12:00pm'}], badge:'⭐ FL' },
+                { date: 'Sat. Oct. 24', dateVal: '2026-10-24', meet: 'District Meet',                    location: 'GlenOak H.S.',                        races: [{div:'Var',time:'2:15pm'}], badge:'🏆 District' },
+                { date: 'Mon. Oct. 26', dateVal: '2026-10-26', meet: 'Walsh Warrior Invite (JV)',         location: 'Walsh Jesuit H.S.',                   races: [{div:'JV',time:'5:00pm'}] },
+                { date: 'Sat. Oct. 31', dateVal: '2026-10-31', meet: 'Regional Meet',                    location: 'Boardman H.S.',                       races: [{div:'Var',time:'12:30pm'}], badge:'🏆 Regional' },
+                { date: 'Sat. Nov. 7',  dateVal: '2026-11-07', meet: 'State Meet',                       location: 'Fortress Obetz — Obetz, OH',           races: [{div:'Var',time:'12:30pm'}], badge:'🏆 State' },
+            ],
+            F: [
+                { date: 'Sat. Aug. 29', dateVal: '2026-08-29', meet: 'Hoka Night XC Showcase',         location: 'Spire Academy — Geneva, OH',          races: [{div:'JV',time:'8:15pm'},{div:'Var',time:'10:15pm'}] },
+                { date: 'Sat. Sept. 5', dateVal: '2026-09-05', meet: 'Ashland CC Invitational',          location: 'Freer Field — Ashland',               races: [{div:'Var',time:'8:45am'}] },
+                { date: 'Sat. Sept. 12',dateVal: '2026-09-12', meet: 'Walsh Jesuit Pat Ritchie Invite',  location: 'Walsh Jesuit H.S.',                   races: [{div:'Var',time:'8:30am'},{div:'Open',time:'10:25am'}] },
+                { date: 'Sat. Sept. 19',dateVal: '2026-09-19', meet: 'Boardman Spartan Invitational',    location: 'Boardman H.S.',                       races: [{div:'Var',time:'2:30pm'},{div:'Combined Open',time:'3:30pm'}] },
+                { date: 'Sat. Sept. 26',dateVal: '2026-09-26', meet: 'Strongsville Invitational',        location: 'Strongsville H.S.',                   races: [{div:'Var',time:'9:00am'},{div:'Open',time:'10:00am'}] },
+                { date: 'Sat. Oct. 3',  dateVal: '2026-10-03', meet: 'Stark County Championships',       location: 'GlenOak H.S.',                        races: [{div:'Var',time:'10:10am'},{div:'JV',time:'11:30am'}], badge:'⭐ County' },
+                { date: 'Sat. Oct. 10', dateVal: '2026-10-10', meet: 'Legends Meet',                     location: 'Trumbull County Fairgrounds',          races: [{div:'Var',time:'1:00pm'},{div:'Open',time:'2:00pm'}] },
+                { date: 'Sat. Oct. 17', dateVal: '2026-10-17', meet: 'Federal League Meet',              location: 'Jackson M.S.',                        races: [{div:'Var',time:'11:15am'},{div:'JV',time:'12:45pm'}], badge:'⭐ FL' },
+                { date: 'Sat. Oct. 24', dateVal: '2026-10-24', meet: 'OHSAA DII District Meet',          location: 'GlenOak H.S.',                        races: [{div:'Var',time:'1:30pm'}], badge:'🏆 District' },
+                { date: 'Mon. Oct. 26', dateVal: '2026-10-26', meet: 'Walsh Warrior Invite (JV)',         location: 'Walsh Jesuit H.S.',                   races: [{div:'JV',time:'4:30pm'}] },
+                { date: 'Sat. Oct. 31', dateVal: '2026-10-31', meet: 'OHSAA DII Regional Meet',          location: 'Boardman H.S.',                       races: [{div:'Var',time:'1:40pm'}], badge:'🏆 Regional' },
+                { date: 'Sat. Nov. 7',  dateVal: '2026-11-07', meet: 'OHSAA DII State Meet',             location: 'Fortress Obetz — Obetz, OH',           races: [{div:'Var',time:'1:40pm'}], badge:'🏆 State' },
+            ]
+        };
+
+        const XC_COACHES = {
+            M: 'Head Coach: Joey Beall · Asst: Alex Swinheart',
+            F: 'Head Coach: Emily Mazzaferri · Asst: Taryn Doyle · Vol: Maggie Thiessen'
+        };
+
+        let scheduleGender = 'M';
+
+        function openScheduleOverlay() {
+            document.getElementById('scheduleOverlay').classList.add('open');
+            renderSchedule();
+        }
+
+        function closeScheduleOverlay() {
+            document.getElementById('scheduleOverlay').classList.remove('open');
+        }
+
+        function switchScheduleTab(gender) {
+            scheduleGender = gender;
+            document.getElementById('schedTabBoys').classList.toggle('active', gender === 'M');
+            document.getElementById('schedTabGirls').classList.toggle('active', gender === 'F');
+            renderSchedule();
+        }
+
+        function renderSchedule() {
+            const today = new Date().toISOString().slice(0, 10);
+            const meets = XC_SCHEDULE[scheduleGender];
+            const nextIdx = meets.findIndex(m => m.dateVal >= today);
+
+            let html = `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change. ` +
+                `<a href="${scheduleGender === 'M'
+                    ? 'https://docs.google.com/document/d/e/2PACX-1vRHlQwn9DZdnS_3nBUGMwS8gSId1cYOQWZSIRwtmKFXLy6NESo7TvTgW9wUHv9qftIEAdSCVbdhRc4n/pub'
+                    : 'https://docs.google.com/document/d/e/2PACX-1vQ8P7MoikNSYMNn2R5EtzctdljFOgxpuIrRwaU3glbaCG09wdUD1eK2-jtL_lyucK9oxH3WV3WEvUVF/pub'
+                }" target="_blank" rel="noopener" style="color:var(--perry-gray);">View source doc ↗</a></p>`;
+
+            meets.forEach((m, i) => {
+                const isPast = m.dateVal < today;
+                const isNext = i === nextIdx;
+                const racesHtml = m.races.map(r =>
+                    `<div class="sched-race-chip">
+                        <span class="sched-race-div">${r.div}</span>
+                        <span class="sched-race-time">${r.time}</span>
+                        ${r.unconf ? `<span class="sched-race-unconf">*unconf</span>` : ''}
+                    </div>`
+                ).join('');
+
+                html += `<div class="sched-card ${isPast ? 'sched-past' : ''} ${isNext ? 'sched-next' : ''}">
+                    <div class="sched-date-bar">
+                        <span>${m.date}</span>
+                        ${isNext ? `<span class="sched-next-badge">▶ Next Up</span>` : ''}
+                        ${m.badge && !isPast ? `<span style="font-size:10px;opacity:0.9;">${m.badge}</span>` : ''}
+                    </div>
+                    <div class="sched-meet-name">${m.meet}</div>
+                    <div class="sched-location">📍 ${m.location}</div>
+                    <div class="sched-races">${racesHtml}</div>
+                </div>`;
+            });
+
+            html += `<p style="font-size:10px;color:var(--text-muted);margin-top:8px;padding-bottom:4px;">${XC_COACHES[scheduleGender]}</p>`;
+            document.getElementById('scheduleBody').innerHTML = html;
+
+            // Scroll to next meet
+            if (nextIdx > 0) {
+                setTimeout(() => {
+                    const cards = document.querySelectorAll('#scheduleBody .sched-card');
+                    if (cards[nextIdx]) cards[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+
+        function openHamMenu() {
+            document.getElementById('hamMenuOverlay').classList.add('open');
+            // Sync dark mode switch state
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('darkModeSwitch').classList.toggle('on', isDark);
+        }
+
+        function closeHamMenu() {
+            document.getElementById('hamMenuOverlay').classList.remove('open');
+        }
+
+        function openNavMenu(tab) {
             document.getElementById('navOverlay').classList.add('open');
+            if (tab) switchNavTab(tab);
+        }
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
             navCurrentTab = 'accomplishments';
