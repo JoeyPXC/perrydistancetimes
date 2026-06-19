@@ -2098,8 +2098,14 @@
                         .sort((a, b) => cleanTimeToSeconds(a[ev][cat], ev) - cleanTimeToSeconds(b[ev][cat], ev));
                     
                     rankingsCache[ev][cat] = {};
+                    let rank = 1;
                     sorted.forEach((athlete, index) => {
-                        rankingsCache[ev][cat][athlete.name] = index + 1;
+                        if (index > 0 && cleanTimeToSeconds(sorted[index][ev][cat], ev) === cleanTimeToSeconds(sorted[index - 1][ev][cat], ev)) {
+                            // tie — keep the same rank as the previous (tied) athlete
+                        } else {
+                            rank = index + 1;
+                        }
+                        rankingsCache[ev][cat][athlete.name] = rank;
                     });
                 });
             });
@@ -3490,6 +3496,7 @@
                     return;
                 }
 
+                let careerRank = 1;
                 sortedPRList.forEach((athlete, index) => {
                     let card = document.createElement('div');
                     card.id = `row-${btoa(athlete.name)}`;
@@ -3503,10 +3510,18 @@
                     let checkIsPR = (timeVal) => (timeVal && timeVal !== '--' && cleanTimeToSeconds(timeVal, eventType) === prSecs);
                     let yrDisp = athlete.gradYear ? `'${String(athlete.gradYear).slice(-2)}` : '--';
 
+                    // Tied PRs share a rank; the next distinct time skips ahead
+                    // (e.g. two tied for 54th, next one is 56th).
+                    if (index > 0 && prSecs === cleanTimeToSeconds(sortedPRList[index - 1][eventType]['PR'], eventType)) {
+                        // tie — keep careerRank as-is
+                    } else {
+                        careerRank = index + 1;
+                    }
+
                     card.innerHTML = `
                         <div class="career-main-line">
                             <div class="career-left-meta">
-                                <span class="career-num">${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}</span>
+                                <span class="career-num">${careerRank === 1 ? '🥇' : careerRank === 2 ? '🥈' : careerRank === 3 ? '🥉' : careerRank}</span>
                                 <span class="career-name">${athlete.name} <span class="career-grad">${yrDisp}</span></span>
                             </div>
                             <span class="career-pr-pill">PR: ${evData['PR']}</span>
@@ -3677,6 +3692,7 @@
                 }
             }
 
+            let listRank = 1;
             list.forEach((athlete, index) => {
                 let row = document.createElement('tr');
                 row.id = `row-${btoa(athlete.name)}`;
@@ -3685,8 +3701,15 @@
                 row.setAttribute('onclick', `highlightedAthlete="${athlete.name.replace(/"/g, '&quot;')}"; renderLeaderboard(); openDrawerToAthlete("${athlete.name.replace(/"/g, '&quot;')}");`);
 
                 let yrDisp = athlete.gradYear ? `'${String(athlete.gradYear).slice(-2)}` : '--';
-                let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
-                let isTopTime = (rankType === 'PR' && index === 0);
+                // Tied times share a rank; the next distinct time skips ahead
+                // (e.g. two tied for 54th, next one is 56th).
+                if (index > 0 && cleanTimeToSeconds(athlete.calculatedDisplayTime, eventType) === cleanTimeToSeconds(list[index - 1].calculatedDisplayTime, eventType)) {
+                    // tie — keep listRank as-is
+                } else {
+                    listRank = index + 1;
+                }
+                let medal = listRank === 1 ? '🥇' : listRank === 2 ? '🥈' : listRank === 3 ? '🥉' : listRank;
+                let isTopTime = (rankType === 'PR' && listRank === 1);
                 let timeHtml = isTopTime
                     ? `<span class="time-pr-pill">${athlete.calculatedDisplayTime.split('(')[0].trim()}</span>`
                     : athlete.calculatedDisplayTime.split('(')[0].trim();
