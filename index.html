@@ -1488,10 +1488,13 @@
             if (open) {
                 input.value = '';
                 input.placeholder = 'Search runner name or graduation year...';
+                expandedAthleteName = null;
                 overlay.classList.add('active');
                 setTimeout(() => input.focus(), 150);
             } else {
                 overlay.classList.remove('active');
+                expandedAthleteName = null;
+                updateUrlForAthlete(null);
             }
         }
 
@@ -1605,9 +1608,22 @@
             expandedAthleteName = name;
             await renderRoster();
             updateUrlForAthlete(name);
-            setTimeout(() => {
+            setTimeout(async () => {
+                // Clear the search box back to empty (so it reads as a
+                // placeholder, not a stuck filter) and re-render the full
+                // roster. expandedAthleteName keeps this card open and
+                // visible past the 60-item cutoff in renderRoster(), so
+                // clearing the query here does NOT lose the open card —
+                // but we still need this re-render, otherwise the DOM is
+                // left showing the filtered single-card view while the
+                // input itself reports empty, and the next render anyone
+                // triggers (scroll, another click, etc.) silently wipes
+                // it back to the unfiltered alphabetical top.
                 input.value = '';
                 input.placeholder = name;
+                await renderRoster();
+                const card = document.querySelector('#rosterList .athlete-card.expanded');
+                if (card) card.scrollIntoView({ block: 'start' });
             }, 50);
         }
 
