@@ -575,6 +575,10 @@
 
         /* Video column on state qualifiers table */
         .col-sq-video { width:44px; text-align:center; }
+        .card-share-row { display:flex; justify-content:flex-end; margin-bottom:10px; }
+        .card-share-btn { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; background:var(--primary); color:var(--accent); border:none; border-radius:6px; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+        .card-share-btn:hover { opacity:0.85; }
+        .card-share-btn:disabled { opacity:0.6; cursor:default; }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -1394,7 +1398,15 @@
         }
 
         let athletes = {};
-        let rankingsCache = {}; 
+        let rankingsCache = {};
+        // If the page was opened via a shared profile link (?athlete=Name),
+        // remember the requested name here. Once athlete data has loaded,
+        // tryOpenAthleteFromUrl() looks for a match and opens that card.
+        let pendingShareAthleteName = (function() {
+            try {
+                return new URLSearchParams(window.location.search).get('athlete') || null;
+            } catch(e) { return null; }
+        })();
         let highlightedAthlete = null;
         let expandedAthleteName = null;
         let virtualMeetStandingsCache = [];
@@ -1495,6 +1507,79 @@
             }, { passive: true });
         })();
 
+        // Keeps the address bar in sync with whichever athlete card is open,
+        // using replaceState (not pushState) so this never adds extra
+        // entries to browser history — the back button still behaves
+        // normally and just leaves the site, rather than stepping back
+        // through every card someone opened.
+        function updateUrlForAthlete(name) {
+            try {
+                const url = new URL(window.location.href);
+                if (name) {
+                    url.searchParams.set('athlete', name);
+                } else {
+                    url.searchParams.delete('athlete');
+                }
+                history.replaceState(null, '', url.pathname + url.search + url.hash);
+            } catch(e) {}
+        }
+
+        function getAthleteShareUrl(name) {
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.hash = '';
+            url.searchParams.set('athlete', name);
+            return url.toString();
+        }
+
+        // Share button handler on each athlete card. Uses the native share
+        // sheet on phones (texting, Instagram, etc.) when available, and
+        // falls back to copying the link to the clipboard on desktop.
+        async function shareAthleteProfile(name) {
+            const shareUrl = getAthleteShareUrl(name);
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: `${name} — Perry Distance Times`, url: shareUrl });
+                } catch(e) {
+                    // user cancelled the share sheet — nothing to do
+                }
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                showMessage(`Link copied for ${name}!`);
+            } catch(e) {
+                try {
+                    const tmp = document.createElement('textarea');
+                    tmp.value = shareUrl;
+                    tmp.style.position = 'fixed';
+                    tmp.style.opacity = '0';
+                    document.body.appendChild(tmp);
+                    tmp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tmp);
+                    showMessage(`Link copied for ${name}!`);
+                } catch(e2) {
+                    showMessage('Could not copy link', true);
+                }
+            }
+        }
+
+        // Called after athlete data loads. If the page was opened via a
+        // shared profile link, finds the matching athlete (switching the
+        // Boys/Girls toggle if needed) and opens their card automatically.
+        function tryOpenAthleteFromUrl() {
+            if (!pendingShareAthleteName || Object.keys(athletes).length === 0) return;
+            const target = pendingShareAthleteName.toLowerCase().trim();
+            const match = Object.values(athletes).find(a => a.name.toLowerCase() === target);
+            if (!match) return;
+            pendingShareAthleteName = null;
+            if ((match.gender === 'M' || match.gender === 'F') && genderFilter !== 'ALL' && genderFilter !== match.gender) {
+                setGenderFilter(match.gender);
+            }
+            openDrawerToAthlete(match.name);
+        }
+
         function openDrawerToAthlete(name) {
             const overlay = document.getElementById('drawerOverlay');
             const input = document.getElementById('searchInput');
@@ -1502,6 +1587,7 @@
             overlay.classList.add('active');
             expandedAthleteName = name;
             renderRoster();
+            updateUrlForAthlete(name);
             setTimeout(() => {
                 input.value = '';
                 input.placeholder = name;
@@ -1519,6 +1605,7 @@
             
             if (cardElement.classList.contains('expanded')) {
                 expandedAthleteName = runnerName;
+                updateUrlForAthlete(runnerName);
                 let safeIdName = runnerName.toLowerCase().replace(/[^a-z0-9]/g, '');
                 let targetGridId = `history-grid-${safeIdName}`;
                 
@@ -1527,7 +1614,10 @@
                     loadAthleteMeetHistory(runnerName, targetGridId);
                 }
             } else {
-                if (expandedAthleteName === runnerName) expandedAthleteName = null;
+                if (expandedAthleteName === runnerName) {
+                    expandedAthleteName = null;
+                    updateUrlForAthlete(null);
+                }
             }
         }
 
@@ -3090,6 +3180,9 @@
                         <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                     </div>
                     <div class="card-expand-body">
+                        <div class="card-share-row">
+                            <button type="button" class="card-share-btn" onclick="event.stopPropagation(); shareAthleteProfile(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🔗 Share Profile</button>
+                        </div>
                         <div class="events-grid">${eventsHtml}</div>
                         ${honorDetailHtml}
                         ${videosHtml}
@@ -4233,6 +4326,7 @@
                     populateSeasonYearDropdown();
                     renderLeaderboard();
                     renderRoster();
+                    tryOpenAthleteFromUrl();
 
                     // The Collegiate Runners list depends on roster data to
                     // build its PR/progression cards, so drop its cache and
@@ -4258,6 +4352,7 @@
         if (Object.keys(athletes).length > 0) populateSeasonYearDropdown();
         renderLeaderboard();
         renderRoster();
+        tryOpenAthleteFromUrl();
 
         // Restore last sync timestamp from localStorage
         try {
