@@ -3902,8 +3902,7 @@
 
                         let badges = honorList.map(h => {
                             const count = h.years.length;
-                            const suffix = count > 1 ? ` <span style="font-size:8px;opacity:0.85;">${count}x</span>` : '';
-                            return `<span class="card-honor-badge ${h.cls}" style="display:inline-flex;align-items:center;gap:2px;">${h.label}${suffix}</span>`;
+                            return `<span class="card-honor-badge ${h.cls}" style="display:inline-flex;align-items:center;gap:2px;">${h.label} <span style="font-size:8px;opacity:0.85;">${count}x</span></span>`;
                         }).join('');
                         html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;">${badges || '—'}</div>`;
                     }
