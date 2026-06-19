@@ -1569,25 +1569,41 @@
         // Called after athlete data loads. If the page was opened via a
         // shared profile link, finds the matching athlete (switching the
         // Boys/Girls toggle if needed) and opens their card automatically.
-        function tryOpenAthleteFromUrl() {
+        //
+        // Both steps below avoid firing a second, overlapping renderRoster()
+        // call on top of one that might already be in flight (e.g. the
+        // normal page-load render, or setGenderFilter's own render) — two
+        // un-awaited renderRoster() calls can resolve out of order, and
+        // whichever one finishes last "wins" and overwrites the DOM. That
+        // was the actual cause of shared links sometimes opening to what
+        // looked like an empty search: the plain page-load render occasionally
+        // finished after the name-filtered one and wiped it out.
+        async function tryOpenAthleteFromUrl() {
             if (!pendingShareAthleteName || Object.keys(athletes).length === 0) return;
             const target = pendingShareAthleteName.toLowerCase().trim();
             const match = Object.values(athletes).find(a => a.name.toLowerCase() === target);
             if (!match) return;
             pendingShareAthleteName = null;
             if ((match.gender === 'M' || match.gender === 'F') && genderFilter !== 'ALL' && genderFilter !== match.gender) {
-                setGenderFilter(match.gender);
+                genderFilter = match.gender;
+                document.querySelectorAll('.gender-toggle-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.gender === match.gender);
+                });
+                try { localStorage.setItem('perry_gender_filter', match.gender); } catch(e) {}
+                recalculateAllRankings();
+                populateSeasonYearDropdown();
+                renderLeaderboard();
             }
-            openDrawerToAthlete(match.name);
+            await openDrawerToAthlete(match.name);
         }
 
-        function openDrawerToAthlete(name) {
+        async function openDrawerToAthlete(name) {
             const overlay = document.getElementById('drawerOverlay');
             const input = document.getElementById('searchInput');
             input.value = name;
             overlay.classList.add('active');
             expandedAthleteName = name;
-            renderRoster();
+            await renderRoster();
             updateUrlForAthlete(name);
             setTimeout(() => {
                 input.value = '';
@@ -4326,7 +4342,7 @@
                     recalculateAllRankings();
                     populateSeasonYearDropdown();
                     renderLeaderboard();
-                    renderRoster();
+                    await renderRoster();
                     tryOpenAthleteFromUrl();
 
                     // The Collegiate Runners list depends on roster data to
@@ -4352,8 +4368,10 @@
 
         if (Object.keys(athletes).length > 0) populateSeasonYearDropdown();
         renderLeaderboard();
-        renderRoster();
-        tryOpenAthleteFromUrl();
+        (async () => {
+            await renderRoster();
+            tryOpenAthleteFromUrl();
+        })();
 
         // Restore last sync timestamp from localStorage
         try {
