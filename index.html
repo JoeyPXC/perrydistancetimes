@@ -581,6 +581,16 @@
             .col-record-year { width:38px; font-size:11px; }
             .col-sq-year { width:42px; font-size:11px; }
             .col-sq-place { width:64px; font-size:11px; }
+            /* Relay rows stack multiple names in one cell. On narrow screens
+               a longer name wraps to 2 lines while shorter names on the same
+               row stay at 1 — reserving 2 lines for every name in that stack
+               keeps the legs evenly spaced instead of looking ragged. Only
+               applies to cells with more than one name (relays); single-name
+               individual-qualifier rows are untouched. */
+            .col-sq-athletes:has(.records-name-line ~ .records-name-line) .records-name-line,
+            .col-record-holder:has(.records-name-line ~ .records-name-line) .records-name-line {
+                min-height: 2.8em;
+            }
         }
 
         /* ── Track State Qualifiers ──────────────────────────────────── */
