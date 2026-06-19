@@ -3880,24 +3880,31 @@
                         const key = name.toLowerCase();
                         const h = honorsMap ? (honorsMap[key] || {}) : {};
                         const t = trackMap  ? (trackMap[key]  || {}) : {};
-                        let badges = '';
-                        if (h.allOhio     && h.allOhio.length)     badges += `<span class="card-honor-badge badge-all-ohio">XC All-Ohio</span>`;
-                        if (h.stateQual   && h.stateQual.length)   badges += `<span class="card-honor-badge badge-state">XC State</span>`;
-                        if (h.distChamp   && h.distChamp.length)   badges += `<span class="card-honor-badge badge-dist-champ">XC Dist Champ</span>`;
-                        if (h.fedChamp    && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">XC FL Champ</span>`;
-                        if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">XC County Champ</span>`;
-                        if (h.regQual     && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">XC Regional</span>`;
-                        if (h.allFed      && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
-                        if (h.allCounty   && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
-                        if (t.tStateChamp   && t.tStateChamp.length)   badges += `<span class="card-honor-badge badge-t-state-champ">Track State Champ</span>`;
-                        if (t.tStateRunnerUp&& t.tStateRunnerUp.length) badges += `<span class="card-honor-badge badge-t-runner-up">Track Runner-Up</span>`;
-                        if (t.tAllOhio     && t.tAllOhio.length)    badges += `<span class="card-honor-badge badge-t-all-ohio">Track All-Ohio</span>`;
-                        if (t.tStateQual   && t.tStateQual.length)  badges += `<span class="card-honor-badge badge-t-state-qual">Track State</span>`;
-                        if (t.tRegChamp    && t.tRegChamp.length)   badges += `<span class="card-honor-badge badge-t-reg-champ">Track Reg Champ</span>`;
-                        if (t.tDistChamp   && t.tDistChamp.length)  badges += `<span class="card-honor-badge badge-t-dist-champ">Track Dist Champ</span>`;
-                        if (t.tFLChamp     && t.tFLChamp.length)    badges += `<span class="card-honor-badge badge-t-fl-champ">Track FL Champ</span>`;
-                        if (t.tCountyChamp && t.tCountyChamp.length)badges += `<span class="card-honor-badge badge-t-county-champ">Track County Champ</span>`;
-                        if (t.tRegQual     && t.tRegQual.length)    badges += `<span class="card-honor-badge badge-t-reg-qual">Track Regional</span>`;
+                        const honorList = [
+                            { label:'XC All-Ohio',        cls:'badge-all-ohio',       years: h.allOhio },
+                            { label:'XC State',           cls:'badge-state',          years: h.stateQual },
+                            { label:'XC Dist Champ',      cls:'badge-dist-champ',     years: h.distChamp },
+                            { label:'XC FL Champ',        cls:'badge-fed-champ',      years: h.fedChamp },
+                            { label:'XC County Champ',    cls:'badge-county-champ',   years: h.countyChamp },
+                            { label:'XC Regional',        cls:'badge-regional',       years: h.regQual },
+                            { label:'All-Federal',        cls:'badge-all-federal',    years: h.allFed },
+                            { label:'All-County',         cls:'badge-all-county',     years: h.allCounty },
+                            { label:'Track State Champ',  cls:'badge-t-state-champ',  years: t.tStateChamp },
+                            { label:'Track Runner-Up',    cls:'badge-t-runner-up',    years: t.tStateRunnerUp },
+                            { label:'Track All-Ohio',     cls:'badge-t-all-ohio',     years: t.tAllOhio },
+                            { label:'Track State',        cls:'badge-t-state-qual',   years: t.tStateQual },
+                            { label:'Track Reg Champ',    cls:'badge-t-reg-champ',    years: t.tRegChamp },
+                            { label:'Track Dist Champ',   cls:'badge-t-dist-champ',   years: t.tDistChamp },
+                            { label:'Track FL Champ',     cls:'badge-t-fl-champ',     years: t.tFLChamp },
+                            { label:'Track County Champ', cls:'badge-t-county-champ', years: t.tCountyChamp },
+                            { label:'Track Regional',     cls:'badge-t-reg-qual',     years: t.tRegQual },
+                        ].filter(h => h.years && h.years.length);
+
+                        let badges = honorList.map(h => {
+                            const count = h.years.length;
+                            const suffix = count > 1 ? ` <span style="font-size:8px;opacity:0.85;">${count}x</span>` : '';
+                            return `<span class="card-honor-badge ${h.cls}" style="display:inline-flex;align-items:center;gap:2px;">${h.label}${suffix}</span>`;
+                        }).join('');
                         html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;">${badges || '—'}</div>`;
                     }
                 });
