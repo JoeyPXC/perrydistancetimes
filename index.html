@@ -3142,6 +3142,123 @@
         // Pre-fetch so videos are ready when a card is first opened.
         getAthleteVideosMap();
 
+        // ── Infinite scroll state for the roster drawer ──────────────────
+        // No-search browsing used to hard-cap at 60 cards. Now it renders
+        // an initial batch of ROSTER_BATCH_SIZE, then appends more batches
+        // as the user scrolls near the bottom of the drawer — keeps the
+        // first paint fast (and avoids firing off a huge wave of
+        // loadAthleteMeetHistory() calls all at once) while still letting
+        // someone scroll all the way through the alphabet.
+        const ROSTER_BATCH_SIZE = 60;
+        let rosterFilteredItems = [];   // the current query/gender-filtered + sorted list
+        let rosterRenderedCount = 0;    // how many of rosterFilteredItems are currently in the DOM
+        let rosterMapsCache = null;     // { videosMap, honorsMap, trackMap } for the in-progress render
+
+        function buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap) {
+            let gradDisplay = athlete.gradYear ? `Class of ${athlete.gradYear}` : 'Grad Class: --';
+
+            let card = document.createElement('div');
+            card.className = 'athlete-card';
+            if (query && athlete.name.toLowerCase() === query) card.className += ' expanded';
+            if (athlete.name === expandedAthleteName) card.className += ' expanded';
+
+            let eventsHtml = buildEventsGridHtml(athlete);
+            let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
+            let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap, trackMap);
+            let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap, trackMap);
+
+            let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            // College info — a row below the grad year showing the
+            // school's logo + name, visible on the collapsed card so the
+            // whole roster's college runners are visible at a glance.
+            let collegeInfo = getCollegeInfo(athlete);
+            let collegeRowHtml = '';
+            if (collegeInfo) {
+                let logosHtml = collegeInfo.colleges.map(c => {
+                    const logo = COLLEGE_LOGOS[c];
+                    return logo ? `<img src="${logo}" alt="" class="college-logo-mini" onerror="this.remove()">` : '';
+                }).join('');
+                collegeRowHtml = `
+                    <span class="athlete-college-row">
+                        <span class="athlete-college-name">${collegeInfo.colleges.join(' & ')}</span>
+                        ${logosHtml}
+                    </span>`;
+            }
+
+            card.dataset.compareName = athlete.name;
+            card.innerHTML = `
+                <div class="card-toggle-header" data-runner-name="${athlete.name.replace(/"/g, '&quot;')}">
+                <span class="compare-check">✓</span>
+                    <div class="athlete-meta-box">
+                        <span class="athlete-name">${athlete.name}</span>
+                        <span class="athlete-grad-text">${gradDisplay}</span>
+                        ${honorBadgesHtml}
+                    </div>
+                    ${collegeRowHtml}
+                    <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                </div>
+                <div class="card-expand-body">
+                    <div class="card-share-row">
+                        <button type="button" class="card-share-btn" onclick="event.stopPropagation(); shareAthleteProfile(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🔗 Share Profile</button>
+                    </div>
+                    <div class="events-grid">${eventsHtml}</div>
+                    ${honorDetailHtml}
+                    ${videosHtml}
+                    <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
+                        <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
+                        <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
+                            <p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px;">Loading historical meet times…</p>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+
+            let toggleHeader = card.querySelector('.card-toggle-header');
+            toggleHeader.addEventListener('click', function() {
+                if (toggleAthleteCompareSelect(card.dataset.compareName, card)) return;
+                toggleAthleteCardElement(card, this.dataset.runnerName);
+            });
+
+            return { card, safeId };
+        }
+
+        // Appends the next batch of rosterFilteredItems (starting at
+        // rosterRenderedCount) to the drawer. Called both by renderRoster()
+        // for the first batch and by the scroll listener for subsequent
+        // ones. No-ops once everything has been rendered.
+        function renderNextRosterBatch() {
+            if (!rosterMapsCache) return;
+            const container = document.getElementById('rosterList');
+            const { videosMap, honorsMap, trackMap, query } = rosterMapsCache;
+            const start = rosterRenderedCount;
+            const end = Math.min(start + ROSTER_BATCH_SIZE, rosterFilteredItems.length);
+
+            for (let i = start; i < end; i++) {
+                const athlete = rosterFilteredItems[i];
+                const { card, safeId } = buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap);
+                container.appendChild(card);
+                loadAthleteMeetHistory(athlete.name, `history-grid-${safeId}`);
+            }
+            rosterRenderedCount = end;
+        }
+
+        // Scroll listener on the drawer itself — appends more roster cards
+        // once the user scrolls within ~400px of the bottom. Set up once;
+        // it just checks rosterRenderedCount vs rosterFilteredItems.length
+        // on every scroll tick, so it's safe across re-renders.
+        (function() {
+            const list = document.getElementById('rosterList');
+            if (!list) return;
+            list.addEventListener('scroll', () => {
+                if (rosterRenderedCount >= rosterFilteredItems.length) return;
+                if (list.scrollTop + list.clientHeight >= list.scrollHeight - 400) {
+                    renderNextRosterBatch();
+                }
+            }, { passive: true });
+        })();
+
         async function renderRoster() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const container = document.getElementById('rosterList');
@@ -3150,97 +3267,46 @@
 
             if(items.length === 0) {
                 container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted); font-weight:600;">Building profile database...</p>';
+                rosterFilteredItems = [];
+                rosterRenderedCount = 0;
+                rosterMapsCache = null;
                 return;
             }
 
             items.sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
 
+            const filtered = items.filter(athlete => {
+                if (!query) return true;
+                let gradDisplay = athlete.gradYear ? `Class of ${athlete.gradYear}` : 'Grad Class: --';
+                return athlete.name.toLowerCase().includes(query) || gradDisplay.toLowerCase().includes(query);
+            });
+
+            if (query && filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">No runners found.</p>';
+                rosterFilteredItems = [];
+                rosterRenderedCount = 0;
+                rosterMapsCache = null;
+                return;
+            }
+
             const videosMap = await getAthleteVideosMap();
             const honorsMap = await getXCHonorsMap();
             const trackMap  = await getTrackHonorsMap();
 
-            let renderedCount = 0;
-            for(let i=0; i<items.length; i++) {
-                let athlete = items[i];
-                let gradDisplay = athlete.gradYear ? `Class of ${athlete.gradYear}` : 'Grad Class: --';
-                
-                if (query && !athlete.name.toLowerCase().includes(query) && !gradDisplay.toLowerCase().includes(query)) continue;
-                
-                renderedCount++;
-                if (renderedCount > 60 && !query) {
-                    if (athlete.name !== expandedAthleteName) continue;
+            rosterFilteredItems = filtered;
+            rosterRenderedCount = 0;
+            rosterMapsCache = { videosMap, honorsMap, trackMap, query };
+
+            renderNextRosterBatch();
+
+            // If the card we need to keep open (e.g. from a share link or
+            // a card click) landed past the first batch, make sure it's
+            // rendered too rather than waiting on the user to scroll to it.
+            if (expandedAthleteName && !query) {
+                const idx = rosterFilteredItems.findIndex(a => a.name === expandedAthleteName);
+                while (idx !== -1 && idx >= rosterRenderedCount && rosterRenderedCount < rosterFilteredItems.length) {
+                    renderNextRosterBatch();
                 }
-
-                let card = document.createElement('div');
-                card.className = 'athlete-card';
-                if (query && athlete.name.toLowerCase() === query) card.className += ' expanded';
-                if (athlete.name === expandedAthleteName) card.className += ' expanded';
-                
-                let eventsHtml = buildEventsGridHtml(athlete);
-                let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
-                let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap, trackMap);
-                let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap, trackMap);
-
-                let safeId = athlete.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                // College info — a row below the grad year showing the
-                // school's logo + name, visible on the collapsed card so the
-                // whole roster's college runners are visible at a glance.
-                let collegeInfo = getCollegeInfo(athlete);
-                let collegeRowHtml = '';
-                if (collegeInfo) {
-                    let logosHtml = collegeInfo.colleges.map(c => {
-                        const logo = COLLEGE_LOGOS[c];
-                        return logo ? `<img src="${logo}" alt="" class="college-logo-mini" onerror="this.remove()">` : '';
-                    }).join('');
-                    collegeRowHtml = `
-                        <span class="athlete-college-row">
-                            <span class="athlete-college-name">${collegeInfo.colleges.join(' & ')}</span>
-                            ${logosHtml}
-                        </span>`;
-                }
-
-                card.dataset.compareName = athlete.name;
-                card.innerHTML = `
-                    <div class="card-toggle-header" data-runner-name="${athlete.name.replace(/"/g, '&quot;')}">
-                    <span class="compare-check">✓</span>
-                        <div class="athlete-meta-box">
-                            <span class="athlete-name">${athlete.name}</span>
-                            <span class="athlete-grad-text">${gradDisplay}</span>
-                            ${honorBadgesHtml}
-                        </div>
-                        ${collegeRowHtml}
-                        <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-                    </div>
-                    <div class="card-expand-body">
-                        <div class="card-share-row">
-                            <button type="button" class="card-share-btn" onclick="event.stopPropagation(); shareAthleteProfile(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🔗 Share Profile</button>
-                        </div>
-                        <div class="events-grid">${eventsHtml}</div>
-                        ${honorDetailHtml}
-                        ${videosHtml}
-                        <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
-                            <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
-                            <div class="meet-history-vertical-grid" id="history-grid-${safeId}" style="background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;">
-                                <p style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 10px;">Loading historical meet times…</p>
-                            </div>
-
-                        </div>
-                    </div>
-                `;
-
-                let toggleHeader = card.querySelector('.card-toggle-header');
-                toggleHeader.addEventListener('click', function() {
-                    if (toggleAthleteCompareSelect(card.dataset.compareName, card)) return;
-                    toggleAthleteCardElement(card, this.dataset.runnerName);
-                });
-                container.appendChild(card);
-
-                loadAthleteMeetHistory(athlete.name, `history-grid-${safeId}`);
-            }
-            
-            if(query && renderedCount === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-muted);">No runners found.</p>';
             }
         }
 
