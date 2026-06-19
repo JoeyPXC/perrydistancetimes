@@ -3775,7 +3775,7 @@
             return true; // consumed the click
         }
 
-        function openComparePanel() {
+        async function openComparePanel() {
             if (compareSelected.length < 2) return;
             const panel = document.getElementById('comparePanelOverlay');
             const body = document.getElementById('comparePanelBody');
@@ -3784,7 +3784,8 @@
             const events = ['XC 5K', '800m', '1600m', '3200m'];
             const grades = ['9th', '10th', '11th', '12th'];
             const gradeLabels = {'9th':'Fr','10th':'So','11th':'Jr','12th':'Sr'};
-            const cols = compareSelected.length + 1; // grade col + one per athlete
+
+            const [honorsMap, trackMap] = await Promise.all([getXCHonorsMap(), getTrackHonorsMap()]);
 
             let html = '';
 
@@ -3818,7 +3819,6 @@
                 // PR row
                 html += `<div class="compare-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};background:rgba(255,221,0,0.05);">`;
                 html += `<div class="compare-cell grade-col" style="font-weight:800;color:var(--text);">PR</div>`;
-                // Find the best time across all athletes for this event to highlight winner
                 const prTimes = compareSelected.map(name => {
                     const d = athletes[name] && athletes[name][ev];
                     return d && d.PR && d.PR !== '--' ? cleanTimeToSeconds(d.PR) : Infinity;
@@ -3858,8 +3858,51 @@
                     html += `</div>`;
                 });
 
-                html += `</div></div>`; // close grid + event-section
+                html += `</div></div>`;
             });
+
+            // Honors section
+            const anyHonors = compareSelected.some(name => {
+                const key = name.toLowerCase();
+                return (honorsMap && honorsMap[key]) || (trackMap && trackMap[key]);
+            });
+            if (anyHonors) {
+                html += `<div class="compare-event-section">`;
+                html += `<div class="compare-event-header">🏅 Honors</div>`;
+                html += `<div style="display:grid;grid-template-columns:${compareSelected.map(()=>'1fr').join(' ')};gap:8px;padding:10px;">`;
+                compareSelected.forEach(name => {
+                    const badgesHtml = buildCardHonorBadgesHtml(name, honorsMap, trackMap);
+                    const detailHtml = buildCardHonorsDetailHtml(name, honorsMap, trackMap);
+                    if (!badgesHtml && !detailHtml) {
+                        html += `<div style="font-size:11px;color:var(--text-muted);">—</div>`;
+                    } else {
+                        // Extract just the badge spans without the wrapper div for inline display
+                        const key = name.toLowerCase();
+                        const h = honorsMap ? (honorsMap[key] || {}) : {};
+                        const t = trackMap  ? (trackMap[key]  || {}) : {};
+                        let badges = '';
+                        if (h.allOhio     && h.allOhio.length)     badges += `<span class="card-honor-badge badge-all-ohio">XC All-Ohio</span>`;
+                        if (h.stateQual   && h.stateQual.length)   badges += `<span class="card-honor-badge badge-state">XC State</span>`;
+                        if (h.distChamp   && h.distChamp.length)   badges += `<span class="card-honor-badge badge-dist-champ">XC Dist Champ</span>`;
+                        if (h.fedChamp    && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">XC FL Champ</span>`;
+                        if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">XC County Champ</span>`;
+                        if (h.regQual     && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">XC Regional</span>`;
+                        if (h.allFed      && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal</span>`;
+                        if (h.allCounty   && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County</span>`;
+                        if (t.tStateChamp   && t.tStateChamp.length)   badges += `<span class="card-honor-badge badge-t-state-champ">Track State Champ</span>`;
+                        if (t.tStateRunnerUp&& t.tStateRunnerUp.length) badges += `<span class="card-honor-badge badge-t-runner-up">Track Runner-Up</span>`;
+                        if (t.tAllOhio     && t.tAllOhio.length)    badges += `<span class="card-honor-badge badge-t-all-ohio">Track All-Ohio</span>`;
+                        if (t.tStateQual   && t.tStateQual.length)  badges += `<span class="card-honor-badge badge-t-state-qual">Track State</span>`;
+                        if (t.tRegChamp    && t.tRegChamp.length)   badges += `<span class="card-honor-badge badge-t-reg-champ">Track Reg Champ</span>`;
+                        if (t.tDistChamp   && t.tDistChamp.length)  badges += `<span class="card-honor-badge badge-t-dist-champ">Track Dist Champ</span>`;
+                        if (t.tFLChamp     && t.tFLChamp.length)    badges += `<span class="card-honor-badge badge-t-fl-champ">Track FL Champ</span>`;
+                        if (t.tCountyChamp && t.tCountyChamp.length)badges += `<span class="card-honor-badge badge-t-county-champ">Track County Champ</span>`;
+                        if (t.tRegQual     && t.tRegQual.length)    badges += `<span class="card-honor-badge badge-t-reg-qual">Track Regional</span>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;">${badges || '—'}</div>`;
+                    }
+                });
+                html += `</div></div>`;
+            }
 
             body.innerHTML = html;
         }
