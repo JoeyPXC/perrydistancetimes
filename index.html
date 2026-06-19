@@ -552,7 +552,7 @@
         /* Team roster expansion on accomplishments year chips */
         .accomp-year-chip { cursor:pointer; position:relative; }
         .accomp-chip-wrapper { display:inline-block; position:relative; }
-        .accomp-roster-popup { display:none; position:fixed; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; z-index:100; min-width:160px; max-width:220px; box-shadow:0 4px 12px rgba(0,0,0,0.15); white-space:nowrap; }
+        .accomp-roster-popup { display:none; position:absolute; left:50%; transform:translateX(-50%); background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; z-index:1000; min-width:160px; max-width:220px; box-shadow:0 4px 12px rgba(0,0,0,0.2); white-space:nowrap; }
         .accomp-roster-popup-title { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; letter-spacing:0.3px; }
         .accomp-roster-popup-name { font-size:12px; font-weight:600; color:var(--text); padding:2px 0; border-bottom:1px dashed var(--border); }
         .accomp-roster-popup-name:last-child { border-bottom:none; }
@@ -2650,15 +2650,37 @@
             allPopups.forEach(p => { if (p !== popup) p.style.display = 'none'; });
             if (popup.style.display === 'block') { popup.style.display = 'none'; return; }
 
-            // Position below the chip, clamped to screen edges
-            const chip = wrapper.querySelector('.accomp-year-chip');
-            const chipRect = chip.getBoundingClientRect();
+            // Reset position styles first
+            popup.style.top = '';
+            popup.style.bottom = '';
+            popup.style.left = '';
+            popup.style.transform = '';
             popup.style.display = 'block';
+
             const popupW = popup.offsetWidth || 180;
-            let left = chipRect.left + chipRect.width / 2 - popupW / 2;
-            left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+            const popupH = popup.offsetHeight || 200;
+            const chipRect = wrapper.getBoundingClientRect();
+            const scrollParent = document.querySelector('.nav-body');
+            const scrollRect = scrollParent ? scrollParent.getBoundingClientRect() : { left: 0, right: window.innerWidth };
+
+            // Horizontal: center on chip, clamp to scroll parent edges
+            const chipCenter = chipRect.left + chipRect.width / 2;
+            let left = chipCenter - scrollRect.left - popupW / 2;
+            const minLeft = 4;
+            const maxLeft = (scrollRect.right - scrollRect.left) - popupW - 4;
+            left = Math.max(minLeft, Math.min(left, maxLeft));
             popup.style.left = left + 'px';
-            popup.style.top = (chipRect.bottom + 4) + 'px';
+            popup.style.transform = 'none';
+
+            // Vertical: below chip by default, flip above if too close to bottom
+            const spaceBelow = window.innerHeight - chipRect.bottom;
+            if (spaceBelow < popupH + 8) {
+                popup.style.bottom = (wrapper.offsetHeight + 4) + 'px';
+                popup.style.top = '';
+            } else {
+                popup.style.top = (wrapper.offsetHeight + 4) + 'px';
+                popup.style.bottom = '';
+            }
         }
 
         getTeamRostersMap();
@@ -4530,7 +4552,7 @@
                         return `<span class="accomp-chip-wrapper" onclick="toggleRosterPopup(this, event)">
                             <span class="accomp-year-chip ${chipClass}">${y} ▾</span>
                             <div class="accomp-roster-popup">
-                                <div class="accomp-roster-popup-title">${y} Roster</div>
+                                <div class="accomp-roster-popup-title">${y} Varsity 7</div>
                                 ${namesHtml}
                             </div>
                         </span>`;
