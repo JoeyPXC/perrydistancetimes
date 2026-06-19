@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1520,26 +1521,51 @@
             }
         }
 
-        function cleanTimeToSeconds(timeStr) {
+        // Track events where hand-timed marks (1 decimal, e.g. "2:00.3") need a
+        // conversion to compare fairly against Fully Automatic Timed marks
+        // (2 decimals, e.g. "2:00.43"). XC is intentionally excluded — this is
+        // a track-only convention.
+        const HAND_TIME_CONVERSION_EVENTS = new Set(['800m', '1600m', '3200m']);
+        // Standard hand-time -> FAT conversion offset, in seconds.
+        const HAND_TIME_FAT_OFFSET = 0.24;
+
+        function cleanTimeToSeconds(timeStr, eventType) {
             if (!timeStr || timeStr.trim() === "" || timeStr.toUpperCase() === "NT" || timeStr === "--") return Infinity;
             
             let clean = timeStr.split('(')[0].split('-')[0].trim();
             clean = clean.replace(/[^\d:.]/g, '');
             
-            if (!clean.includes(':')) return parseFloat(clean) || Infinity;
-            
-            let parts = clean.split(':');
-            if (parts.length === 3) {
-                let hours = parseInt(parts[0], 10);
-                let minutes = parseInt(parts[1], 10);
-                let seconds = parseFloat(parts[2]);
-                if (hours > 0 && minutes < 60) {
-                    return (hours * 60) + seconds;
+            let totalSeconds;
+            if (!clean.includes(':')) {
+                totalSeconds = parseFloat(clean) || Infinity;
+            } else {
+                let parts = clean.split(':');
+                if (parts.length === 3) {
+                    let hours = parseInt(parts[0], 10);
+                    let minutes = parseInt(parts[1], 10);
+                    let seconds = parseFloat(parts[2]);
+                    totalSeconds = (hours > 0 && minutes < 60) ? (hours * 60) + seconds : (minutes * 60) + seconds;
+                } else {
+                    totalSeconds = (parseInt(parts[0], 10) * 60) + parseFloat(parts[1]);
                 }
-                return (minutes * 60) + seconds;
             }
-            
-            return (parseInt(parts[0], 10) * 60) + parseFloat(parts[1]);
+
+            if (!isFinite(totalSeconds)) return totalSeconds;
+
+            // Hand-time -> FAT equivalency adjustment, for ranking/comparison
+            // purposes only — this never changes what's displayed on screen.
+            // A time recorded to the hundredth (2 decimal digits) is FAT.
+            // Anything else (1 decimal, or a whole number) is hand-timed, so
+            // we add the standard offset to make it comparable to FAT marks.
+            if (eventType && HAND_TIME_CONVERSION_EVENTS.has(eventType)) {
+                let secondsPart = clean.includes(':') ? clean.split(':').pop() : clean;
+                let decimalDigits = secondsPart.includes('.') ? secondsPart.split('.')[1].length : 0;
+                if (decimalDigits !== 2) {
+                    totalSeconds += HAND_TIME_FAT_OFFSET;
+                }
+            }
+
+            return totalSeconds;
         }
 
         function extractYearFromTimeValue(timeValueStr) {
@@ -1581,7 +1607,7 @@
                     if (!raw || raw === '--' || raw === 'NT') return;
                     let year = extractYearFromTimeValue(raw);
                     if (!year) return;
-                    let secs = cleanTimeToSeconds(raw);
+                    let secs = cleanTimeToSeconds(raw, eventType);
                     if (!isFinite(secs)) return;
                     entries.push({
                         year: parseInt(year, 10),
@@ -2069,7 +2095,7 @@
                 categories.forEach(cat => {
                     let sorted = Object.values(athletes)
                         .filter(a => genderMatches(a) && a[ev] && a[ev][cat] && a[ev][cat] !== 'NT' && a[ev][cat] !== '' && a[ev][cat] !== '--')
-                        .sort((a, b) => cleanTimeToSeconds(a[ev][cat]) - cleanTimeToSeconds(b[ev][cat]));
+                        .sort((a, b) => cleanTimeToSeconds(a[ev][cat], ev) - cleanTimeToSeconds(b[ev][cat], ev));
                     
                     rankingsCache[ev][cat] = {};
                     sorted.forEach((athlete, index) => {
@@ -3456,7 +3482,7 @@
 
             let sortedPRList = Object.values(athletes)
                 .filter(a => genderMatches(a) && a[eventType] && a[eventType]['PR'] && a[eventType]['PR'] !== 'NT' && a[eventType]['PR'] !== '' && a[eventType]['PR'] !== '--')
-                .sort((a, b) => cleanTimeToSeconds(a[eventType]['PR']) - cleanTimeToSeconds(b[eventType]['PR']));
+                .sort((a, b) => cleanTimeToSeconds(a[eventType]['PR'], eventType) - cleanTimeToSeconds(b[eventType]['PR'], eventType));
 
             if (rankType === 'CAREER_ALL') {
                 if (sortedPRList.length === 0) {
@@ -3473,8 +3499,8 @@
                     card.setAttribute('onclick', `highlightedAthlete="${athlete.name.replace(/"/g, '&quot;')}"; renderLeaderboard(); openDrawerToAthlete("${athlete.name.replace(/"/g, '&quot;')}");`);
 
                     let evData = athlete[eventType];
-                    let prSecs = cleanTimeToSeconds(evData['PR']);
-                    let checkIsPR = (timeVal) => (timeVal && timeVal !== '--' && cleanTimeToSeconds(timeVal) === prSecs);
+                    let prSecs = cleanTimeToSeconds(evData['PR'], eventType);
+                    let checkIsPR = (timeVal) => (timeVal && timeVal !== '--' && cleanTimeToSeconds(timeVal, eventType) === prSecs);
                     let yrDisp = athlete.gradYear ? `'${String(athlete.gradYear).slice(-2)}` : '--';
 
                     card.innerHTML = `
@@ -3540,7 +3566,7 @@
                         }
                     }
                 });
-                list.sort((a, b) => cleanTimeToSeconds(a.calculatedDisplayTime) - cleanTimeToSeconds(b.calculatedDisplayTime));
+                list.sort((a, b) => cleanTimeToSeconds(a.calculatedDisplayTime, eventType) - cleanTimeToSeconds(b.calculatedDisplayTime, eventType));
 
             } else {
                 document.getElementById('rankHeaderTime').innerText = rankType === 'PR' ? 'Career PR' : rankType + ' Time';
@@ -3548,7 +3574,7 @@
 
                 let rawList = Object.values(athletes)
                     .filter(a => genderMatches(a) && a[eventType] && a[eventType][rankType] && a[eventType][rankType] !== 'NT' && a[eventType][rankType] !== '' && a[eventType][rankType] !== '--')
-                    .sort((a, b) => cleanTimeToSeconds(a[eventType][rankType]) - cleanTimeToSeconds(b[eventType][rankType]));
+                    .sort((a, b) => cleanTimeToSeconds(a[eventType][rankType], eventType) - cleanTimeToSeconds(b[eventType][rankType], eventType));
 
                 list = rawList.map(a => ({
                     name: a.name,
@@ -3610,7 +3636,7 @@
                     let allTimeSecs = Infinity;
                     Object.values(athletes).forEach(a => {
                         if (genderMatches(a) && a[eventType] && a[eventType]['PR']) {
-                            let s = cleanTimeToSeconds(a[eventType]['PR']);
+                            let s = cleanTimeToSeconds(a[eventType]['PR'], eventType);
                             if (s < allTimeSecs) {
                                 allTimeSecs = s;
                                 allTimeBest = a;
@@ -3670,9 +3696,9 @@
                 // For PR rank type, try to find the year from the athlete's data
                 if (!markYear && rankType === 'PR' && athletes[athlete.name] && athletes[athlete.name][eventType]) {
                     let evData = athletes[athlete.name][eventType];
-                    let prSecs = cleanTimeToSeconds(evData['PR']);
+                    let prSecs = cleanTimeToSeconds(evData['PR'], eventType);
                     ['9th','10th','11th','12th'].forEach(g => {
-                        if (!markYear && evData[g] && cleanTimeToSeconds(evData[g]) === prSecs) {
+                        if (!markYear && evData[g] && cleanTimeToSeconds(evData[g], eventType) === prSecs) {
                             markYear = extractYearFromTimeValue(evData[g]);
                         }
                     });
@@ -3821,7 +3847,7 @@
                 html += `<div class="compare-cell grade-col" style="font-weight:800;color:var(--text);">PR</div>`;
                 const prTimes = compareSelected.map(name => {
                     const d = athletes[name] && athletes[name][ev];
-                    return d && d.PR && d.PR !== '--' ? cleanTimeToSeconds(d.PR) : Infinity;
+                    return d && d.PR && d.PR !== '--' ? cleanTimeToSeconds(d.PR, ev) : Infinity;
                 });
                 const bestPR = Math.min(...prTimes);
                 compareSelected.forEach((name, i) => {
@@ -3843,7 +3869,7 @@
                     const gradeTimes = compareSelected.map(name => {
                         const d = athletes[name] && athletes[name][ev];
                         const val = d && d[grade] && d[grade] !== '--' ? d[grade].split('(')[0].trim() : null;
-                        return val ? cleanTimeToSeconds(val) : Infinity;
+                        return val ? cleanTimeToSeconds(val, ev) : Infinity;
                     });
                     const bestGrade = Math.min(...gradeTimes);
 
