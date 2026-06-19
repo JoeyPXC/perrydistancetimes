@@ -552,8 +552,7 @@
         /* Team roster expansion on accomplishments year chips */
         .accomp-year-chip { cursor:pointer; position:relative; }
         .accomp-chip-wrapper { display:inline-block; position:relative; }
-        .accomp-roster-popup { display:none; position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; z-index:100; min-width:160px; box-shadow:0 4px 12px rgba(0,0,0,0.15); white-space:nowrap; }
-        .accomp-chip-wrapper.open .accomp-roster-popup { display:block; }
+        .accomp-roster-popup { display:none; position:fixed; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; z-index:100; min-width:160px; max-width:220px; box-shadow:0 4px 12px rgba(0,0,0,0.15); white-space:nowrap; }
         .accomp-roster-popup-title { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; letter-spacing:0.3px; }
         .accomp-roster-popup-name { font-size:12px; font-weight:600; color:var(--text); padding:2px 0; border-bottom:1px dashed var(--border); }
         .accomp-roster-popup-name:last-child { border-bottom:none; }
@@ -2641,8 +2640,26 @@
 
         // Close any open roster popups when clicking outside
         document.addEventListener('click', () => {
-            document.querySelectorAll('.accomp-chip-wrapper.open').forEach(el => el.classList.remove('open'));
+            document.querySelectorAll('.accomp-roster-popup').forEach(p => p.style.display = 'none');
         });
+
+        function toggleRosterPopup(wrapper, event) {
+            event.stopPropagation();
+            const popup = wrapper.querySelector('.accomp-roster-popup');
+            const allPopups = document.querySelectorAll('.accomp-roster-popup');
+            allPopups.forEach(p => { if (p !== popup) p.style.display = 'none'; });
+            if (popup.style.display === 'block') { popup.style.display = 'none'; return; }
+
+            // Position below the chip, clamped to screen edges
+            const chip = wrapper.querySelector('.accomp-year-chip');
+            const chipRect = chip.getBoundingClientRect();
+            popup.style.display = 'block';
+            const popupW = popup.offsetWidth || 180;
+            let left = chipRect.left + chipRect.width / 2 - popupW / 2;
+            left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+            popup.style.left = left + 'px';
+            popup.style.top = (chipRect.bottom + 4) + 'px';
+        }
 
         getTeamRostersMap();
 
@@ -4510,7 +4527,7 @@
                     const roster = rostersMap[key];
                     if (roster && roster.length) {
                         const namesHtml = roster.map(n => `<div class="accomp-roster-popup-name">${n}</div>`).join('');
-                        return `<span class="accomp-chip-wrapper" onclick="this.classList.toggle('open');event.stopPropagation();">
+                        return `<span class="accomp-chip-wrapper" onclick="toggleRosterPopup(this, event)">
                             <span class="accomp-year-chip ${chipClass}">${y} ▾</span>
                             <div class="accomp-roster-popup">
                                 <div class="accomp-roster-popup-title">${y} Roster</div>
