@@ -28,6 +28,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = event.request.url;
+  const requestUrl = new URL(url);
 
   // Google Sheets CSVs — network first, fall back to cache
   if (url.includes('docs.google.com') || url.includes('spreadsheets')) {
@@ -45,15 +46,36 @@ self.addEventListener('fetch', event => {
 
   // Main HTML file — always network first so updates show immediately.
   // Falls back to cache only if offline.
-  if (url.endsWith('/') || url.endsWith('.html')) {
+  //
+  // Detecting "this is the main page" by checking request.mode === 'navigate'
+  // (the standard, reliable signal for an actual page load) rather than only
+  // matching the URL's path. Shared profile links look like
+  // ".../perrydistancetimes/?athlete=Connor%20Reed" — that doesn't end in
+  // "/" or ".html", so a path-only check would miss it and let it fall
+  // through to the cache-first branch below meant for icons/images. That
+  // would mean: open a shared link once, and every future visit to that
+  // exact link silently serves the stale copy from that first visit instead
+  // of checking the network, even though the page itself updates fine
+  // otherwise. request.mode catches this (and any other URL shape) since it
+  // reflects how the browser is loading the resource, not the URL text.
+  const isPageNavigation = event.request.mode === 'navigate' ||
+    requestUrl.pathname.endsWith('/') || requestUrl.pathname.endsWith('.html');
+
+  if (isPageNavigation) {
+    // Cache under the bare path (no query string) — every shared link
+    // (?athlete=...) serves the identical app shell, so there's no reason
+    // to store a separate cached copy per link. This also means the
+    // offline fallback below finds a match regardless of which athlete
+    // link was used to get here.
+    const cacheKey = new Request(requestUrl.origin + requestUrl.pathname);
     event.respondWith(
       fetch(event.request)
         .then(response => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(cacheKey, clone));
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request, { ignoreSearch: true }))
     );
     return;
   }
