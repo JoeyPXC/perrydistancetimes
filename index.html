@@ -573,6 +573,18 @@
         .card-video-btn { font-size:11px; font-weight:800; background:var(--primary); color:var(--accent); border-radius:6px; padding:3px 9px; text-decoration:none; white-space:nowrap; flex-shrink:0; }
         .card-video-btn:hover { opacity:0.85; }
         body.dark-mode .card-video-btn { border:1px solid var(--border); }
+        .card-posths-section { border-top:1px solid var(--border); padding-top:10px; margin-top:12px; }
+        .card-posths-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom:6px; }
+        .card-posths-title { font-size:11px; text-transform:uppercase; color:var(--perry-gray); letter-spacing:0.3px; font-weight:800; }
+        .card-posths-chevron { fill:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
+        .card-posths-section.expanded .card-posths-chevron { transform:rotate(180deg); }
+        .card-posths-body { display:none; }
+        .card-posths-section.expanded .card-posths-body { display:block; }
+        .card-posths-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:12px; }
+        .card-posths-row:last-child { border-bottom:none; }
+        .card-posths-distance { font-weight:600; color:var(--text); text-transform:capitalize; }
+        .card-posths-time { font-weight:800; font-family:monospace; color:var(--primary); }
+        body.dark-mode .card-posths-time { color:var(--accent); }
 
         /* Video column on state qualifiers table */
         .col-sq-video { width:44px; text-align:center; }
@@ -1030,6 +1042,15 @@
 
     <script>
         const ATHLETE_VIDEOS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaGB9k-Wuq0cFzHPxLHUiV6A3O41f0JIJ4dkiRbcg-f6jDNVKkeIDibUGdEkcaiVaIeWy5Tc0Cp9sO/pub?output=csv';
+        // Post-high-school personal bests (5k/10k track, 8k/10k XC, 1500m,
+        // half marathon, marathon). Sheet columns: Name, Distance, Time —
+        // one row per personal best, so an athlete can have several rows.
+        // REPLACE THIS with the real published-CSV link once that sheet
+        // exists (File > Share > Publish to web > CSV, same as the others
+        // above). Until then this points nowhere on purpose, and the
+        // section just won't show on any card (same way it'd behave if an
+        // athlete simply has no rows yet).
+        const POST_HS_BESTS_CSV_URL = 'REPLACE_WITH_PUBLISHED_CSV_URL';
         const TRACK_HONORS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9f9jEfQYpVOE1_fWR0_BGdgqzMei-60jxg88pIv_ea4o2ihpqfBKqmbP69AlvkmaHLqZcDeztuK3V/pub?output=csv';
         const TEAM_ROSTERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUpLCa8UMA-PHRXmJmhenbhUDijaB2U4d2_DYKuI7LCQw5JDnQpZwCk8tuYqY2CTxE6b4P0ECYwbnK/pub?output=csv';
         const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
@@ -3118,6 +3139,92 @@
             return athleteVideosFetchPromise;
         }
 
+        // ── Post-High-School Bests ───────────────────────────────────────
+        // Sheet columns: Name, Distance, Time — one row per personal best,
+        // so an athlete can have several (a 10k AND a half marathon, etc).
+        // Builds { 'connor reed': [{distance:'10k', time:'29:45'}, ...], ... }
+        let postHSBestsCache = null;
+        let postHSBestsFetchPromise = null;
+
+        async function getPostHSBestsMap() {
+            if (postHSBestsCache) return postHSBestsCache;
+            if (postHSBestsFetchPromise) return postHSBestsFetchPromise;
+            postHSBestsFetchPromise = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(POST_HS_BESTS_CSV_URL));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    const rows = parseCSVText(text);
+                    if (rows.length < 2) return {};
+                    const headers = rows[0].map(h => h.toLowerCase().trim());
+                    const nameIdx = headers.findIndex(h => h.includes('name'));
+                    const distIdx = headers.findIndex(h => h.includes('distance') || h.includes('event'));
+                    const timeIdx = headers.findIndex(h => h.includes('time'));
+                    if (nameIdx === -1 || distIdx === -1 || timeIdx === -1) return {};
+                    const map = {};
+                    for (let r = 1; r < rows.length; r++) {
+                        const row = rows[r];
+                        const name     = (row[nameIdx] || '').trim();
+                        const distance = (row[distIdx] || '').trim();
+                        const time     = (row[timeIdx] || '').trim();
+                        if (!name || !distance || !time) continue;
+                        const key = name.toLowerCase();
+                        if (!map[key]) map[key] = [];
+                        map[key].push({ distance, time });
+                    }
+                    // Sort each athlete's bests into a sensible shortest-to-
+                    // longest order rather than whatever order the sheet
+                    // rows happen to be in. Unrecognized distance labels
+                    // (a custom one someone typed in) just sort to the end,
+                    // alphabetically among themselves, rather than getting
+                    // dropped.
+                    const order = ['1500m', 'mile', '5k', '5k xc', '8k xc', '10k', '10k xc', 'half marathon', 'marathon'];
+                    Object.keys(map).forEach(key => {
+                        map[key].sort((a, b) => {
+                            const ai = order.indexOf(a.distance.toLowerCase().trim());
+                            const bi = order.indexOf(b.distance.toLowerCase().trim());
+                            if (ai === -1 && bi === -1) return a.distance.localeCompare(b.distance);
+                            if (ai === -1) return 1;
+                            if (bi === -1) return -1;
+                            return ai - bi;
+                        });
+                    });
+                    postHSBestsCache = map;
+                    return map;
+                } catch(e) {
+                    console.error('Post-HS bests fetch error:', e);
+                    postHSBestsFetchPromise = null;
+                    return {};
+                }
+            })();
+            return postHSBestsFetchPromise;
+        }
+
+        // Returns an expandable "👟 After Perry" section for a card, or ''
+        // if this athlete has no post-high-school bests on file.
+        function buildPostHSBestsHtml(athleteName, postHSBestsMap) {
+            if (!postHSBestsMap) return '';
+            const key = (athleteName || '').toLowerCase().trim();
+            const bests = postHSBestsMap[key];
+            if (!bests || !bests.length) return '';
+            const rowsHtml = bests.map(b => `
+                <div class="card-posths-row">
+                    <span class="card-posths-distance">${b.distance}</span>
+                    <span class="card-posths-time">${b.time}</span>
+                </div>`).join('');
+            return `
+                <div class="card-posths-section">
+                    <div class="card-posths-toggle" onclick="this.closest('.card-posths-section').classList.toggle('expanded')">
+                        <span class="card-posths-title">👟 After Perry (${bests.length})</span>
+                        <svg class="card-posths-chevron" width="16" height="16" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </div>
+                    <div class="card-posths-body">${rowsHtml}</div>
+                </div>`;
+        }
+
+        // Pre-fetch so this is ready when a card is first opened.
+        getPostHSBestsMap();
+
         // Returns an expandable "📹 Videos" section for a card, or '' if none.
         function buildAthleteVideosHtml(athleteName, videosMap) {
             if (!videosMap) return '';
@@ -3152,9 +3259,9 @@
         const ROSTER_BATCH_SIZE = 60;
         let rosterFilteredItems = [];   // the current query/gender-filtered + sorted list
         let rosterRenderedCount = 0;    // how many of rosterFilteredItems are currently in the DOM
-        let rosterMapsCache = null;     // { videosMap, honorsMap, trackMap } for the in-progress render
+        let rosterMapsCache = null;     // { videosMap, honorsMap, trackMap, postHSBestsMap } for the in-progress render
 
-        function buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap) {
+        function buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap, postHSBestsMap) {
             let gradDisplay = athlete.gradYear ? `Class of ${athlete.gradYear}` : 'Grad Class: --';
 
             let card = document.createElement('div');
@@ -3164,6 +3271,7 @@
 
             let eventsHtml = buildEventsGridHtml(athlete);
             let videosHtml = buildAthleteVideosHtml(athlete.name, videosMap);
+            let postHSBestsHtml = buildPostHSBestsHtml(athlete.name, postHSBestsMap);
             let honorBadgesHtml = buildCardHonorBadgesHtml(athlete.name, honorsMap, trackMap);
             let honorDetailHtml = buildCardHonorsDetailHtml(athlete.name, honorsMap, trackMap);
 
@@ -3204,6 +3312,7 @@
                     </div>
                     <div class="events-grid">${eventsHtml}</div>
                     ${honorDetailHtml}
+                    ${postHSBestsHtml}
                     ${videosHtml}
                     <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                         <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
@@ -3231,13 +3340,13 @@
         function renderNextRosterBatch() {
             if (!rosterMapsCache) return;
             const container = document.getElementById('rosterList');
-            const { videosMap, honorsMap, trackMap, query } = rosterMapsCache;
+            const { videosMap, honorsMap, trackMap, postHSBestsMap, query } = rosterMapsCache;
             const start = rosterRenderedCount;
             const end = Math.min(start + ROSTER_BATCH_SIZE, rosterFilteredItems.length);
 
             for (let i = start; i < end; i++) {
                 const athlete = rosterFilteredItems[i];
-                const { card, safeId } = buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap);
+                const { card, safeId } = buildAthleteCard(athlete, query, videosMap, honorsMap, trackMap, postHSBestsMap);
                 container.appendChild(card);
                 loadAthleteMeetHistory(athlete.name, `history-grid-${safeId}`);
             }
@@ -3292,10 +3401,11 @@
             const videosMap = await getAthleteVideosMap();
             const honorsMap = await getXCHonorsMap();
             const trackMap  = await getTrackHonorsMap();
+            const postHSBestsMap = await getPostHSBestsMap();
 
             rosterFilteredItems = filtered;
             rosterRenderedCount = 0;
-            rosterMapsCache = { videosMap, honorsMap, trackMap, query };
+            rosterMapsCache = { videosMap, honorsMap, trackMap, postHSBestsMap, query };
 
             renderNextRosterBatch();
 
@@ -4339,6 +4449,7 @@
             teamRostersCache = null;         teamRostersFetchPromise = null;
             xcHonorsCache = null;            xcHonorsFetchPromise = null;
             trackHonorsCache = null;         trackHonorsFetchPromise = null;
+            postHSBestsCache = null;         postHSBestsFetchPromise = null;
             historyStatsCache = null;
             trackRecordsCache = { M: null, F: null };
             trackRecordsFetchPromise = { M: null, F: null };
