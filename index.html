@@ -4324,6 +4324,34 @@
             return stateQualifiersFetchPromise[gender];
         }
 
+        // "Sync Now" only ever refreshed athlete times — honors, records,
+        // state qualifiers, videos, team rosters, and meet history are each
+        // memoized in their own module-level cache the first time they're
+        // fetched, and nothing was clearing those on a manual sync. So
+        // fixing a typo or adding an All-Ohio asterisk in a sheet wouldn't
+        // show up until a full page reload, even after hitting sync. This
+        // clears every one of those caches (cache + its in-flight-request
+        // dedup promise) so a manual sync actually re-fetches everything.
+        function clearSecondaryDataCaches() {
+            trackHistoryCache = null;        trackHistoryFetchPromise = null;
+            xcHistoryCache = null;           xcHistoryFetchPromise = null;
+            athleteVideosCache = null;       athleteVideosFetchPromise = null;
+            teamRostersCache = null;         teamRostersFetchPromise = null;
+            xcHonorsCache = null;            xcHonorsFetchPromise = null;
+            trackHonorsCache = null;         trackHonorsFetchPromise = null;
+            historyStatsCache = null;
+            trackRecordsCache = { M: null, F: null };
+            trackRecordsFetchPromise = { M: null, F: null };
+            stateQualifiersCache = { M: null, F: null };
+            stateQualifiersFetchPromise = { M: null, F: null };
+            // Each nav tab (Year-by-Year, Alumni, Accomplishments, Track
+            // Records, State Qualifiers) also caches its own finished HTML
+            // separately from the raw data above — clear that too, or a
+            // tab would keep showing its old render even once the
+            // underlying data was fresh.
+            navCache = { yearbyyear: { M: null, F: null, ALL: null }, alumni: { M: null, F: null, ALL: null }, accomplishments: { M: null, F: null, ALL: null }, trackrecords: { M: null, F: null, ALL: null }, statequalifiers: { M: null, F: null, ALL: null } };
+        }
+
         async function fetchLiveGoogleSheets(isManualClick = false) {
             let updatedAthletes = {}; 
             let count = 0;
@@ -4332,6 +4360,7 @@
             if (isManualClick) {
                 if(syncBtn) syncBtn.classList.add('spinning');
                 showMessage("Syncing real-time records from Google Sheets...");
+                clearSecondaryDataCaches();
             }
 
             // Loads one gender's set of leaderboard sheets into
@@ -4427,11 +4456,21 @@
                     await renderRoster();
                     tryOpenAthleteFromUrl();
 
-                    // The Collegiate Runners list depends on roster data to
-                    // build its PR/progression cards, so drop its cache and
-                    // re-render now if the user happens to be on that tab.
-                    navCache.alumni = { M: null, F: null, ALL: null };
-                    if (navCurrentTab === 'alumni') renderAlumniPage(document.getElementById('navBody'));
+                    // All nav-tab and underlying data caches were already
+                    // cleared at the top of this function on a manual sync.
+                    // Re-render whichever tab is currently open so the
+                    // refresh shows up immediately, instead of only taking
+                    // effect the next time someone switches tabs.
+                    if (isManualClick) {
+                        const navBody = document.getElementById('navBody');
+                        if (navBody) {
+                            if (navCurrentTab === 'alumni') renderAlumniPage(navBody);
+                            else if (navCurrentTab === 'accomplishments') renderAccomplishmentsPage(navBody);
+                            else if (navCurrentTab === 'yearbyyear') renderYearByYearPage(navBody);
+                            else if (navCurrentTab === 'trackrecords') renderTrackRecordsPage(navBody);
+                            else if (navCurrentTab === 'statequalifiers') renderStateQualifiersPage(navBody);
+                        }
+                    }
 
                     const now = new Date();
                     const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
