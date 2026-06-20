@@ -3173,7 +3173,7 @@
                     // (a custom one someone typed in) just sort to the end,
                     // alphabetically among themselves, rather than getting
                     // dropped.
-                    const order = ['1500m', 'mile', '5k', '5k xc', '8k xc', '10k', '10k xc', 'half marathon', 'marathon'];
+                    const order = ['400m', '500m', '600m', '800m', '1k', '1500m', '1600m', '3k', '3200m', '4k xc', '5k', '5k xc', '6k xc', '8k xc', '5 mile', '10k', '10k xc', '15k', 'half marathon', 'marathon', '50k', '100 mile'];
                     Object.keys(map).forEach(key => {
                         map[key].sort((a, b) => {
                             const ai = order.indexOf(a.distance.toLowerCase().trim());
