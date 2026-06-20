@@ -3138,6 +3138,18 @@
         // Sheet columns: Name, Distance, Time — one row per personal best,
         // so an athlete can have several (a 10k AND a half marathon, etc).
         // Builds { 'connor reed': [{distance:'10k', time:'29:45'}, ...], ... }
+        // Shared shortest-to-longest distance order, used both for sorting
+        // an athlete's own list of bests and for ordering rows in the
+        // compare panel. Anything not in this list sorts to the end.
+        const POST_HS_DISTANCE_ORDER = ['400m', '500m', '600m', '800m', '1k', '1500m', '1600m', '3k', '3200m', '4k xc', '5k', '5k xc', '6k xc', '8k xc', '5 mile', '10k', '10k xc', '15k', 'half marathon', 'marathon', '50k', '100 mile'];
+        function comparePostHSDistances(distA, distB) {
+            const ai = POST_HS_DISTANCE_ORDER.indexOf(distA.toLowerCase().trim());
+            const bi = POST_HS_DISTANCE_ORDER.indexOf(distB.toLowerCase().trim());
+            if (ai === -1 && bi === -1) return distA.localeCompare(distB);
+            if (ai === -1) return 1;
+            if (bi === -1) return -1;
+            return ai - bi;
+        }
         let postHSBestsCache = null;
         let postHSBestsFetchPromise = null;
 
@@ -3173,16 +3185,8 @@
                     // (a custom one someone typed in) just sort to the end,
                     // alphabetically among themselves, rather than getting
                     // dropped.
-                    const order = ['400m', '500m', '600m', '800m', '1k', '1500m', '1600m', '3k', '3200m', '4k xc', '5k', '5k xc', '6k xc', '8k xc', '5 mile', '10k', '10k xc', '15k', 'half marathon', 'marathon', '50k', '100 mile'];
                     Object.keys(map).forEach(key => {
-                        map[key].sort((a, b) => {
-                            const ai = order.indexOf(a.distance.toLowerCase().trim());
-                            const bi = order.indexOf(b.distance.toLowerCase().trim());
-                            if (ai === -1 && bi === -1) return a.distance.localeCompare(b.distance);
-                            if (ai === -1) return 1;
-                            if (bi === -1) return -1;
-                            return ai - bi;
-                        });
+                        map[key].sort((a, b) => comparePostHSDistances(a.distance, b.distance));
                     });
                     postHSBestsCache = map;
                     return map;
@@ -4141,7 +4145,7 @@
             const grades = ['9th', '10th', '11th', '12th'];
             const gradeLabels = {'9th':'Fr','10th':'So','11th':'Jr','12th':'Sr'};
 
-            const [honorsMap, trackMap] = await Promise.all([getXCHonorsMap(), getTrackHonorsMap()]);
+            const [honorsMap, trackMap, postHSBestsMap] = await Promise.all([getXCHonorsMap(), getTrackHonorsMap(), getPostHSBestsMap()]);
 
             let html = '';
 
@@ -4264,6 +4268,64 @@
                         html += `<div style="display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;${colStyle}">${badges || '—'}</div>`;
                     }
                 });
+                html += `</div></div>`;
+            }
+
+            // After Perry section — shown if ANY athlete being compared has
+            // at least one post-HS best on file. Athletes with nothing
+            // logged at all get a clear "No races on file" message in every
+            // row instead of a bare dash, so it's obvious that's a "nothing
+            // recorded yet" case rather than just "didn't run this one
+            // distance" (which still just gets a dash, since that athlete
+            // does have other races on file).
+            const anyHavePostHSBests = compareSelected.some(name => {
+                const list = postHSBestsMap[name.toLowerCase()];
+                return list && list.length;
+            });
+            if (anyHavePostHSBests) {
+                // Union of every distance label any athlete has, in
+                // shortest-to-longest order, so matching distances line up
+                // in the same row even if each athlete's list isn't in the
+                // exact same order.
+                const distanceSet = [];
+                compareSelected.forEach(name => {
+                    (postHSBestsMap[name.toLowerCase()] || []).forEach(b => {
+                        if (!distanceSet.includes(b.distance)) distanceSet.push(b.distance);
+                    });
+                });
+                distanceSet.sort(comparePostHSDistances);
+
+                html += `<div class="compare-event-section">`;
+                html += `<div class="compare-event-header">👟 After Perry</div>`;
+                html += `<div class="compare-grid">`;
+
+                html += `<div class="compare-row header-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};">`;
+                html += `<div class="compare-cell grade-col">Dist</div>`;
+                compareSelected.forEach(name => {
+                    html += `<div class="compare-cell">${name.split(' ')[0]}</div>`;
+                });
+                html += `</div>`;
+
+                distanceSet.forEach(distance => {
+                    const times = compareSelected.map(name => {
+                        const entry = (postHSBestsMap[name.toLowerCase()] || []).find(b => b.distance === distance);
+                        return entry ? cleanTimeToSeconds(entry.time) : Infinity;
+                    });
+                    const bestTime = Math.min(...times);
+
+                    html += `<div class="compare-row" style="grid-template-columns:70px ${compareSelected.map(()=>'1fr').join(' ')};">`;
+                    html += `<div class="compare-cell grade-col">${distance}</div>`;
+                    compareSelected.forEach((name, i) => {
+                        const list = postHSBestsMap[name.toLowerCase()] || [];
+                        const entry = list.find(b => b.distance === distance);
+                        const isBest = entry && times[i] === bestTime && bestTime !== Infinity && compareSelected.length > 1;
+                        const val = entry ? entry.time : (list.length ? '—' : 'No races on file');
+                        const dimStyle = !entry && !list.length ? ' style="color:var(--text-muted);font-weight:500;font-size:11px;"' : '';
+                        html += `<div class="compare-cell${isBest ? ' best-time' : ''}"${dimStyle}>${val}${isBest ? ' 🏆' : ''}</div>`;
+                    });
+                    html += `</div>`;
+                });
+
                 html += `</div></div>`;
             }
 
@@ -4792,7 +4854,7 @@
         };
 
         const XC_COACHES = {
-            M: 'Head Coach: Joey Beall · Asst: Alex Swinheart',
+            M: 'Head Coach: Joey Beall · Asst: Alex Swineheart',
             F: 'Head Coach: Emily Mazzaferri · Asst: Taryn Doyle · Vol: Maggie Thiessen'
         };
 
