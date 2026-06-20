@@ -5160,6 +5160,7 @@
             const videosMap = await getAthleteVideosMap();
             const honorsMap = await getXCHonorsMap();
             const trackMap  = await getTrackHonorsMap();
+            const postHSBestsMap = await getPostHSBestsMap();
 
             const years = entries.map(e => e.hsGradYear);
             const minYear = Math.min(...years);
@@ -5214,6 +5215,7 @@
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
                     const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap, trackMap);
                     const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap, trackMap);
+                    const postHSBestsHtml = buildPostHSBestsHtml(e.name, postHSBestsMap);
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" data-runner-name="${rosterAthlete.name.replace(/"/g, '&quot;')}">
@@ -5228,6 +5230,7 @@
                             <div class="card-expand-body">
                                 <div class="events-grid">${buildEventsGridHtml(rosterAthlete)}</div>
                                 ${honorDetailHtml}
+                                ${postHSBestsHtml}
                                 ${videosHtml}
                                 <div class="meet-history-section" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
                                     <h4 style="font-size: 11px; text-transform: uppercase; color: var(--perry-gray); margin-bottom: 6px; letter-spacing: 0.3px; font-weight: 800;">📋 Meet-by-Meet History</h4>
@@ -5241,7 +5244,8 @@
                     const videosHtml = buildAthleteVideosHtml(e.name, videosMap);
                     const honorBadgesHtml = buildCardHonorBadgesHtml(e.name, honorsMap, trackMap);
                     const honorDetailHtml = buildCardHonorsDetailHtml(e.name, honorsMap, trackMap);
-                    const hasExpandable = videosHtml || honorDetailHtml;
+                    const postHSBestsHtml = buildPostHSBestsHtml(e.name, postHSBestsMap);
+                    const hasExpandable = videosHtml || honorDetailHtml || postHSBestsHtml;
                     html += `
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" ${hasExpandable ? `data-runner-name="${e.name.replace(/"/g, '&quot;')}"` : 'style="cursor:default;"'}>
@@ -5253,7 +5257,7 @@
                                 ${collegeRowHtml}
                                 ${hasExpandable ? `<svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>` : ''}
                             </div>
-                            ${hasExpandable ? `<div class="card-expand-body">${honorDetailHtml}${videosHtml}</div>` : ''}
+                            ${hasExpandable ? `<div class="card-expand-body">${honorDetailHtml}${postHSBestsHtml}${videosHtml}</div>` : ''}
                         </div>`;
                 }
             });
