@@ -4784,6 +4784,14 @@
                             else if (navCurrentTab === 'trackrecords') renderTrackRecordsPage(navBody);
                             else if (navCurrentTab === 'statequalifiers') renderStateQualifiersPage(navBody);
                         }
+                        // The Virtual Meet keeps its last-calculated results
+                        // on screen until something re-triggers scoring —
+                        // a sync alone doesn't do that, so if it's the
+                        // active view, re-run it now with the fresh data.
+                        const rankTypeEl = document.getElementById('leaderboardRankType');
+                        if (rankTypeEl && rankTypeEl.value === 'VIRTUAL_MEET') {
+                            updateMeetYearCheckboxAvailability().then(() => executeVirtualMeetCalculation());
+                        }
                     }
 
                     const now = new Date();
