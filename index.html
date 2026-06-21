@@ -976,6 +976,10 @@
                     <input type="checkbox" id="showFullRosterToggle" onchange="executeVirtualMeetCalculation()" checked style="accent-color:var(--accent);width:15px;height:15px;">
                     Show full depth <span style="font-size:10px;font-weight:500;color:var(--text-muted);">(runners beyond scorer)</span>
                 </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <input type="checkbox" id="avgModeToggle" onchange="handleAvgModeToggle()" style="accent-color:var(--accent);width:15px;height:15px;">
+                    Score by Season Average <span style="font-size:10px;font-weight:500;color:var(--text-muted);">(not just best race)</span>
+                </label>
             </div>
             <div class="meet-btn-group">
                 <button class="action-btn" onclick="executeVirtualMeetCalculation()">Score Meet</button>
@@ -1046,6 +1050,12 @@
         // half marathon, marathon). Sheet columns: Name, Distance, Time —
         // one row per personal best, so an athlete can have several rows.
         const POST_HS_BESTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRmKAvTOPI9gtH52ap0hP9U6EJ5OJkAzNcVweaC0iTbr5UW01jHPJt2llfrr0ZJuPaJ7sF7G5W4cwUX/pub?output=csv';
+        // Season-average XC times (per runner, per year), for the Virtual
+        // Meet's "Score by Season Average" mode. Sheet columns: Year,
+        // Runner Name, Grade, Average — built by the All_Time_Averages
+        // Apps Script. Boys and girls both live now.
+        const XC_AVERAGES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-3btJXTHknwy-ko0O1pinK71_v5hS51PDH-U3yoM2QK2hIeVJAfnIbLSDKSsrVzNjzT-LyIYlYghl/pub?gid=2109531005&single=true&output=csv';
+        const GIRLS_XC_AVERAGES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQErrVn5pXDc97uxkU081yClBZ6m3QhoaRfEqg5wjoGH2-LOVYqugBMadQ96USBaG3TZEAkcb2foa4v/pub?gid=2099036518&single=true&output=csv';
         const TRACK_HONORS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9f9jEfQYpVOE1_fWR0_BGdgqzMei-60jxg88pIv_ea4o2ihpqfBKqmbP69AlvkmaHLqZcDeztuK3V/pub?output=csv';
         const TEAM_ROSTERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUpLCa8UMA-PHRXmJmhenbhUDijaB2U4d2_DYKuI7LCQw5JDnQpZwCk8tuYqY2CTxE6b4P0ECYwbnK/pub?output=csv';
         const YEAR_BY_YEAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcu9c_osUnhoRsnKUxeRoHSvyIp9dZ3kp-QEJTmhM2feI2pqz3ZR41i06VoAflKg0Ra1QZhE4_W4Vc/pub?output=csv';
@@ -1909,10 +1919,13 @@
                 container.appendChild(lbl);
             });
             document.getElementById('selectAllMeetYearsBtn').innerText = "Select All";
+            // In case the checkboxes get rebuilt (gender switch, sync,
+            // etc.) while Average Mode happens to already be checked.
+            updateMeetYearCheckboxAvailability();
         }
 
         function toggleSelectAllMeetYears() {
-            const checkboxes = document.querySelectorAll('.meet-year-checkbox');
+            const checkboxes = document.querySelectorAll('.meet-year-checkbox:not(:disabled)');
             const linkBtn = document.getElementById('selectAllMeetYearsBtn');
             let anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
 
@@ -1921,6 +1934,38 @@
             });
 
             linkBtn.innerText = anyUnchecked ? "Clear All" : "Select All";
+        }
+
+        // Years with no season-average data can't be used in Average Mode —
+        // this dims and disables those checkboxes (and unchecks them if
+        // they were checked) rather than hiding them, so it's clear why
+        // they're not selectable instead of just vanishing. Flipping
+        // Average Mode back off restores every year to normal.
+        async function updateMeetYearCheckboxAvailability() {
+            const avgToggle = document.getElementById('avgModeToggle');
+            const avgMode = avgToggle && avgToggle.checked;
+            const checkboxes = document.querySelectorAll('.meet-year-checkbox');
+
+            if (!avgMode) {
+                checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                    if (cb.closest('label')) cb.closest('label').style.opacity = '';
+                });
+                return;
+            }
+
+            const avgData = await getXCAveragesMap();
+            checkboxes.forEach(cb => {
+                const hasAvg = avgData.yearsWithData.has(cb.value);
+                cb.disabled = !hasAvg;
+                if (!hasAvg && cb.checked) cb.checked = false;
+                if (cb.closest('label')) cb.closest('label').style.opacity = hasAvg ? '' : '0.4';
+            });
+        }
+
+        async function handleAvgModeToggle() {
+            await updateMeetYearCheckboxAvailability();
+            executeVirtualMeetCalculation();
         }
 
         let boardmanEra = 'all'; // 'all' | 'classic' | 'current'
@@ -3199,6 +3244,59 @@
             return postHSBestsFetchPromise;
         }
 
+        // ── XC Season Averages (for Virtual Meet "Score by Season Average") ──
+        // Sheet columns: Year, Runner Name, Grade, Average — one row per
+        // runner per year that actually has a season average on file. Built
+        // into { byYearName: { '2019': { 'connor reed': {secs, display} } }, 
+        //        yearsWithData: Set('2019', '2021', ...) } so the Virtual
+        // Meet UI can quickly tell which years are eligible for average
+        // mode and look up a specific runner's average for a specific year.
+        let xcAveragesCache = null;
+        let xcAveragesFetchPromise = null;
+
+        async function getXCAveragesMap() {
+            if (xcAveragesCache) return xcAveragesCache;
+            if (xcAveragesFetchPromise) return xcAveragesFetchPromise;
+            xcAveragesFetchPromise = (async () => {
+                const byYearName = {};
+                const yearsWithData = new Set();
+                const sources = [XC_AVERAGES_CSV_URL, GIRLS_XC_AVERAGES_CSV_URL].filter(u => u && !u.startsWith('REPLACE_'));
+                try {
+                    for (const url of sources) {
+                        const res = await fetch(cacheBustUrl(url));
+                        if (!res.ok) continue;
+                        const text = await res.text();
+                        const rows = parseCSVText(text);
+                        if (rows.length < 2) continue;
+                        const headers = rows[0].map(h => h.toLowerCase().trim());
+                        const yearIdx = headers.findIndex(h => h.includes('year'));
+                        const nameIdx = headers.findIndex(h => h.includes('name'));
+                        const avgIdx  = headers.findIndex(h => h.includes('average') || h.includes('avg'));
+                        if (yearIdx === -1 || nameIdx === -1 || avgIdx === -1) continue;
+                        for (let r = 1; r < rows.length; r++) {
+                            const row = rows[r];
+                            const year = (row[yearIdx] || '').trim();
+                            const name = (row[nameIdx] || '').trim();
+                            const avgVal = (row[avgIdx] || '').trim();
+                            if (!year || !name || !avgVal) continue;
+                            const secs = cleanTimeToSeconds(avgVal);
+                            if (!isFinite(secs)) continue;
+                            if (!byYearName[year]) byYearName[year] = {};
+                            byYearName[year][name.toLowerCase()] = { secs, display: avgVal };
+                            yearsWithData.add(year);
+                        }
+                    }
+                    xcAveragesCache = { byYearName, yearsWithData };
+                    return xcAveragesCache;
+                } catch(e) {
+                    console.error('XC averages fetch error:', e);
+                    xcAveragesFetchPromise = null;
+                    return { byYearName: {}, yearsWithData: new Set() };
+                }
+            })();
+            return xcAveragesFetchPromise;
+        }
+
         // Returns an expandable "👟 After Perry" section for a card, or ''
         // if this athlete has no post-high-school bests on file.
         function buildPostHSBestsHtml(athleteName, postHSBestsMap) {
@@ -3423,7 +3521,7 @@
             groupElement.classList.toggle('expanded');
         }
 
-        function executeVirtualMeetCalculation() {
+        async function executeVirtualMeetCalculation() {
             const checkboxes = document.querySelectorAll('.meet-year-checkbox');
             let selectedYears = [];
             checkboxes.forEach(cb => { if(cb.checked) selectedYears.push(cb.value); });
@@ -3437,7 +3535,7 @@
             if (selectedYears.length === 0) {
                 let defaultYears = generateUniqueYearsList().slice(0, 3);
                 checkboxes.forEach(cb => {
-                    if (defaultYears.includes(cb.value)) {
+                    if (defaultYears.includes(cb.value) && !cb.disabled) {
                         cb.checked = true;
                         selectedYears.push(cb.value);
                     }
@@ -3452,39 +3550,71 @@
                 return;
             }
 
+            const avgModeToggle = document.getElementById('avgModeToggle');
+            const avgMode = avgModeToggle && avgModeToggle.checked;
+            const avgData = avgMode ? await getXCAveragesMap() : null;
+
             let globalRaceEntries = [];
 
             selectedYears.forEach(year => {
                 let seasonCandidates = [];
                 
                 Object.values(athletes).forEach(athlete => {
-                    if (genderMatches(athlete) && athlete['XC 5K']) {
-                        let evData = athlete['XC 5K'];
-                        let bestTimeThisYear = Infinity;
-                        let bestTimeStringThisYear = null;
-                        let runningGrade = "--";
+                    if (!genderMatches(athlete) || !athlete['XC 5K']) return;
+                    let evData = athlete['XC 5K'];
 
+                    if (avgMode) {
+                        // Average mode: plug in this runner's season average
+                        // for this specific year instead of their best race.
+                        // No average on file for them this year -> they
+                        // just don't race in this year's lineup at all.
+                        const yearAverages = avgData.byYearName[year];
+                        const entry = yearAverages ? yearAverages[athlete.name.toLowerCase()] : null;
+                        if (!entry) return;
+
+                        // Grade label is cosmetic only here — best-effort
+                        // lookup from their normal times data, falls back
+                        // gracefully if it can't be determined.
+                        let runningGrade = "--";
                         ['9th', '10th', '11th', '12th'].forEach(grade => {
-                            if (extractYearFromTimeValue(evData[grade]) === year) {
-                                let secs = cleanTimeToSeconds(evData[grade]);
-                                if (secs < bestTimeThisYear) {
-                                    bestTimeThisYear = secs;
-                                    bestTimeStringThisYear = evData[grade].split('(')[0].trim();
-                                    runningGrade = grade.replace('th','');
-                                }
-                            }
+                            if (extractYearFromTimeValue(evData[grade]) === year) runningGrade = grade.replace('th','');
                         });
 
-                        if (bestTimeStringThisYear) {
-                            seasonCandidates.push({
-                                name: athlete.name,
-                                gradYear: athlete.gradYear,
-                                gradeCode: runningGrade,
-                                timeSecs: bestTimeThisYear,
-                                displayTime: bestTimeStringThisYear,
-                                team: year + " PXC Team"
-                            });
+                        seasonCandidates.push({
+                            name: athlete.name,
+                            gradYear: athlete.gradYear,
+                            gradeCode: runningGrade,
+                            timeSecs: entry.secs,
+                            displayTime: entry.display,
+                            team: year + " PXC Team"
+                        });
+                        return;
+                    }
+
+                    let bestTimeThisYear = Infinity;
+                    let bestTimeStringThisYear = null;
+                    let runningGrade = "--";
+
+                    ['9th', '10th', '11th', '12th'].forEach(grade => {
+                        if (extractYearFromTimeValue(evData[grade]) === year) {
+                            let secs = cleanTimeToSeconds(evData[grade]);
+                            if (secs < bestTimeThisYear) {
+                                bestTimeThisYear = secs;
+                                bestTimeStringThisYear = evData[grade].split('(')[0].trim();
+                                runningGrade = grade.replace('th','');
+                            }
                         }
+                    });
+
+                    if (bestTimeStringThisYear) {
+                        seasonCandidates.push({
+                            name: athlete.name,
+                            gradYear: athlete.gradYear,
+                            gradeCode: runningGrade,
+                            timeSecs: bestTimeThisYear,
+                            displayTime: bestTimeStringThisYear,
+                            team: year + " PXC Team"
+                        });
                     }
                 });
 
@@ -3523,6 +3653,21 @@
 
             globalRaceEntries.sort((a, b) => a.timeSecs - b.timeSecs);
 
+            // Standard competition ranking: runners with the exact same
+            // time share a place, and the next distinct time skips ahead
+            // by however many tied (three tied for 22nd -> next is 25th).
+            // This is also how real XC meets score ties, so it affects the
+            // actual points below, not just the displayed place.
+            let tiedGlobalPlace = 1;
+            globalRaceEntries.forEach((runner, index) => {
+                if (index > 0 && runner.timeSecs === globalRaceEntries[index - 1].timeSecs) {
+                    // tie — keep the same place as the previous (tied) runner
+                } else {
+                    tiedGlobalPlace = index + 1;
+                }
+                runner.tiedPlace = tiedGlobalPlace;
+            });
+
             let teamStandingsMap = {};
             selectedYears.forEach(year => {
                 teamStandingsMap[year + " PXC Team"] = {
@@ -3542,7 +3687,7 @@
             selectedYears.forEach(y => { teamRacePlaceCounter[y + " PXC Team"] = 0; });
 
             globalRaceEntries.forEach((runner, index) => {
-                let finishPositionPoints = index + 1;
+                let finishPositionPoints = runner.tiedPlace;
                 let team = teamStandingsMap[runner.team];
                 let runnerScoreForTeam = "--";
 
@@ -3629,7 +3774,7 @@
                 podiumContainer.appendChild(accordionGroup);
             });
 
-            document.getElementById('rankHeaderTime').innerText = "Points (Time)";
+            document.getElementById('rankHeaderTime').innerText = avgMode ? "Points (Season Avg)" : "Points (Time)";
             globalRaceEntries.forEach((runner, index) => {
                 let row = document.createElement('tr');
                 row.id = `row-${btoa(runner.name)}`;
@@ -3646,7 +3791,7 @@
                 let teamPlaceDisp = runner.teamPlaceInRace !== undefined ? runner.teamPlaceInRace : '--';
                 row.innerHTML = `
                     <td class="col-rank" style="text-align:center;">
-                        <span style="display:block;font-size:10px;font-weight:800;color:var(--perry-gray);">${index + 1}</span>
+                        <span style="display:block;font-size:10px;font-weight:800;color:var(--perry-gray);">${runner.globalPlace}</span>
                         <span style="display:block;font-size:9px;font-weight:600;color:${teamPlaceDisp === '--' ? 'var(--text-muted)' : 'var(--accent-dark,#b45309)'};">${teamPlaceDisp === '--' ? '--' : '#' + teamPlaceDisp}</span>
                     </td>
                     <td class="col-grad" style="text-align:center;"><span style="font-size:11px;font-weight:700;color:var(--perry-gray);">${runner.team.replace(' PXC Team','')}</span></td>
@@ -3688,7 +3833,7 @@
             output += `======================================================================================\n`;
 
             globalRaceEntriesCache.forEach((runner, idx) => {
-                let rankStr = padStringColumns(idx + 1, 3, false);
+                let rankStr = padStringColumns(runner.globalPlace, 3, false);
                 let nameStr = padStringColumns(formatNameLastFirst(runner.name), 25, true);
                 let gradeStr = padStringColumns(runner.gradeCode, 2, false);
                 let schoolStr = padStringColumns(runner.team, 22, true);
@@ -4507,6 +4652,7 @@
             xcHonorsCache = null;            xcHonorsFetchPromise = null;
             trackHonorsCache = null;         trackHonorsFetchPromise = null;
             postHSBestsCache = null;         postHSBestsFetchPromise = null;
+            xcAveragesCache = null;          xcAveragesFetchPromise = null;
             historyStatsCache = null;
             trackRecordsCache = { M: null, F: null };
             trackRecordsFetchPromise = { M: null, F: null };
@@ -4854,7 +5000,7 @@
         };
 
         const XC_COACHES = {
-            M: 'Head Coach: Joey Beall · Asst: Alex Swineheart',
+            M: 'Head Coach: Joey Beall · Asst: Alex Swinheart',
             F: 'Head Coach: Emily Mazzaferri · Asst: Taryn Doyle · Vol: Maggie Thiessen'
         };
 
