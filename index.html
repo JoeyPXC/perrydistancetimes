@@ -199,6 +199,10 @@
         .footer-social-link { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: background 0.2s; }
         .footer-social-link:hover { background: rgba(255,255,255,0.2); }
         .footer-social-link svg { width: 20px; height: 20px; fill: white; }
+        .footer-results-links { display: flex; gap: 10px; margin-top: 12px; }
+        .footer-results-link { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #e2e8f0; font-size: 12px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px; transition: background 0.2s; }
+        .footer-results-link:hover { background: rgba(255,255,255,0.18); }
+        .footer-results-link span { font-size: 10px; opacity: 0.6; }
 
         
         .logo-img { max-width: 140px; height: auto; display: block; margin-bottom: -20px; }
@@ -530,6 +534,7 @@
         .news-article-body a { color:var(--perry-gray); text-decoration:underline; }
         body.dark-mode .news-article-body a { color:var(--accent); }
         .news-archived-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:18px; padding-top:12px; border-top:1px solid var(--border); }
+        .ohio-icon { display:inline-block; width:1em; height:1em; vertical-align:-0.15em; margin-right:0.25em; }
 
 
         /* Year-by-year page */
@@ -784,23 +789,11 @@
                     <div class="ham-menu-toggle-switch" id="darkModeSwitch" onclick="toggleDarkMode()"></div>
                 </div>
                 <hr class="ham-menu-divider">
-                <div class="ham-menu-section-label">XC Program History</div>
                 <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('accomplishments')">
-                    <span class="ham-menu-item-icon">🏆</span> Accomplishments
+                    <span class="ham-menu-item-icon">🏆</span> XC Program History
                 </button>
-                <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('alumni')">
-                    <span class="ham-menu-item-icon">🎓</span> Collegiate Runners
-                </button>
-                <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('yearbyyear')">
-                    <span class="ham-menu-item-icon">📅</span> Year by Year
-                </button>
-                <hr class="ham-menu-divider">
-                <div class="ham-menu-section-label">Track Program</div>
                 <button class="ham-menu-item" onclick="closeHamMenu();openRecordsOverlay()">
-                    <span class="ham-menu-item-icon">🏅</span> School Records
-                </button>
-                <button class="ham-menu-item" onclick="closeHamMenu();openStateQualifiersOverlay()">
-                    <span class="ham-menu-item-icon">🎟️</span> State Qualifiers
+                    <span class="ham-menu-item-icon">🏅</span> Track Program History
                 </button>
                 <hr class="ham-menu-divider">
                 <button class="ham-menu-item" onclick="closeHamMenu();openNewsOverlay()">
@@ -895,7 +888,7 @@
     <div class="nav-overlay" id="stateQualifiersOverlay">
         <div class="nav-header">
             <div class="nav-back-btn" title="Back to Leaderboards" onclick="closeStateQualifiersOverlay()">← 🏃</div>
-            <span class="nav-header-title" id="stateQualifiersHeaderTitle">🎟️ Boys State Qualifiers</span>
+            <span class="nav-header-title" id="stateQualifiersHeaderTitle"><svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Boys State Qualifiers</span>
             <button class="nav-close-btn" onclick="closeStateQualifiersOverlay()">✕ Close</button>
         </div>
         <div class="nav-gender-toggle-row">
@@ -1100,6 +1093,14 @@
             </a>
             <a href="https://www.youtube.com/perrytrackxc" target="_blank" rel="noopener" class="footer-social-link" title="YouTube" aria-label="YouTube">
                 <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+        </div>
+        <div class="footer-results-links">
+            <a class="footer-results-link" href="https://www.athletic.net/team/7900/cross-country/2026" target="_blank" rel="noopener">
+                Athletic.net <span>↗</span>
+            </a>
+            <a class="footer-results-link" href="https://oh.milesplit.com/teams/9609-mass-perry" target="_blank" rel="noopener">
+                MileSplit <span>↗</span>
             </a>
         </div>
     </footer>
@@ -5349,7 +5350,7 @@
                 .map(src => `<img class="news-article-img" src="${src}" alt="" onerror="this.remove()">`)
                 .join('');
             const archivedNote = post.archived
-                ? '<div class="news-archived-note">📦 Imported from the original Perry XC/Track blog. Some old photos may no longer load if they were removed from the original site.</div>'
+                ? '<div class="news-archived-note">📦 Archived post from the original Perry XC/Track website. Some links and photos may no longer work as the original site is no longer online.</div>'
                 : '';
             container.innerHTML = `
                 <button class="news-back-link" onclick="renderNewsList()">← All Updates</button>
@@ -5405,9 +5406,9 @@
 
         // State Qualifiers overlay title reflects the current Boys/Girls/All toggle.
         function stateQualifiersPageTitle() {
-            if (genderFilter === 'F') return '🎟️ Girls State Qualifiers';
-            if (genderFilter === 'M') return '🎟️ Boys State Qualifiers';
-            return '🎟️ State Qualifiers';
+            if (genderFilter === 'F') return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Girls State Qualifiers';
+            if (genderFilter === 'M') return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Boys State Qualifiers';
+            return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> State Qualifiers';
         }
 
         function switchNavTab(tab) {
@@ -6034,7 +6035,7 @@
                     inner = `<div class="accomp-gender-divider">🏆 Boys</div>${boysHtml}<div class="accomp-gender-divider">🏆 Girls</div>${girlsHtml}`;
                 }
 
-                const stateQualBtn = `<div class="filter-row records-link-row"><button class="action-btn" onclick="openStateQualifiersOverlay()" style="width:100%;">🎟️ Track State Qualifiers</button></div>`;
+                const stateQualBtn = `<div class="filter-row records-link-row"><button class="action-btn" onclick="openStateQualifiersOverlay()" style="width:100%;"><svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Track State Qualifiers</button></div>`;
                 inner = stateQualBtn + inner;
 
                 navCache.trackrecords[genderFilter] = inner;
