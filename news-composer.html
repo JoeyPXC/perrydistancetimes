@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perry News Post Composer</title>
+<style>
+    :root {
+        --primary: #000000;
+        --accent: #ffdd00;
+        --perry-gray: #53565A;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --green: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); }
+    header { background:var(--primary); border-bottom:4px solid var(--accent); padding:16px 20px; display:flex; align-items:center; gap:16px; }
+    header h1 { color:#fff; font-size:17px; margin:0 0 3px; }
+    header p { color:#aaa; font-size:12px; margin:0; }
+    .header-text { flex:1; }
+    #syncStatus { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+    #syncStatus.loading { background:#334155; color:#94a3b8; }
+    #syncStatus.ok     { background:#14532d; color:#86efac; }
+    #syncStatus.err    { background:#7f1d1d; color:#fca5a5; }
+
+    .wrap { max-width:1100px; margin:0 auto; padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media (max-width:820px) { .wrap { grid-template-columns:1fr; } }
+    .panel { background:var(--card-bg); border:2px solid var(--border); border-radius:12px; padding:16px; }
+    .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:0.4px; color:var(--perry-gray); margin:0 0 12px; }
+    label { display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin:12px 0 5px; text-transform:uppercase; letter-spacing:0.3px; }
+    label:first-of-type { margin-top:0; }
+    input[type=text], input[type=date], textarea {
+        width:100%; padding:9px 10px; border:2px solid var(--border); border-radius:8px;
+        font-size:14px; font-family:inherit; color:var(--text); background:var(--bg);
+    }
+    textarea { min-height:180px; resize:vertical; line-height:1.5; }
+    .sport-row { display:flex; gap:8px; }
+    .sport-row button { flex:1; padding:9px; border:2px solid var(--border); border-radius:8px; background:var(--bg); font-weight:800; font-size:12px; text-transform:uppercase; cursor:pointer; color:var(--text-muted); }
+    .sport-row button.active { background:var(--primary); color:var(--accent); border-color:var(--primary); }
+    .toolbar { display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+    .toolbar button { background:var(--primary); color:var(--accent); border:none; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; }
+    .toolbar button:hover { opacity:0.85; }
+    .hint { font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.5; }
+    .imgrow { display:flex; gap:8px; margin-bottom:6px; }
+    .imgrow input { flex:1; }
+    .imgrow button { background:none; border:2px solid var(--border); border-radius:8px; padding:0 12px; cursor:pointer; color:var(--text-muted); font-weight:800; }
+    #addImageBtn { margin-top:6px; background:none; border:2px dashed var(--border); border-radius:8px; padding:8px; width:100%; cursor:pointer; color:var(--perry-gray); font-weight:800; font-size:12px; text-transform:uppercase; }
+
+    /* Preview */
+    .news-badge { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; padding:2px 7px; border-radius:20px; color:#000; }
+    .news-badge.xc { background:var(--accent); }
+    .news-badge.track { background:#60a5fa; }
+    .news-article-title { font-size:19px; font-weight:900; color:var(--text); line-height:1.25; margin:8px 0 4px; }
+    .news-article-date { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:14px; }
+    .news-article-img { width:100%; border-radius:10px; margin-bottom:12px; display:block; background:var(--border); }
+    .news-body-list { margin:6px 0 14px 18px; padding:0; }
+    .news-body-list li { font-size:14px; line-height:1.6; color:var(--text); margin-bottom:4px; }
+    .news-article-body p { font-size:14px; line-height:1.7; color:var(--text); margin:0 0 14px; }
+    .news-article-body a { color:var(--perry-gray); text-decoration:underline; }
+    .preview-empty { color:var(--text-muted); font-style:italic; font-size:13px; }
+
+    /* Output */
+    #generateBtn { width:100%; margin-top:16px; background:var(--primary); color:var(--accent); border:3px solid var(--accent); border-radius:10px; padding:12px; font-size:14px; font-weight:800; text-transform:uppercase; cursor:pointer; }
+    #outputWrap { margin-top:14px; display:none; }
+    .out-step { background:#f1f5f9; border-radius:10px; padding:12px 14px; font-size:13px; }
+    .out-step strong { display:block; margin-bottom:6px; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; color:var(--perry-gray); }
+    .btn-row { display:flex; gap:8px; margin-top:10px; }
+    .btn-row button { flex:1; padding:10px; font-weight:800; cursor:pointer; border-radius:8px; font-size:13px; border:2px solid transparent; }
+    #downloadBtn { background:var(--accent); color:#000; border-color:var(--accent); font-size:14px; }
+    #downloadBtn:hover { opacity:0.85; }
+    .post-count { font-size:11px; color:var(--text-muted); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-text">
+        <h1>📰 Perry News Post Composer</h1>
+        <p>Write a post, preview it, download an updated news-posts.js — ready to push to GitHub</p>
+    </div>
+    <span id="syncStatus" class="loading">⏳ Loading posts…</span>
+</header>
+
+<div class="wrap">
+    <div class="panel">
+        <h2>Write</h2>
+
+        <label>Sport</label>
+        <div class="sport-row">
+            <button type="button" class="active" data-sport="xc" onclick="setSport('xc')">Cross Country</button>
+            <button type="button" data-sport="track" onclick="setSport('track')">Track</button>
+        </div>
+
+        <label for="fTitle">Title</label>
+        <input type="text" id="fTitle" placeholder="Boys Beat Hoover in Federal League Dual" oninput="updatePreview()">
+
+        <label for="fDate">Date</label>
+        <input type="date" id="fDate" oninput="updatePreview()">
+
+        <label for="fBody">Story</label>
+        <div class="toolbar">
+            <button type="button" onclick="wrapSel('**','**')" title="Bold"><b>B</b></button>
+            <button type="button" onclick="wrapSel('*','*')"  title="Italic"><i>I</i></button>
+            <button type="button" onclick="wrapSel('***','***')" title="Bold+Italic"><b><i>BI</i></b></button>
+            <button type="button" onclick="insertBullet()">• Bullet</button>
+            <button type="button" onclick="insertLink()">🔗 Link</button>
+        </div>
+        <textarea id="fBody" placeholder="Great team effort tonight at Hoover..." oninput="updatePreview()"></textarea>
+        <p class="hint">
+            Blank line = new paragraph &nbsp;|&nbsp; Line starting with "- " = bullet<br>
+            <code>**bold**</code> &nbsp; <code>*italic*</code> &nbsp; <code>***bold+italic***</code>
+        </p>
+
+        <label>Photos</label>
+        <div id="imageRows"></div>
+        <button type="button" id="addImageBtn" onclick="addImageRow()">+ Add Photo</button>
+        <p class="hint">Drop the photo into the <strong>news-images/</strong> folder in your GitHub repo, then enter its filename here, e.g. <code>news-images/2026-09-13-hoover-1.jpg</code>.</p>
+
+        <button type="button" id="generateBtn" onclick="generate()">Generate &amp; Download →</button>
+
+        <div id="outputWrap">
+            <div class="out-step">
+                <strong>✅ Ready — click Download to get the updated file</strong>
+                The downloaded <code>news-posts.js</code> already contains all your existing posts
+                plus this new one at the top. Just replace the file in your GitHub repo.
+                <div class="btn-row">
+                    <button type="button" id="downloadBtn" onclick="downloadFile()">⬇ Download news-posts.js</button>
+                </div>
+                <p class="post-count" id="postCount"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Preview — exactly how it'll look on the News page</h2>
+        <div id="previewArea"><p class="preview-empty">Start typing to see a preview…</p></div>
+    </div>
+</div>
+
+<script>
+// ── Embedded renderer (mirrors news-render.js exactly) ───────────────────────
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function renderInline(s) {
+    s = s.replace(/\[([^\]]+)\]\(([^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    s = s.replace(/\*\*\*([^*]+)\*\*\*/g,'<strong><em>$1</em></strong>');
+    s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    s = s.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+    return s;
+}
+function renderNewsBody(raw) {
+    if (!raw) return '';
+    const escaped = escapeHtml(raw).replace(/\r\n/g,'\n');
+    const blocks = escaped.split(/\n\s*\n/);
+    let html = '';
+    for (const block of blocks) {
+        const lines = block.split('\n').filter(l=>l.length>0);
+        if (!lines.length) continue;
+        let i=0, para=[];
+        const flush=()=>{ if(para.length){ html+='<p>'+para.map(renderInline).join('<br>')+'</p>'; para=[]; } };
+        while(i<lines.length){
+            if(/^-\s+/.test(lines[i].trim())){
+                flush(); html+='<ul class="news-body-list">';
+                while(i<lines.length && /^-\s+/.test(lines[i].trim()))
+                    html+='<li>'+renderInline(lines[i++].trim().replace(/^-\s+/,''))+'</li>';
+                html+='</ul>';
+            } else { para.push(lines[i++]); }
+        }
+        flush();
+    }
+    return html;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+const RAW_URL = 'https://raw.githubusercontent.com/JoeyPXC/perrydistancetimes/main/news-posts.js';
+
+// Will hold the existing posts array text (everything inside NEWS_POSTS = [...])
+// and the full file header comment so we can reconstruct the file faithfully.
+let existingPostsText = '';   // the raw JS array items, as a string
+let existingPostCount = 0;
+let fetchedOk = false;
+
+async function loadExistingPosts() {
+    const el = document.getElementById('syncStatus');
+    try {
+        const res = await fetch(RAW_URL + '?t=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+
+        // Extract everything inside NEWS_POSTS = [ ... ];
+        const match = text.match(/const NEWS_POSTS\s*=\s*\[([\s\S]*)\];/);
+        if (match) {
+            existingPostsText = match[1].trim();
+            // Count real posts (lines starting with a { after stripping comments)
+            const stripped = existingPostsText.replace(/\/\/[^\n]*/g,'').trim();
+            existingPostCount = stripped.length > 5
+                ? (stripped.match(/^\s*\{/mg) || []).length
+                : 0;
+        }
+        fetchedOk = true;
+        el.className = 'ok';
+        el.textContent = existingPostCount > 0
+            ? `✓ Loaded ${existingPostCount} existing post${existingPostCount!==1?'s':''}`
+            : '✓ Connected (no posts yet)';
+    } catch(e) {
+        el.className = 'err';
+        el.textContent = '⚠ Offline — download will still work';
+        // Not fatal; user can still compose and download
+    }
+}
+
+loadExistingPosts();
+
+// ── Form helpers ─────────────────────────────────────────────────────────────
+let currentSport = 'xc';
+document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+
+function setSport(s) {
+    currentSport = s;
+    document.querySelectorAll('.sport-row button').forEach(b=>b.classList.toggle('active',b.dataset.sport===s));
+    updatePreview();
+}
+function wrapSel(before, after) {
+    const ta=document.getElementById('fBody');
+    const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+    const sel=v.slice(s,e)||'text';
+    ta.value=v.slice(0,s)+before+sel+after+v.slice(e);
+    ta.focus(); ta.selectionStart=s+before.length; ta.selectionEnd=s+before.length+sel.length;
+    updatePreview();
+}
+function insertBullet() {
+    const ta=document.getElementById('fBody');
+    const s=ta.selectionStart,v=ta.value;
+    const ins=(s>0&&v[s-1]!=='\n'?'\n':'')+' - ';
+    ta.value=v.slice(0,s)+ins+v.slice(s);
+    ta.focus(); ta.selectionStart=ta.selectionEnd=s+ins.length;
+    updatePreview();
+}
+function insertLink() {
+    const url=prompt('Link URL:'); if(!url) return;
+    const txt=prompt('Link text (what the reader sees):','results')||'link';
+    wrapSel(`[${txt}](${url})`,'');
+}
+function addImageRow(val) {
+    const wrap=document.getElementById('imageRows');
+    const row=document.createElement('div'); row.className='imgrow';
+    row.innerHTML=`<input type="text" class="imgInput" placeholder="news-images/filename.jpg" oninput="updatePreview()">
+                   <button type="button" onclick="this.parentElement.remove();updatePreview()">✕</button>`;
+    wrap.appendChild(row);
+    if(val) row.querySelector('input').value=val;
+}
+function getImages() {
+    return [...document.querySelectorAll('.imgInput')].map(i=>i.value.trim()).filter(Boolean);
+}
+
+// ── Preview ──────────────────────────────────────────────────────────────────
+function updatePreview() {
+    const title=document.getElementById('fTitle').value.trim();
+    const dateStr=document.getElementById('fDate').value;
+    const body=document.getElementById('fBody').value;
+    const images=getImages();
+    const preview=document.getElementById('previewArea');
+    if(!title&&!body){ preview.innerHTML='<p class="preview-empty">Start typing to see a preview…</p>'; return; }
+    const badge=currentSport==='track'?'track':'xc';
+    const label=currentSport==='track'?'Track':'XC';
+    const dateLabel=dateStr?new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'';
+    const imgs=images.map(src=>`<img class="news-article-img" src="${src}" alt="" onerror="this.style.display='none'">`).join('');
+    preview.innerHTML=`
+        <span class="news-badge ${badge}">${label}</span>
+        <div class="news-article-title">${title||'(untitled)'}</div>
+        <div class="news-article-date">${dateLabel}</div>
+        ${imgs}
+        <div class="news-article-body">${renderNewsBody(body)}</div>`;
+}
+
+// ── Code generation ───────────────────────────────────────────────────────────
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60); }
+
+function buildPostCode() {
+    const title=document.getElementById('fTitle').value.trim();
+    const dateStr=document.getElementById('fDate').value;
+    const body=document.getElementById('fBody').value;
+    const images=getImages();
+    const id=`${dateStr}-${slugify(title)}`;
+    const lines=['    {',
+        `        id: ${JSON.stringify(id)},`,
+        `        sport: ${JSON.stringify(currentSport)},`,
+        `        date: ${JSON.stringify(dateStr)},`,
+        `        title: ${JSON.stringify(title)},`,
+        `        body: ${JSON.stringify(body)},`,
+        `        images: ${JSON.stringify(images)}`,
+        '    },'];
+    return lines.join('\n');
+}
+
+function buildFullFile(newPostCode) {
+    const header =
+`// news-posts.js
+// This is YOUR file — add a new post here after every meet and it shows up
+// on the News & Updates page. Newest or oldest doesn't matter, the app
+// sorts by date automatically.
+//
+// Easiest way to add a post: open news-composer.html, fill out the form,
+// click "Download news-posts.js", and replace this file in your GitHub repo.
+//
+// Formatting in the body field:
+//   ***bold and italic***
+//   **bold**
+//   *italic*
+//   [link text](https://example.com)
+//   lines starting with "- " become bullet points
+//   blank line = new paragraph
+
+const NEWS_POSTS = [
+`;
+    // Combine new post + existing posts (if any)
+    const existingBlock = existingPostsText ? '\n' + existingPostsText : '';
+    return header + newPostCode + existingBlock + '\n];\n';
+}
+
+function generate() {
+    const title=document.getElementById('fTitle').value.trim();
+    const dateStr=document.getElementById('fDate').value;
+    if(!title||!dateStr){ alert('Add at least a title and date first.'); return; }
+
+    const total = existingPostCount + 1;
+    document.getElementById('postCount').textContent =
+        `This file will contain ${total} post${total!==1?'s':''} total` +
+        (fetchedOk ? ` (${existingPostCount} existing + 1 new).` : ` (couldn't verify existing posts — offline?).`);
+
+    document.getElementById('outputWrap').style.display='block';
+    document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function downloadFile() {
+    const title=document.getElementById('fTitle').value.trim();
+    const dateStr=document.getElementById('fDate').value;
+    if(!title||!dateStr){ alert('Add at least a title and date first.'); return; }
+
+    const newPostCode = buildPostCode();
+    const fileContent = buildFullFile(newPostCode);
+
+    const blob=new Blob([fileContent],{type:'text/javascript'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='news-posts.js'; a.click();
+    URL.revokeObjectURL(url);
+}
+
+addImageRow();
+</script>
+</body>
+</html>

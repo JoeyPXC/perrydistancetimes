@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perry-distance-v5';
+const CACHE_NAME = 'perry-distance-v7';
 
 const APP_SHELL = [
   './',
@@ -7,6 +7,9 @@ const APP_SHELL = [
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
+  './news-render.js',
+  './news-posts.js',
+  './news-archive.js',
 ];
 
 self.addEventListener('install', event => {
