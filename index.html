@@ -4680,21 +4680,42 @@
             // Loads one gender's set of leaderboard sheets into
             // updatedAthletes, tagging each athlete with gender:'M' or 'F'.
             // Boys and girls sheets share the same column layout (see the
-            // GIRLS_GOOGLE_SHEET_CSV_URLS comment), so this single routine
-            // handles both — only the URL map and gender tag differ.
+            // GIRLS_GOOGLE_SHEET_CSV_URLS comment), so the same pair of
+            // routines handles both — only the URL map and gender tag differ.
             //
             // NOTE: athletes are keyed by name. A boy and girl sharing the
             // exact same full name would collide here (the second one
-            // loaded would overwrite the first's record). This hasn't come
-            // up in practice; if it ever does, the fix is to key girls'
+            // processed would overwrite the first's record). This hasn't
+            // come up in practice; if it ever does, the fix is to key girls'
             // entries separately when a collision is detected.
-            async function loadGenderSheets(urlMap, gender) {
-                for (const [eventName, url] of Object.entries(urlMap)) {
-                    if (!url) continue;
 
-                    let res = await fetch(url + '&cachebust=' + new Date().getTime());
-                    let text = await res.text();
-                    let rows = parseCSVText(text);
+            // Downloads one gender's sheets ALL AT ONCE (Promise.all) and
+            // returns the parsed rows. Fetching and processing are split
+            // into two steps on purpose: the old version awaited each
+            // fetch inside the loop, so the 8 leaderboard CSVs downloaded
+            // one after another — the slowest part of startup. Now all 8
+            // (both genders, kicked off together below) are in flight
+            // simultaneously; a failed sheet just comes back empty rather
+            // than aborting the rest.
+            function fetchGenderSheets(urlMap) {
+                const entries = Object.entries(urlMap).filter(([, url]) => url);
+                return Promise.all(entries.map(async ([eventName, url]) => {
+                    try {
+                        const res = await fetch(url + '&cachebust=' + new Date().getTime());
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        const text = await res.text();
+                        return { eventName, rows: parseCSVText(text) };
+                    } catch (e) {
+                        console.error('Leaderboard fetch error (' + eventName + '):', e);
+                        return { eventName, rows: [] };
+                    }
+                }));
+            }
+
+            // Processing stays sequential and boys-before-girls so the
+            // name-collision behavior described above is unchanged.
+            function processGenderSheets(fetchedSheets, gender) {
+                for (const { eventName, rows } of fetchedSheets) {
                     if (rows.length < 2) continue;
 
                     let isXC = (eventName === 'XC 5K');
@@ -4757,8 +4778,14 @@
             }
 
             try {
-                await loadGenderSheets(GOOGLE_SHEET_CSV_URLS, 'M');
-                await loadGenderSheets(GIRLS_GOOGLE_SHEET_CSV_URLS, 'F');
+                // All 8 CSVs (4 boys + 4 girls) download simultaneously...
+                const [boysSheets, girlsSheets] = await Promise.all([
+                    fetchGenderSheets(GOOGLE_SHEET_CSV_URLS),
+                    fetchGenderSheets(GIRLS_GOOGLE_SHEET_CSV_URLS)
+                ]);
+                // ...but are processed in a fixed order (M then F).
+                processGenderSheets(boysSheets, 'M');
+                processGenderSheets(girlsSheets, 'F');
 
                 if (count > 0) {
                     athletes = updatedAthletes;
@@ -4826,8 +4853,14 @@
             }
         } catch(e) {}
         
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchLiveGoogleSheets(false);
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Leaderboards first — they're what's on screen. Only once
+            // they've landed do we kick off the big history prefetch
+            // (~30 more CSV requests), so it no longer competes with the
+            // visible data for bandwidth on slow connections. Cards still
+            // open instantly in practice; the prefetch just starts a
+            // couple seconds later.
+            await fetchLiveGoogleSheets(false);
             getXCHistoryData();
             getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
         });
