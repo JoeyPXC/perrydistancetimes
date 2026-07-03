@@ -333,7 +333,8 @@ function generate() {
     const total = existingPostCount + 1;
     document.getElementById('postCount').textContent =
         `This file will contain ${total} post${total!==1?'s':''} total` +
-        (fetchedOk ? ` (${existingPostCount} existing + 1 new).` : ` (couldn't verify existing posts — offline?).`);
+        (fetchedOk ? ` (${existingPostCount} existing + 1 new).` : ` (couldn't verify existing posts — offline?).`) +
+        ` Your 485 historical posts from the old site are always loaded separately from news-archive.js.`;
 
     document.getElementById('outputWrap').style.display='block';
     document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
