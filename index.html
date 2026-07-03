@@ -5108,7 +5108,28 @@
 
         let scheduleGender = 'M';
 
+        // ── Back gesture handling (Android swipe / browser back button) ──
+        // Each overlay open pushes a history entry. Swiping back pops it,
+        // which fires popstate and closes whichever overlay is open.
+        window.addEventListener('popstate', () => {
+            if (document.getElementById('newsOverlay').classList.contains('open')) {
+                if (newsInDetailView) { renderNewsList(); }
+                else { closeNewsOverlay(); }
+            } else if (document.getElementById('navOverlay').classList.contains('open')) {
+                closeNavMenu();
+            } else if (document.getElementById('recordsOverlay').classList.contains('open')) {
+                closeRecordsOverlay();
+            } else if (document.getElementById('stateQualifiersOverlay').classList.contains('open')) {
+                closeStateQualifiersOverlay();
+            } else if (document.getElementById('scheduleOverlay').classList.contains('open')) {
+                closeScheduleOverlay();
+            } else if (document.getElementById('hamMenuOverlay').classList.contains('open')) {
+                closeHamMenu();
+            }
+        });
+
         function openScheduleOverlay() {
+            history.pushState({ overlay: 'schedule' }, '');
             document.getElementById('scheduleOverlay').classList.add('open');
             renderSchedule();
         }
@@ -5171,6 +5192,7 @@
         }
 
         function openHamMenu() {
+            history.pushState({ overlay: 'ham' }, '');
             document.getElementById('hamMenuOverlay').classList.add('open');
             // Sync dark mode switch state
             const isDark = document.body.classList.contains('dark-mode');
@@ -5182,6 +5204,7 @@
         }
 
         function openNavMenu(tab) {
+            history.pushState({ overlay: 'nav' }, '');
             document.getElementById('navOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
@@ -5203,6 +5226,7 @@
         }
 
         function openRecordsOverlay() {
+            history.pushState({ overlay: 'records' }, '');
             document.getElementById('recordsOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
@@ -5217,6 +5241,7 @@
         }
 
         function openStateQualifiersOverlay() {
+            history.pushState({ overlay: 'statequalifiers' }, '');
             document.getElementById('stateQualifiersOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
@@ -5251,6 +5276,7 @@
         }
 
         function openNewsOverlay() {
+            history.pushState({ overlay: 'news' }, '');
             document.getElementById('newsOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
@@ -5345,6 +5371,7 @@
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
+            history.pushState({ overlay: 'newsdetail' }, '');
             newsInDetailView = true;
             document.getElementById('newsFilterRow').style.display = 'none';
             const container = document.getElementById('newsBody');
