@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -799,7 +800,7 @@
                     <span class="ham-menu-item-icon">📰</span> News & Updates
                 </button>
                 <button class="ham-menu-item" onclick="closeHamMenu();openScheduleOverlay()">
-                    <span class="ham-menu-item-icon">📋</span> 2026 XC Schedule
+                    <span class="ham-menu-item-icon">📋</span> Schedule
                 </button>
                 <hr class="ham-menu-divider">
                 <div class="ham-menu-section-label">External Links</div>
@@ -830,7 +831,7 @@
     <div class="nav-overlay" id="scheduleOverlay">
         <div class="nav-header">
             <div class="nav-back-btn" onclick="closeScheduleOverlay()">← 🏃</div>
-            <span class="nav-header-title">📋 2026 XC Schedule</span>
+            <span class="nav-header-title">📋 Schedule</span>
             <button class="nav-close-btn" onclick="closeScheduleOverlay()">✕ Close</button>
         </div>
         <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
@@ -5068,7 +5069,7 @@
             if (card) toggleAthleteCardElement(card, header.dataset.runnerName);
         });
 
-        // ── 2026 XC Schedule ─────────────────────────────────────────────
+        // ── Schedule ─────────────────────────────────────────────
         const XC_SCHEDULE = {
             M: [
                 { date: 'Sat. Aug. 29', dateVal: '2026-08-29', meet: 'Hoka Night XC Showcase',         location: 'Spire Academy — Geneva, OH',          races: [{div:'Open',time:'6:30pm'},{div:'JV',time:'7:45pm'},{div:'Var',time:'9:50pm'}] },
