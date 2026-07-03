@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2267,7 +2268,13 @@
                         ? 'color:var(--perry-gray);font-size:13px;font-weight:700;'
                         : 'color:var(--text-muted);';
                 const timeStyle = 'font-family:monospace;font-weight:600;';
-                const safeName = r.name.replace(/"/g, '&quot;');
+                // Escape for a single-quoted JS string inside a double-quoted
+                // HTML attribute. The old version only escaped double quotes,
+                // so any athlete with an apostrophe (O'Brien, D'Aurelio...)
+                // produced invalid JS — clicking their row silently did
+                // nothing. Backslash-escape apostrophes for the JS layer,
+                // entity-escape double quotes for the HTML layer.
+                const safeName = r.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 return `<tr class="${highlightedAthlete === r.name ? 'highlighted-row' : ''}" style="cursor:pointer;"
                     onclick="highlightedAthlete='${safeName}'; renderCourseRankings(); openDrawerToAthlete('${safeName}');">
                     <td class="col-rank" style="text-align:center;font-family:monospace;${rankStyle}">${r.rank}</td>
