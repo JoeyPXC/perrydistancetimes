@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perry-distance-v7';
+const CACHE_NAME = 'perry-distance-v8';
 
 const APP_SHELL = [
   './',
@@ -8,8 +8,9 @@ const APP_SHELL = [
   './icon-512.png',
   './icon-maskable-512.png',
   './news-render.js',
-  './news-posts.js',
   './news-archive.js',
+  // news-posts.js is intentionally excluded — it's fetched network-first
+  // so new posts show up immediately without clearing cache.
 ];
 
 self.addEventListener('install', event => {
@@ -65,6 +66,24 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match(cacheKey))
+    );
+    return;
+  }
+
+  // news-posts.js — network first, fall back to cache offline.
+  // This file updates every time a new post is added, so we never
+  // want to serve a stale cached copy when the network is available.
+  if (requestUrl.pathname.endsWith('news-posts.js')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
