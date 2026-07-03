@@ -5307,10 +5307,13 @@
             newsRenderedCount = end;
         }
 
+        let newsInDetailView = false;
+
         (function() {
             const body = document.getElementById('newsBody');
             if (!body) return;
             body.addEventListener('scroll', () => {
+                if (newsInDetailView) return;
                 if (newsRenderedCount >= newsFilteredItems.length) return;
                 if (body.scrollTop + body.clientHeight >= body.scrollHeight - 400) {
                     renderNextNewsBatch();
@@ -5319,6 +5322,7 @@
         })();
 
         function renderNewsList() {
+            newsInDetailView = false;
             document.getElementById('newsFilterRow').style.display = 'flex';
             const query = (document.getElementById('newsSearchInput').value || '').toLowerCase().trim();
             const all = getAllNewsPosts();
@@ -5340,6 +5344,7 @@
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
+            newsInDetailView = true;
             document.getElementById('newsFilterRow').style.display = 'none';
             const container = document.getElementById('newsBody');
             const badgeClass = post.sport === 'track' ? 'track' : 'xc';
