@@ -888,7 +888,7 @@
     <div class="nav-overlay" id="stateQualifiersOverlay">
         <div class="nav-header">
             <div class="nav-back-btn" title="Back to Leaderboards" onclick="closeStateQualifiersOverlay()">← 🏃</div>
-            <span class="nav-header-title" id="stateQualifiersHeaderTitle"><svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Boys State Qualifiers</span>
+            <span class="nav-header-title" id="stateQualifiersHeaderTitle"><svg class="ohio-icon" viewBox="0 0 120 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 18 L0 0 L90 0 L90 6 L118 6 L118 62 L110 74 L98 84 L84 92 L70 97 L56 98 L42 95 L30 88 L20 78 L12 66 L6 52 L2 38 L0 24 Z"/></svg> Boys State Qualifiers</span>
             <button class="nav-close-btn" onclick="closeStateQualifiersOverlay()">✕ Close</button>
         </div>
         <div class="nav-gender-toggle-row">
@@ -1535,7 +1535,7 @@
                 renderTrackRecordsPage(document.getElementById('recordsBody'));
             }
             if (document.getElementById('stateQualifiersOverlay').classList.contains('open')) {
-                document.getElementById('stateQualifiersHeaderTitle').textContent = stateQualifiersPageTitle();
+                document.getElementById('stateQualifiersHeaderTitle').innerHTML = stateQualifiersPageTitle();
                 renderStateQualifiersPage(document.getElementById('stateQualifiersBody'));
             }
             try { localStorage.setItem('perry_gender_filter', g); } catch(e) {}
@@ -5220,7 +5220,7 @@
             document.getElementById('stateQualifiersOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
-            document.getElementById('stateQualifiersHeaderTitle').textContent = stateQualifiersPageTitle();
+            document.getElementById('stateQualifiersHeaderTitle').innerHTML = stateQualifiersPageTitle();
             renderStateQualifiersPage(document.getElementById('stateQualifiersBody'));
         }
 
@@ -5406,9 +5406,9 @@
 
         // State Qualifiers overlay title reflects the current Boys/Girls/All toggle.
         function stateQualifiersPageTitle() {
-            if (genderFilter === 'F') return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Girls State Qualifiers';
-            if (genderFilter === 'M') return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Boys State Qualifiers';
-            return '<svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> State Qualifiers';
+            if (genderFilter === 'F') return '<svg class="ohio-icon" viewBox="0 0 120 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 18 L0 0 L90 0 L90 6 L118 6 L118 62 L110 74 L98 84 L84 92 L70 97 L56 98 L42 95 L30 88 L20 78 L12 66 L6 52 L2 38 L0 24 Z"/></svg> Girls State Qualifiers';
+            if (genderFilter === 'M') return '<svg class="ohio-icon" viewBox="0 0 120 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 18 L0 0 L90 0 L90 6 L118 6 L118 62 L110 74 L98 84 L84 92 L70 97 L56 98 L42 95 L30 88 L20 78 L12 66 L6 52 L2 38 L0 24 Z"/></svg> Boys State Qualifiers';
+            return '<svg class="ohio-icon" viewBox="0 0 120 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 18 L0 0 L90 0 L90 6 L118 6 L118 62 L110 74 L98 84 L84 92 L70 97 L56 98 L42 95 L30 88 L20 78 L12 66 L6 52 L2 38 L0 24 Z"/></svg> State Qualifiers';
         }
 
         function switchNavTab(tab) {
@@ -6035,7 +6035,7 @@
                     inner = `<div class="accomp-gender-divider">🏆 Boys</div>${boysHtml}<div class="accomp-gender-divider">🏆 Girls</div>${girlsHtml}`;
                 }
 
-                const stateQualBtn = `<div class="filter-row records-link-row"><button class="action-btn" onclick="openStateQualifiersOverlay()" style="width:100%;"><svg class="ohio-icon" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18 4 L18 18 L8 18 L8 28 L2 28 L2 72 L12 82 L20 88 L30 95 L40 98 L52 96 L62 90 L74 80 L84 68 L90 55 L92 42 L88 30 L80 20 L70 12 L58 6 L44 3 L30 3 Z"/></svg> Track State Qualifiers</button></div>`;
+                const stateQualBtn = `<div class="filter-row records-link-row"><button class="action-btn" onclick="openStateQualifiersOverlay()" style="width:100%;"><svg class="ohio-icon" viewBox="0 0 120 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 18 L0 0 L90 0 L90 6 L118 6 L118 62 L110 74 L98 84 L84 92 L70 97 L56 98 L42 95 L30 88 L20 78 L12 66 L6 52 L2 38 L0 24 Z"/></svg> Track State Qualifiers</button></div>`;
                 inner = stateQualBtn + inner;
 
                 navCache.trackrecords[genderFilter] = inner;

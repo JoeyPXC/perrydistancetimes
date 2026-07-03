@@ -72,6 +72,8 @@
     .btn-row button { flex:1; padding:10px; font-weight:800; cursor:pointer; border-radius:8px; font-size:13px; border:2px solid transparent; }
     #downloadBtn { background:var(--accent); color:#000; border-color:var(--accent); font-size:14px; }
     #downloadBtn:hover { opacity:0.85; }
+    #githubBtn { background:#24292f; color:#fff; border-color:#24292f; font-size:13px; }
+    #githubBtn:hover { opacity:0.85; }
     .post-count { font-size:11px; color:var(--text-muted); margin-top:6px; }
 </style>
 </head>
@@ -124,11 +126,14 @@
 
         <div id="outputWrap">
             <div class="out-step">
-                <strong>✅ Ready — click Download to get the updated file</strong>
-                The downloaded <code>news-posts.js</code> already contains all your existing posts
-                plus this new one at the top. Just replace the file in your GitHub repo.
+                <strong>✅ Ready</strong>
+                On a computer: click <em>Download</em>, then replace <code>news-posts.js</code> in your GitHub repo.<br>
+                On your phone: click <em>Open in GitHub</em>, paste the code at the top of the <code>NEWS_POSTS</code> array, and commit.
+                <textarea id="codeOut" readonly style="width:100%;min-height:80px;font-family:monospace;font-size:11px;background:#111318;color:#e8eaf0;border:none;border-radius:8px;padding:10px;margin-top:8px;resize:vertical;" onclick="this.select()"></textarea>
                 <div class="btn-row">
-                    <button type="button" id="downloadBtn" onclick="downloadFile()">⬇ Download news-posts.js</button>
+                    <button type="button" id="copyBtn" onclick="copyCode()" style="background:none;border:2px solid var(--border);color:var(--text);">📋 Copy Code</button>
+                    <button type="button" id="downloadBtn" onclick="downloadFile()">⬇ Download</button>
+                    <button type="button" id="githubBtn" onclick="openGitHub()">📂 GitHub</button>
                 </div>
                 <p class="post-count" id="postCount"></p>
             </div>
@@ -336,8 +341,24 @@ function generate() {
         (fetchedOk ? ` (${existingPostCount} existing + 1 new).` : ` (couldn't verify existing posts — offline?).`) +
         ` Your 485 historical posts from the old site are always loaded separately from news-archive.js.`;
 
+    document.getElementById('codeOut').value = buildPostCode();
     document.getElementById('outputWrap').style.display='block';
     document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function openGitHub() {
+    window.open('https://github.com/JoeyPXC/perrydistancetimes/edit/main/news-posts.js', '_blank');
+}
+
+function copyCode() {
+    const el = document.getElementById('codeOut');
+    el.select();
+    navigator.clipboard.writeText(el.value).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+    }).catch(() => document.execCommand('copy'));
 }
 
 function downloadFile() {
