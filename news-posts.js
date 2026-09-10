@@ -15,7 +15,7 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [
-            {
+               {
         id: "2026-09-07-ashland-arrows-xc-invitational-results",
         sport: "xc",
         date: "2026-09-07",
@@ -28,7 +28,7 @@ const NEWS_POSTS = [
         sport: "xc",
         date: "2026-08-31",
         title: "Hoka Night Showcase Results",
-        body: "The cross country teams opened their season up at SPIRE Academy Saturday night at the Hoka Night Showcase. The boys varsity team finished 14th out of 53 schools with 19 teams from other states. The team was led by Parker Simonson's 44th place medal finish. The other scorers were Noah Dostal, Ryan Sexton, Andrew Ramos, and Michael Norris. \n\nThe girls finished 38th out of 51 schools. Scoring for the girls were Julia Thompson, Brielle Thom, Lillee Woods, Annamae Rogers, and Kiley Szackas\nThe teams competes again this Saturday at the Ashland Arrows Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/272844/info)Full Results\n",
+        body: "The cross country teams opened their season up at SPIRE Academy Saturday night at the Hoka Night Showcase. The boys varsity team finished 14th out of 53 schools with 19 teams from other states. The team was led by Parker Simonson's 44th place medal finish. The other scorers were Noah Dostal, Ryan Sexton, Andrew Ramos, and Michael Norris. \n\nThe girls finished 38th out of 51 schools. Scoring for the girls were Julia Thompson, Brielle Thom, Lillee Woods, Annamae Rogers, and Kiley Szackas\n\nThe teams competes again this Saturday at the Ashland Arrows Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/272844/info)Full Results\n",
         images: []
     },
     {
