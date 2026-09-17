@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [
-                   {
+      {
+        id: "2026-09-14-boys-5th-girls-17th-at-walsh-jesuit-pat-ritchie-invitational",
+        sport: "xc",
+        date: "2026-09-14",
+        title: "Boys 5th, Girls 17th at Walsh Jesuit Pat Ritchie Invitational",
+        body: "The girls and boys cross country teams competed at Walsh Jesuit Saturday in the Pat Ritchie Invitational. The girls finished 17th out of 26 schools and the boys finished 5th out of 25 schools.\n\nScoring for the girls were: \n - Kiley Szackas\n - Julia Thompson\n - Annamae Rogers\n - Lillian Stewart\n - and Paige Schwab\nThe boys were led by Parker Simonson and Noah Dostal's 9th and 10th place overall finishes out of 179 runners. The other scorers for the boys were:\n - Ryan Sexton\n - Michael Norris\n - and Leo Miller\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/276429/info)\n\nThe teams compete Saturday at the Boardman Spartan Invitational which is a huge meet with around 35 teams in their D2 races.",
+        images: []
+    },                 
+  {
         id: "2026-09-07-ashland-arrows-xc-invitational-results",
         sport: "xc",
         date: "2026-09-07",
