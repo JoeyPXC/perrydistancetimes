@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4137,11 +4129,16 @@
             if (rankType === 'SEASON_YEAR') {
                 let teamSize = list.length;
                 let fastestTime = list[0].calculatedDisplayTime.split('(')[0].trim();
-                let totalSecs = list.reduce((sum, a) => sum + cleanTimeToSeconds(a.calculatedDisplayTime), 0);
-                let avgSecs = totalSecs / teamSize;
+                // Only include athletes who have an actual numeric time (exclude DNR, INJ, NT, --, etc.)
+                const timedList = list.filter(a => {
+                    const secs = cleanTimeToSeconds(a.calculatedDisplayTime);
+                    return isFinite(secs) && secs > 0;
+                });
+                let totalSecs = timedList.reduce((sum, a) => sum + cleanTimeToSeconds(a.calculatedDisplayTime), 0);
+                let avgSecs = timedList.length > 0 ? totalSecs / timedList.length : 0;
                 let avgMin = Math.floor(avgSecs / 60);
                 let avgSecPart = (avgSecs % 60).toFixed(2);
-                let avgDisplay = `${avgMin}:${parseFloat(avgSecPart) < 10 ? '0' : ''}${avgSecPart}`;
+                let avgDisplay = timedList.length > 0 ? `${avgMin}:${parseFloat(avgSecPart) < 10 ? '0' : ''}${avgSecPart}` : '—';
 
                 let statBlock = document.createElement('div');
                 statBlock.id = 'seasonStatBlock';
