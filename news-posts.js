@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [
+          {
+        id: "2026-09-21-boys-5th-girls-19th-at-boardman-spartan-invitational",
+        sport: "xc",
+        date: "2026-09-21",
+        title: "Boys 5th, Girls 19th at Boardman Spartan Invitational",
+        body: "The girls and boys teams traveled to Boardman on Saturday and ran in the Boardman Spartan Invitational. This meet is always a big meet and serves as a regional preview. The girls finished 19th overall out of 33 schools. Scoring for the girls were:\n - Kiley Szackas\n - Annamae Rogers\n - Julia Thompson\n - Lillian Stewart\n - Paige Schwab\n\nThe boys finished 5th overall out of 34 schools. Parker Simonson, Noah Dostal, and Ryan Sexton all won individual awards finishing 9th, 19th, and 23rd overall out of 235 finishers. Michael Norris and Andrew Ramos were the 4th and 5th scorers for the boys. Adam Spurrell joined in on the fun winning an award in the Open race with his 17th place finish.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/281837/info)\n\nThe teams will race again this weekend at the Strongsville Invitational",
+        images: []
+    },  
       {
         id: "2026-09-14-boys-5th-girls-17th-at-walsh-jesuit-pat-ritchie-invitational",
         sport: "xc",
