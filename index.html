@@ -459,8 +459,9 @@
         body.dark-mode .sched-race-chip { background: #16191f; }
 
         /* Full-screen nav overlay */
-        .season-stat-block { display: flex; gap: 8px; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-        .stat-item { flex: 1; background: #f8fafc; border-radius: 8px; padding: 8px 6px; text-align: center; }
+        .season-stat-block { display: flex; gap: 8px; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); flex-wrap: wrap; }
+        .stat-item { flex: 1; min-width: calc(50% - 8px); background: #f8fafc; border-radius: 8px; padding: 8px 6px; text-align: center; }
+        @media (min-width: 400px) { .stat-item { min-width: 0; } }
         .stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 3px; }
         .stat-value { font-size: 14px; font-weight: 800; color: var(--primary); }
         .stat-value.accent { color: #b45309; }
@@ -4140,6 +4141,22 @@
                 let avgSecPart = (avgSecs % 60).toFixed(2);
                 let avgDisplay = timedList.length > 0 ? `${avgMin}:${parseFloat(avgSecPart) < 10 ? '0' : ''}${avgSecPart}` : '—';
 
+                // Top-5 average: only for XC 5K, only when there are at least 5 timed runners
+                let top5Html = '';
+                if (eventType === 'XC 5K' && timedList.length >= 5) {
+                    const top5 = timedList.slice(0, 5);
+                    const top5Total = top5.reduce((sum, a) => sum + cleanTimeToSeconds(a.calculatedDisplayTime), 0);
+                    const top5Avg = top5Total / 5;
+                    const top5Min = Math.floor(top5Avg / 60);
+                    const top5SecPart = (top5Avg % 60).toFixed(2);
+                    const top5Display = `${top5Min}:${parseFloat(top5SecPart) < 10 ? '0' : ''}${top5SecPart}`;
+                    top5Html = `
+                    <div class="stat-item">
+                        <div class="stat-label">Top 5 Avg</div>
+                        <div class="stat-value accent">${top5Display}</div>
+                    </div>`;
+                }
+
                 let statBlock = document.createElement('div');
                 statBlock.id = 'seasonStatBlock';
                 statBlock.className = 'season-stat-block';
@@ -4156,6 +4173,7 @@
                         <div class="stat-label">Team Average</div>
                         <div class="stat-value">${avgDisplay}</div>
                     </div>
+                    ${top5Html}
                 `;
                 const tableWrapper = document.querySelector('.rank-table-wrapper');
                 tableWrapper.parentNode.insertBefore(statBlock, tableWrapper);
