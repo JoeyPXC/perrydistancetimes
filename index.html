@@ -5788,6 +5788,47 @@
         // Build a map of XC season year -> meet-by-meet team results, sourced
         // from the same all-time history sheet used on athlete profile pages.
         // Shape: { [year]: { meetOrder: [meetName,...], meets: { [meetName]: [{name, time}, ...] } } }
+        // Returns a map of year → { avg: "M:SS.ss", names: ["Name", ...] } for
+        // the top-5 season bests per year. Each athlete's contribution is their
+        // single fastest timed entry across all meets that season.
+        function buildTop5AvgByYear(xcHistory, gender) {
+            const byYear = {};
+            if (!xcHistory) return byYear;
+
+            Object.values(xcHistory).forEach(athleteData => {
+                if (gender !== 'ALL' && athleteData.gender !== gender) return;
+                const name = athleteData.originalName;
+                const seasons = athleteData.seasons || {};
+                Object.keys(seasons).forEach(year => {
+                    const entries = (seasons[year] || []).filter(e => {
+                        const t = (e.time || '').trim();
+                        if (!t || /^(DNR|DNF|DNS|INJ|--?|0(\.0)?)$/i.test(t)) return false;
+                        return isFinite(cleanTimeToSeconds(t)) && cleanTimeToSeconds(t) > 0;
+                    });
+                    if (!entries.length) return;
+                    const bestSecs = Math.min(...entries.map(e => cleanTimeToSeconds(e.time)));
+                    const bestTime = entries.find(e => cleanTimeToSeconds(e.time) === bestSecs).time;
+                    if (!byYear[year]) byYear[year] = [];
+                    byYear[year].push({ name, secs: bestSecs, time: bestTime });
+                });
+            });
+
+            const result = {};
+            Object.keys(byYear).forEach(year => {
+                const sorted = byYear[year].sort((a, b) => a.secs - b.secs);
+                const top5 = sorted.slice(0, 5);
+                if (top5.length < 5) return; // need a full scoring team
+                const avgSecs = top5.reduce((s, a) => s + a.secs, 0) / 5;
+                const m = Math.floor(avgSecs / 60);
+                const s = (avgSecs % 60).toFixed(2);
+                result[year] = {
+                    avg: `${m}:${parseFloat(s) < 10 ? '0' : ''}${s}`,
+                    names: top5.map(a => a.name)
+                };
+            });
+            return result;
+        }
+
         function buildTeamMeetsByYear(xcHistory, gender) {
             const byYear = {};
             if (!xcHistory) return byYear;
@@ -5870,6 +5911,7 @@
         async function buildYearByYearSectionHtml(csvUrl, xcHistory, histData, gender) {
             const NO_DATA_HTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No year-by-year data available yet.</p>`;
             const teamMeetsByYear = buildTeamMeetsByYear(xcHistory, gender);
+            const top5AvgMap = buildTop5AvgByYear(xcHistory, gender);
 
             let csvRes;
             try {
@@ -5970,6 +6012,16 @@
                 if (stateQualInd && !/^none$/i.test(stateQualInd)) addRow('State Ind. Qualifiers', stateQualInd);
                 if (statePlace && !/^none$/i.test(statePlace)) addRow('State Team Place', statePlace, true);
                 if (notesCol !== -1) addRow('Notes / Honors', (row[notesCol] || '').trim());
+
+                // Top-5 average from athlete XC history data
+                const top5Data = top5AvgMap[year];
+                if (top5Data) {
+                    rowsHtml += `
+                        <div class="ybyr-row">
+                            <span class="ybyr-row-label">Top 5 Avg</span>
+                            <span class="ybyr-row-value ybyr-highlight" title="${top5Data.names.join(', ')}">${top5Data.avg}</span>
+                        </div>`;
+                }
 
                 if (!rowsHtml) return;
 
