@@ -4169,11 +4169,11 @@
                         <div class="stat-label">Fastest Time</div>
                         <div class="stat-value accent">${fastestTime}</div>
                     </div>
+                    ${top5Html}
                     <div class="stat-item">
                         <div class="stat-label">Team Average</div>
                         <div class="stat-value">${avgDisplay}</div>
                     </div>
-                    ${top5Html}
                 `;
                 const tableWrapper = document.querySelector('.rank-table-wrapper');
                 tableWrapper.parentNode.insertBefore(statBlock, tableWrapper);
@@ -5785,50 +5785,48 @@
         }
 
 
-        // Build a map of XC season year -> meet-by-meet team results, sourced
-        // from the same all-time history sheet used on athlete profile pages.
-        // Shape: { [year]: { meetOrder: [meetName,...], meets: { [meetName]: [{name, time}, ...] } } }
-        // Returns a map of year → { avg: "M:SS.ss", names: ["Name", ...] } for
-        // the top-5 season bests per year. Each athlete's contribution is their
-        // single fastest timed entry across all meets that season.
-        function buildTop5AvgByYear(xcHistory, gender) {
+        // Returns a map of year -> { avg: "M:SS.ss", names: ["Name", ...] } for
+        // the top-5 XC 5K season bests per year. Uses the same source and
+        // logic as the Top 5 Avg on the Rankings page's season-year view
+        // (the per-grade XC 5K column in `athletes`), so the two always match
+        // and 3200m / 2-mile times can't leak in. Years with fewer than 5
+        // timed runners get no average.
+        function buildTop5AvgByYear(gender) {
             const byYear = {};
-            if (!xcHistory) return byYear;
 
-            Object.values(xcHistory).forEach(athleteData => {
-                if (gender !== 'ALL' && athleteData.gender !== gender) return;
-                const name = athleteData.originalName;
-                const seasons = athleteData.seasons || {};
-                Object.keys(seasons).forEach(year => {
-                    const entries = (seasons[year] || []).filter(e => {
-                        const t = (e.time || '').trim();
-                        if (!t || /^(DNR|DNF|DNS|INJ|--?|0(\.0)?)$/i.test(t)) return false;
-                        return isFinite(cleanTimeToSeconds(t)) && cleanTimeToSeconds(t) > 0;
-                    });
-                    if (!entries.length) return;
-                    const bestSecs = Math.min(...entries.map(e => cleanTimeToSeconds(e.time)));
-                    const bestTime = entries.find(e => cleanTimeToSeconds(e.time) === bestSecs).time;
-                    if (!byYear[year]) byYear[year] = [];
-                    byYear[year].push({ name, secs: bestSecs, time: bestTime });
+            Object.values(athletes).forEach(athlete => {
+                if (gender !== 'ALL' && athlete.gender !== gender) return;
+                const evData = athlete['XC 5K'];
+                if (!evData) return;
+                ['9th', '10th', '11th', '12th'].forEach(grade => {
+                    const yr = extractYearFromTimeValue(evData[grade]);
+                    if (!yr) return;
+                    const timeStr = evData[grade].split('(')[0].trim();
+                    const secs = cleanTimeToSeconds(timeStr, 'XC 5K');
+                    if (!isFinite(secs) || secs <= 0) return;
+                    if (!byYear[yr]) byYear[yr] = [];
+                    byYear[yr].push({ name: athlete.name, secs });
                 });
             });
 
             const result = {};
             Object.keys(byYear).forEach(year => {
-                const sorted = byYear[year].sort((a, b) => a.secs - b.secs);
-                const top5 = sorted.slice(0, 5);
+                const top5 = byYear[year].sort((a, b) => a.secs - b.secs).slice(0, 5);
                 if (top5.length < 5) return; // need a full scoring team
-                const avgSecs = top5.reduce((s, a) => s + a.secs, 0) / 5;
+                const avgSecs = top5.reduce((sum, a) => sum + a.secs, 0) / 5;
                 const m = Math.floor(avgSecs / 60);
-                const s = (avgSecs % 60).toFixed(2);
+                const sec = (avgSecs % 60).toFixed(2);
                 result[year] = {
-                    avg: `${m}:${parseFloat(s) < 10 ? '0' : ''}${s}`,
+                    avg: `${m}:${parseFloat(sec) < 10 ? '0' : ''}${sec}`,
                     names: top5.map(a => a.name)
                 };
             });
             return result;
         }
 
+        // Build a map of XC season year -> meet-by-meet team results, sourced
+        // from the same all-time history sheet used on athlete profile pages.
+        // Shape: { [year]: { meetOrder: [meetName,...], meets: { [meetName]: [{name, time}, ...] } } }
         function buildTeamMeetsByYear(xcHistory, gender) {
             const byYear = {};
             if (!xcHistory) return byYear;
@@ -5911,7 +5909,7 @@
         async function buildYearByYearSectionHtml(csvUrl, xcHistory, histData, gender) {
             const NO_DATA_HTML = `<p style="text-align:center;padding:20px;color:var(--text-muted);font-weight:600;">No year-by-year data available yet.</p>`;
             const teamMeetsByYear = buildTeamMeetsByYear(xcHistory, gender);
-            const top5AvgMap = buildTop5AvgByYear(xcHistory, gender);
+            const top5AvgMap = buildTop5AvgByYear(gender);
 
             let csvRes;
             try {
