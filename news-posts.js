@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [
+              {
+        id: "2026-09-28-girls-14th-boys-7th-at-strongsville",
+        sport: "xc",
+        date: "2026-09-28",
+        title: "Girls 14th, Boys 7th at Strongsville",
+        body: "The cross country teams traveled to Strongsville on Saturday. The girls finished 14th out 24 schools. They were led in scoring by Kiley Szackas, Julia Thompson, Annamae Rogers, Brielle Thom, and Natalie Moecia. The boys finished 7th overall out of 27 schools and were led by Parker Simonson and Noah Dostal's 7th place and 15th place medal winning finishes. Ryan Sexton, Michael Norris, and Andrew Ramos also scored for the boys.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/274392/info)\n\nThe teams will race again this weekend at GlenOak at the Stark County Championships.",
+        images: []
+    },
           {
         id: "2026-09-21-boys-5th-girls-19th-at-boardman-spartan-invitational",
         sport: "xc",
