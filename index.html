@@ -2052,11 +2052,15 @@
             },
             glenoak: {
                 label: 'GlenOak',
-                note: 'Includes Stark County Championship (2007–present), OHSAA District Championship (2017–present), and 2008 Regional',
+                note: 'New GlenOak course (opened 2006): GlenOak meets 2006–present, Stark County Championship (2007–present), OHSAA District Championship (2017–present), 2008 Regional, and 2009 Federal League',
                 match: [/glenoak/i, /glen\s*oak/i],
+                // Old GlenOak H.S. meets (before the new school opened in 2006) are excluded
+                excludeFn: (meet, year) => parseInt(year) < 2006,
                 extraMatch: (meet, year) => {
                     const y = parseInt(year);
                     if (/stark\s*county|\bstark\b/i.test(meet) && y >= 2007) return true;
+                    if (/federal\s*league|fed.*league/i.test(meet) && y === 2009) return true;
+                    if (/district/i.test(meet) && y >= 2017) return true;
                     if (/regional/i.test(meet) && y === 2008) return true;
                     return false;
                 },
