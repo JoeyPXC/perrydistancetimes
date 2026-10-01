@@ -736,15 +736,15 @@
         /* ── Home / splash page ───────────────────────────────────── */
         .home-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 450; display: none; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .home-overlay.open { display: flex; }
-        .home-hero { background: var(--primary); color: #fff; text-align: center; padding: 22px 16px 18px; border-bottom: 4px solid var(--accent); position: relative; flex-shrink: 0; }
-        .home-hero img { max-width: 150px; width: 40%; }
-        .home-hero h1 { font-size: 26px; margin: 6px 0 2px; letter-spacing: 0.5px; }
-        .home-hero p { font-size: 12px; opacity: 0.8; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .home-hero { background: var(--primary); color: #fff; text-align: center; padding: 6px 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 0; position: relative; flex-shrink: 0; }
+        .home-hero img { max-width: 180px; height: auto; display: block; margin-bottom: -10px; }
+        .home-hero h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; margin: 0; }
+        .home-hero p { color: #e2e8f0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin: 0; }
         .header-home-btn { position: absolute; top: 12px; left: 64px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 0 12px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 14px; gap: 2px; white-space: nowrap; color: white; cursor: pointer; z-index: 10; transition: all 0.2s; }
         .header-home-btn:hover { background: rgba(255,255,255,0.2); }
         .home-menu-btn { position: absolute; top: 12px; left: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .home-overlay .checker-border, .home-overlay .site-footer { flex-shrink: 0; }
-        .home-overlay .checker-border { margin-top: auto; }
+        .home-overlay .checker-border-footer { margin-top: auto; }
         .home-body { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
         .home-section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 18px 0 8px; }
         .home-card { background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
@@ -781,8 +781,9 @@
             <div class="home-menu-btn" onclick="openHamMenu()" title="Menu">☰</div>
             <img src="Mass. Perry Black Outline.png" alt="Perry Athletics Logo">
             <h1>Perry Track / XC</h1>
-            <p>Results · Records · History</p>
+            <p>Stats, Records &amp; Team History</p>
         </div>
+        <div class="checker-border"></div>
         <div class="home-body">
             <div class="home-section-label" id="homeNextLabel">Next Meet</div>
             <div id="homeNextMeet"></div>
@@ -797,7 +798,7 @@
                 <button class="home-tile" onclick="openNewsOverlay()"><span class="home-tile-icon">📰</span><span class="home-tile-name">News &amp; Updates</span><span class="home-tile-desc">Recaps and announcements</span></button>
             </div>
         </div>
-        <div class="checker-border"></div>
+        <div class="checker-border checker-border-footer"></div>
         <footer class="site-footer">
             <img src="Perry_Panthers.png" alt="Perry Panthers logo" class="footer-panther-logo">
             <p class="footer-title">Perry Cross Country / Track &amp; Field</p>
