@@ -774,6 +774,16 @@
     </style>
 </head>
 <body>
+    <script>
+        // Prevent the rankings from flashing before the home page appears:
+        // the home overlay starts open in the HTML; only skip it for #rankings links.
+        if (location.hash === '#rankings') {
+            document.getElementById && document.addEventListener('DOMContentLoaded', function () {
+                var h = document.getElementById('homeOverlay');
+                if (h) h.classList.remove('open');
+            });
+        }
+    </script>
 
     <div id="statusNotification" class="status-msg"></div>
 
@@ -788,7 +798,7 @@
     </div>
 
     <!-- ── Home / splash page ─────────────────────────────────────── -->
-    <div class="home-overlay" id="homeOverlay">
+    <div class="home-overlay open" id="homeOverlay">
         <div class="home-hero">
             <div class="home-menu-btn" onclick="openHamMenu()" title="Menu">☰</div>
             <img src="Mass. Perry Black Outline.png" alt="Perry Athletics Logo">
