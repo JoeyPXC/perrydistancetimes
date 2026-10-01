@@ -759,6 +759,18 @@
         .home-tile-icon { font-size: 28px; display: block; margin-bottom: 6px; }
         .home-tile-name { font-size: 13px; font-weight: 800; display: block; }
         .home-tile-desc { font-size: 11px; color: var(--text-muted); font-weight: 600; display: block; margin-top: 2px; }
+
+        /* iOS "Add to Home Screen" banner — iOS Safari has no native
+           install prompt (unlike Android/Chrome), so we show our own
+           short instructions the first time an iOS visitor who hasn't
+           already installed the app lands on the home page. */
+        .ios-install-banner { display: none; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin: 0 0 14px; }
+        .ios-install-banner.show { display: flex; }
+        .ios-install-icon { font-size: 22px; flex-shrink: 0; }
+        .ios-install-text { flex: 1; font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
+        .ios-install-text b { font-weight: 800; }
+        .ios-install-share { display: inline-block; font-size: 13px; }
+        .ios-install-close { flex-shrink: 0; background: none; border: none; color: var(--text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 4px; }
     </style>
 </head>
 <body>
@@ -785,6 +797,11 @@
         </div>
         <div class="checker-border"></div>
         <div class="home-body">
+            <div class="ios-install-banner" id="iosInstallBanner">
+                <span class="ios-install-icon">📲</span>
+                <span class="ios-install-text">Install this app: tap <span class="ios-install-share">⬆️</span> <b>Share</b>, then <b>Add to Home Screen</b>.</span>
+                <button class="ios-install-close" onclick="dismissIosInstallBanner()" title="Dismiss" aria-label="Dismiss">&times;</button>
+            </div>
             <div class="home-section-label" id="homeNextLabel">Next Meet</div>
             <div id="homeNextMeet"></div>
             <div class="home-section-label">Latest News</div>
@@ -5220,6 +5237,32 @@
         // ── Home / splash page ───────────────────────────────────
         function homeEsc(t) { return String(t || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+        // ── iOS "Add to Home Screen" banner ──────────────────────────
+        // iOS Safari never fires beforeinstallprompt like Android/Chrome
+        // does, so there's no native install nudge — this fills that gap
+        // with a one-line instruction banner, shown once per device until
+        // dismissed (or until the app is actually added to the home screen).
+        function isIosSafariBrowser() {
+            const ua = window.navigator.userAgent;
+            const isIos = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && 'ontouchend' in document);
+            const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+            return isIos && isSafari;
+        }
+        function isStandaloneApp() {
+            return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        }
+        function maybeShowIosInstallBanner() {
+            try {
+                if (!isIosSafariBrowser() || isStandaloneApp()) return;
+                if (localStorage.getItem('perry_ios_install_dismissed') === '1') return;
+                document.getElementById('iosInstallBanner').classList.add('show');
+            } catch(e) {}
+        }
+        function dismissIosInstallBanner() {
+            document.getElementById('iosInstallBanner').classList.remove('show');
+            try { localStorage.setItem('perry_ios_install_dismissed', '1'); } catch(e) {}
+        }
+
         function openHome() {
             document.getElementById('homeOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
@@ -5253,6 +5296,7 @@
         }
 
         function renderHome() {
+            maybeShowIosInstallBanner();
             // Next meet (boys + girls may differ, so show both when they do)
             const today = new Date().toISOString().slice(0, 10);
             const next = {};
