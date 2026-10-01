@@ -740,7 +740,11 @@
         .home-hero img { max-width: 150px; width: 40%; }
         .home-hero h1 { font-size: 26px; margin: 6px 0 2px; letter-spacing: 0.5px; }
         .home-hero p { font-size: 12px; opacity: 0.8; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .header-home-btn { position: absolute; top: 12px; left: 64px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; z-index: 10; transition: all 0.2s; }
+        .header-home-btn:hover { background: rgba(255,255,255,0.2); }
         .home-menu-btn { position: absolute; top: 12px; left: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .home-overlay .checker-border, .home-overlay .site-footer { flex-shrink: 0; }
+        .home-overlay .checker-border { margin-top: auto; }
         .home-body { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
         .home-section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 18px 0 8px; }
         .home-card { background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
@@ -755,8 +759,6 @@
         .home-tile-icon { font-size: 28px; display: block; margin-bottom: 6px; }
         .home-tile-name { font-size: 13px; font-weight: 800; display: block; }
         .home-tile-desc { font-size: 11px; color: var(--text-muted); font-weight: 600; display: block; margin-top: 2px; }
-        .home-footer { text-align: center; font-size: 12px; font-weight: 700; padding: 18px 0 28px; }
-        .home-footer a { color: var(--perry-gray); text-decoration: none; margin: 0 8px; }
     </style>
 </head>
 <body>
@@ -794,14 +796,31 @@
                 <button class="home-tile" onclick="openScheduleOverlay()"><span class="home-tile-icon">📋</span><span class="home-tile-name">Schedule</span><span class="home-tile-desc">Meets, times &amp; locations</span></button>
                 <button class="home-tile" onclick="openNewsOverlay()"><span class="home-tile-icon">📰</span><span class="home-tile-name">News &amp; Updates</span><span class="home-tile-desc">Recaps and announcements</span></button>
             </div>
-            <div class="home-footer">
-                <a href="https://www.athletic.net/team/7900/cross-country/2026" target="_blank" rel="noopener">Athletic.net ↗</a>
-                <a href="https://oh.milesplit.com/teams/9609-mass-perry" target="_blank" rel="noopener">MileSplit ↗</a>
-                <a href="https://x.com/perrytrackxc" target="_blank" rel="noopener">X</a>
-                <a href="https://www.instagram.com/perrytrackxc" target="_blank" rel="noopener">Instagram</a>
-                <a href="https://www.youtube.com/perrytrackxc" target="_blank" rel="noopener">YouTube</a>
-            </div>
         </div>
+        <div class="checker-border"></div>
+        <footer class="site-footer">
+            <img src="Perry_Panthers.png" alt="Perry Panthers logo" class="footer-panther-logo">
+            <p class="footer-title">Perry Cross Country / Track &amp; Field</p>
+            <div class="footer-socials">
+                <a href="https://x.com/perrytrackxc" target="_blank" rel="noopener" class="footer-social-link" title="X (Twitter)" aria-label="X (Twitter)">
+                    <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/perrytrackxc" target="_blank" rel="noopener" class="footer-social-link" title="Instagram" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24"><path d="M12 2c-2.717 0-3.056.012-4.123.06-1.064.05-1.79.218-2.428.465a4.901 4.901 0 0 0-1.772 1.153A4.902 4.902 0 0 0 2.525 5.45c-.247.637-.415 1.363-.465 2.428C2.012 8.944 2 9.283 2 12s.012 3.056.06 4.123c.05 1.064.218 1.79.465 2.428a4.9 4.9 0 0 0 1.153 1.772 4.902 4.902 0 0 0 1.772 1.153c.637.247 1.364.415 2.428.465C8.944 21.988 9.283 22 12 22s3.056-.012 4.123-.06c1.064-.05 1.791-.218 2.428-.465a4.901 4.901 0 0 0 1.772-1.153 4.902 4.902 0 0 0 1.153-1.772c.247-.637.415-1.363.465-2.428C21.988 15.056 22 14.717 22 12s-.012-3.056-.06-4.123c-.05-1.064-.218-1.791-.465-2.428a4.9 4.9 0 0 0-1.153-1.772A4.902 4.902 0 0 0 18.55 2.525c-.637-.247-1.364-.415-2.428-.465C15.056 2.012 14.717 2 12 2zm0 1.802c2.67 0 2.987.01 4.042.058.976.045 1.505.207 1.858.344.466.181.8.398 1.15.748.35.35.566.683.747 1.15.137.353.3.882.344 1.857.048 1.055.058 1.37.058 4.041 0 2.67-.01 2.986-.058 4.04-.045.977-.207 1.505-.344 1.858-.18.466-.398.8-.747 1.15-.35.35-.683.566-1.15.747-.353.137-.882.3-1.857.344-1.054.048-1.37.058-4.041.058-2.67 0-2.987-.01-4.04-.058-.977-.045-1.505-.207-1.858-.344-.466-.18-.8-.398-1.15-.747-.35-.35-.566-.683-.747-1.15-.137-.353-.3-.882-.344-1.857-.048-1.054-.058-1.37-.058-4.041 0-2.67.01-2.986.058-4.04.045-.977.207-1.505.344-1.858.181-.466.398-.8.748-1.15.35-.35.683-.566 1.15-.747.353-.137.882-.3 1.857-.344 1.055-.048 1.37-.058 4.041-.058zm0 3.063a5.135 5.135 0 1 0 0 10.27 5.135 5.135 0 0 0 0-10.27zm0 8.468a3.333 3.333 0 1 1 0-6.666 3.333 3.333 0 0 1 0 6.666zm6.538-8.671a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z"/></svg>
+                </a>
+                <a href="https://www.youtube.com/perrytrackxc" target="_blank" rel="noopener" class="footer-social-link" title="YouTube" aria-label="YouTube">
+                    <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+            </div>
+            <div class="footer-results-links">
+                <a class="footer-results-link" href="https://www.athletic.net/team/7900/cross-country/2026" target="_blank" rel="noopener">
+                    Athletic.net <span>↗</span>
+                </a>
+                <a class="footer-results-link" href="https://oh.milesplit.com/teams/9609-mass-perry" target="_blank" rel="noopener">
+                    MileSplit <span>↗</span>
+                </a>
+            </div>
+        </footer>
     </div>
 
     <header>
@@ -809,6 +828,7 @@
         <div class="hamburger-btn" id="hamburgerBtn" title="Menu" onclick="openHamMenu()">
             <span class="hamburger-icon-main">☰</span>
         </div>
+        <div class="header-home-btn" title="Home" aria-label="Home" onclick="navigateHome()">🏠</div>
         <div class="header-sync-btn" title="Force Manual Sync" onclick="fetchLiveGoogleSheets(true)">
             <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
         </div>
@@ -841,8 +861,8 @@
                 <button class="ham-menu-item" onclick="closeHamMenu();openHome()">
                     <span class="ham-menu-item-icon">🏠</span> Home
                 </button>
-                <button class="ham-menu-item" onclick="closeHamMenu();closeHome()">
-                    <span class="ham-menu-item-icon">⏱️</span> Time Rankings
+                <button class="ham-menu-item" onclick="closeHamMenu();goToRankings()">
+                    <span class="ham-menu-item-icon">⏱️</span> Rankings
                 </button>
                 <hr class="ham-menu-divider">
                 <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('accomplishments')">
@@ -5212,7 +5232,16 @@
             document.body.style.overflow = '';
         }
 
+        // Leaving home for the rankings pushes a history entry, so the phone's
+        // back swipe / browser back button returns to the home page.
+        function navigateHome() {
+            if (history.state && history.state.overlay === 'rankings') history.back();
+            else openHome();
+            window.scrollTo(0, 0);
+        }
+
         function goToRankings(type) {
+            if (!(history.state && history.state.overlay === 'rankings')) history.pushState({ overlay: 'rankings' }, '');
             closeHome();
             const sel = document.getElementById('leaderboardRankType');
             if (sel && type && sel.value !== type) {
@@ -5273,6 +5302,9 @@
                 closeScheduleOverlay();
             } else if (document.getElementById('hamMenuOverlay').classList.contains('open')) {
                 closeHamMenu();
+            } else if (!document.getElementById('homeOverlay').classList.contains('open')) {
+                // Nothing else open: back from the rankings page goes to Home
+                openHome();
             }
         });
 
