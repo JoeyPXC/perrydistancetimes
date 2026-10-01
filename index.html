@@ -732,6 +732,31 @@
             #recordBanner .record-banner-label, #recordBanner .record-banner-name, #recordBanner .record-banner-time { color: #000 !important; }
             .rank-table-wrapper { border: 1px solid #999; box-shadow: none; }
         }
+
+        /* ── Home / splash page ───────────────────────────────────── */
+        .home-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 450; display: none; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .home-overlay.open { display: flex; }
+        .home-hero { background: var(--primary); color: #fff; text-align: center; padding: 22px 16px 18px; border-bottom: 4px solid var(--accent); position: relative; flex-shrink: 0; }
+        .home-hero img { max-width: 150px; width: 40%; }
+        .home-hero h1 { font-size: 26px; margin: 6px 0 2px; letter-spacing: 0.5px; }
+        .home-hero p { font-size: 12px; opacity: 0.8; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .home-menu-btn { position: absolute; top: 12px; left: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .home-body { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+        .home-section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 18px 0 8px; }
+        .home-card { background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+        .home-card-top { font-size: 11px; font-weight: 800; color: var(--perry-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+        .home-card-title { font-size: 15px; font-weight: 800; color: var(--text); margin-top: 2px; }
+        .home-card-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+        .home-tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .home-tiles .home-tile { flex: 0 0 calc(50% - 5px); box-sizing: border-box; }
+        @media (min-width: 640px) { .home-tiles .home-tile { flex-basis: calc(33.333% - 7px); } }
+        .home-tile { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 10px; text-align: center; cursor: pointer; font-family: inherit; color: var(--text); transition: transform 0.15s, border-color 0.15s; }
+        .home-tile:hover { transform: translateY(-2px); border-color: var(--accent); }
+        .home-tile-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+        .home-tile-name { font-size: 13px; font-weight: 800; display: block; }
+        .home-tile-desc { font-size: 11px; color: var(--text-muted); font-weight: 600; display: block; margin-top: 2px; }
+        .home-footer { text-align: center; font-size: 12px; font-weight: 700; padding: 18px 0 28px; }
+        .home-footer a { color: var(--perry-gray); text-decoration: none; margin: 0 8px; }
     </style>
 </head>
 <body>
@@ -745,6 +770,37 @@
                 <button class="progression-close" onclick="closeRecordProgression()">&times;</button>
             </div>
             <div class="progression-body" id="progressionBody"></div>
+        </div>
+    </div>
+
+    <!-- ── Home / splash page ─────────────────────────────────────── -->
+    <div class="home-overlay" id="homeOverlay">
+        <div class="home-hero">
+            <div class="home-menu-btn" onclick="openHamMenu()" title="Menu">☰</div>
+            <img src="Mass. Perry Black Outline.png" alt="Perry Athletics Logo">
+            <h1>Perry Track / XC</h1>
+            <p>Results · Records · History</p>
+        </div>
+        <div class="home-body">
+            <div class="home-section-label" id="homeNextLabel">Next Meet</div>
+            <div id="homeNextMeet"></div>
+            <div class="home-section-label">Latest News</div>
+            <div id="homeNews"></div>
+            <div class="home-section-label">Explore</div>
+            <div class="home-tiles">
+                <button class="home-tile" onclick="goToRankings('PR')"><span class="home-tile-icon">⏱️</span><span class="home-tile-name">Rankings</span><span class="home-tile-desc">All-time bests, grades &amp; courses</span></button>
+                <button class="home-tile" onclick="openNavMenu('accomplishments')"><span class="home-tile-icon">🏆</span><span class="home-tile-name">XC History</span><span class="home-tile-desc">Accomplishments &amp; year by year</span></button>
+                <button class="home-tile" onclick="openRecordsOverlay()"><span class="home-tile-icon">🏅</span><span class="home-tile-name">Track History</span><span class="home-tile-desc">Records &amp; state qualifiers</span></button>
+                <button class="home-tile" onclick="openScheduleOverlay()"><span class="home-tile-icon">📋</span><span class="home-tile-name">Schedule</span><span class="home-tile-desc">Meets, times &amp; locations</span></button>
+                <button class="home-tile" onclick="openNewsOverlay()"><span class="home-tile-icon">📰</span><span class="home-tile-name">News &amp; Updates</span><span class="home-tile-desc">Recaps and announcements</span></button>
+            </div>
+            <div class="home-footer">
+                <a href="https://www.athletic.net/team/7900/cross-country/2026" target="_blank" rel="noopener">Athletic.net ↗</a>
+                <a href="https://oh.milesplit.com/teams/9609-mass-perry" target="_blank" rel="noopener">MileSplit ↗</a>
+                <a href="https://x.com/perrytrackxc" target="_blank" rel="noopener">X</a>
+                <a href="https://www.instagram.com/perrytrackxc" target="_blank" rel="noopener">Instagram</a>
+                <a href="https://www.youtube.com/perrytrackxc" target="_blank" rel="noopener">YouTube</a>
+            </div>
         </div>
     </div>
 
@@ -782,6 +838,12 @@
                     <span class="ham-menu-toggle-label"><span class="ham-menu-item-icon">🌙</span> Dark Mode</span>
                     <div class="ham-menu-toggle-switch" id="darkModeSwitch" onclick="toggleDarkMode()"></div>
                 </div>
+                <button class="ham-menu-item" onclick="closeHamMenu();openHome()">
+                    <span class="ham-menu-item-icon">🏠</span> Home
+                </button>
+                <button class="ham-menu-item" onclick="closeHamMenu();closeHome()">
+                    <span class="ham-menu-item-icon">⏱️</span> Time Rankings
+                </button>
                 <hr class="ham-menu-divider">
                 <button class="ham-menu-item" onclick="closeHamMenu();openNavMenu('accomplishments')">
                     <span class="ham-menu-item-icon">🏆</span> XC Program History
@@ -5133,6 +5195,66 @@
         };
 
         let scheduleGender = 'M';
+
+        // ── Home / splash page ───────────────────────────────────
+        function homeEsc(t) { return String(t || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+        function openHome() {
+            document.getElementById('homeOverlay').classList.add('open');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            renderHome();
+        }
+
+        function closeHome() {
+            document.getElementById('homeOverlay').classList.remove('open');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+
+        function goToRankings(type) {
+            closeHome();
+            const sel = document.getElementById('leaderboardRankType');
+            if (sel && type && sel.value !== type) {
+                sel.value = type;
+                handleRankTypeChange();
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function renderHome() {
+            // Next meet (boys + girls may differ, so show both when they do)
+            const today = new Date().toISOString().slice(0, 10);
+            const next = {};
+            ['M', 'F'].forEach(g => { next[g] = XC_SCHEDULE[g].find(m => m.dateVal >= today); });
+            const el = document.getElementById('homeNextMeet');
+            const fmt = (m, tag) => `<div class="home-card" onclick="openScheduleOverlay()">
+                <div class="home-card-top">${tag ? tag + ' · ' : ''}${homeEsc(m.date)}</div>
+                <div class="home-card-title">${homeEsc(m.meet)}</div>
+                <div class="home-card-sub">📍 ${homeEsc(m.location)}</div></div>`;
+            if (!next.M && !next.F) {
+                document.getElementById('homeNextLabel').textContent = 'Schedule';
+                el.innerHTML = `<div class="home-card" onclick="openScheduleOverlay()"><div class="home-card-title">The XC season is complete</div><div class="home-card-sub">Tap to view the full schedule</div></div>`;
+            } else if (next.M && next.F && next.M.meet === next.F.meet && next.M.dateVal === next.F.dateVal) {
+                el.innerHTML = fmt(next.M, '');
+            } else {
+                el.innerHTML = (next.M ? fmt(next.M, 'Boys') : '') + (next.F ? fmt(next.F, 'Girls') : '');
+            }
+
+            // Latest news (3 newest)
+            const posts = getAllNewsPosts().slice(0, 3);
+            document.getElementById('homeNews').innerHTML = posts.length ? posts.map(p => {
+                const d = new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return `<div class="home-card" onclick="openNewsOverlay();showNewsDetail('${homeEsc(p.id)}')">
+                    <div class="home-card-top">${p.sport === 'track' ? 'Track' : 'XC'} · ${d}</div>
+                    <div class="home-card-title">${homeEsc(p.title)}</div></div>`;
+            }).join('') : `<div class="home-card" onclick="openNewsOverlay()"><div class="home-card-sub">No updates yet</div></div>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Skip the splash for direct links like  yoursite.com/#rankings
+            if (location.hash !== '#rankings') openHome();
+        });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
         // Each overlay open pushes a history entry. Swiping back pops it,
