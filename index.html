@@ -6,6 +6,12 @@
     <title>Perry Track / XC</title>
     <meta name="theme-color" content="#000000">
     <link rel="icon" type="image/png" href="Mass. Perry Black Outline.png">
+    <meta name="description" content="Perry High School Track & Cross Country: rankings, records, results and schedule.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Perry Track / XC">
+    <meta property="og:title" content="Perry Track / XC">
+    <meta property="og:description" content="Rankings, records, results and schedule for Perry Track & Cross Country.">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -781,7 +787,8 @@
     <script>
         // Prevent the rankings from flashing before the home page appears:
         // the home overlay starts open in the HTML; only skip it for #rankings links.
-        if (location.hash === '#rankings') {
+        var skipHome = location.hash === '#rankings' || /[?&]athlete=/.test(location.search);
+        if (skipHome) {
             document.getElementById && document.addEventListener('DOMContentLoaded', function () {
                 var h = document.getElementById('homeOverlay');
                 if (h) h.classList.remove('open');
@@ -5277,6 +5284,14 @@
             try { localStorage.setItem('perry_ios_install_dismissed', '1'); } catch(e) {}
         }
 
+        // Builds a Google Maps link for a meet. Add an optional  address: '...'
+        // to any meet in XC_SCHEDULE to override what gets searched.
+        function mapsUrl(m) {
+            let q = m.address || m.location;
+            if (!m.address && !/,\s*[A-Z]{2}\b/.test(q)) q += ', Ohio';
+            return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+        }
+
         function openHome() {
             document.getElementById('homeOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
@@ -5319,7 +5334,7 @@
             const fmt = (m, tag) => `<div class="home-card" onclick="openScheduleOverlay()">
                 <div class="home-card-top">${tag ? tag + ' · ' : ''}${homeEsc(m.date)}</div>
                 <div class="home-card-title">${homeEsc(m.meet)}</div>
-                <div class="home-card-sub">📍 ${homeEsc(m.location)}</div></div>`;
+                <div class="home-card-sub"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div></div>`;
             if (!next.M && !next.F) {
                 document.getElementById('homeNextLabel').textContent = 'Schedule';
                 el.innerHTML = `<div class="home-card" onclick="openScheduleOverlay()"><div class="home-card-title">The XC season is complete</div><div class="home-card-sub">Tap to view the full schedule</div></div>`;
@@ -5341,7 +5356,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             // Skip the splash for direct links like  yoursite.com/#rankings
-            if (location.hash !== '#rankings') openHome();
+            if (location.hash !== '#rankings' && !/[?&]athlete=/.test(location.search)) openHome();
         });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
@@ -5413,7 +5428,7 @@
                         ${m.badge && !isPast ? `<span style="font-size:10px;opacity:0.9;">${m.badge}</span>` : ''}
                     </div>
                     <div class="sched-meet-name">${m.meet}</div>
-                    <div class="sched-location">📍 ${m.location}</div>
+                    <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${m.location} ↗</a></div>
                     <div class="sched-races">${racesHtml}</div>
                 </div>`;
             });
