@@ -5292,6 +5292,32 @@
             return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
         }
 
+        // Today's date in the phone's own timezone (YYYY-MM-DD). The old
+        // toISOString() version used UTC, which rolls over to "tomorrow"
+        // around 8pm Eastern and made tonight's meet look finished.
+        function localToday() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // "Today", "Tomorrow" or "In 5 days" for a YYYY-MM-DD meet date.
+        function meetCountdown(dateVal) {
+            const [y, m, d] = dateVal.split('-').map(Number);
+            const [ty, tm, td] = localToday().split('-').map(Number);
+            const days = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86400000);
+            if (days < 0) return '';
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Tomorrow';
+            return 'In ' + days + ' days';
+        }
+
+        // Optional "Live Results" button. Add  results: 'https://...'  to any
+        // meet in XC_SCHEDULE and this appears on its cards.
+        function resultsLink(m) {
+            if (!m.results) return '';
+            return `<a href="${m.results}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:8px;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">📊 Results ↗</a>`;
+        }
+
         function openHome() {
             document.getElementById('homeOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
@@ -5327,14 +5353,14 @@
         function renderHome() {
             maybeShowIosInstallBanner();
             // Next meet (boys + girls may differ, so show both when they do)
-            const today = new Date().toISOString().slice(0, 10);
+            const today = localToday();
             const next = {};
             ['M', 'F'].forEach(g => { next[g] = XC_SCHEDULE[g].find(m => m.dateVal >= today); });
             const el = document.getElementById('homeNextMeet');
             const fmt = (m, tag) => `<div class="home-card" onclick="openScheduleOverlay()">
-                <div class="home-card-top">${tag ? tag + ' · ' : ''}${homeEsc(m.date)}</div>
+                <div class="home-card-top">${tag ? tag + ' · ' : ''}${homeEsc(m.date)}${meetCountdown(m.dateVal) ? ' · <strong>' + meetCountdown(m.dateVal) + '</strong>' : ''}</div>
                 <div class="home-card-title">${homeEsc(m.meet)}</div>
-                <div class="home-card-sub"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div></div>`;
+                <div class="home-card-sub"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div>${resultsLink(m)}</div>`;
             if (!next.M && !next.F) {
                 document.getElementById('homeNextLabel').textContent = 'Schedule';
                 el.innerHTML = `<div class="home-card" onclick="openScheduleOverlay()"><div class="home-card-title">The XC season is complete</div><div class="home-card-sub">Tap to view the full schedule</div></div>`;
@@ -5400,7 +5426,7 @@
         }
 
         function renderSchedule() {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = localToday();
             const meets = XC_SCHEDULE[scheduleGender];
             const nextIdx = meets.findIndex(m => m.dateVal >= today);
 
@@ -5430,6 +5456,7 @@
                     <div class="sched-meet-name">${m.meet}</div>
                     <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${m.location} ↗</a></div>
                     <div class="sched-races">${racesHtml}</div>
+                    ${m.results ? `<div style="padding:0 14px 10px;">${resultsLink(m)}</div>` : ''}
                 </div>`;
             });
 
