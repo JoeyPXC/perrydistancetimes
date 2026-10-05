@@ -14,8 +14,16 @@
 //   lines starting with "- " become bullet points
 //   blank line = new paragraph
 
-const NEWS_POSTS = [
-              {
+const NEWS_POSTS = [    
+      {
+        id: "2026-10-05-stark-county-boys-5th-girls-9th",
+        sport: "xc",
+        date: "2026-10-05",
+        title: "Stark County: Boys 5th, Girls 9th",
+        body: "The cross country teams traveled to GlenOak on Saturday for the Stark County Championships. The boys finished 5th overall and 4th in the Big School race (D1-D2 schools). Parker Simonson, Noah Dostal, and Ryan Sexton all medaled finishing 5th, 7th, and 20th overall (3rd, 5th, and 13th in D1-D2). Michael Norris and Andrew Ramos scored as the #4 and #5 runners.\n\nThe girls finished 9th overall and 6th in the D1-D2 Big School race. Annamae Rogers led the team with here medal earning 19th place finish in the D1-D2 race. The other top five scorers for the girls were Julia Thompson, Brielle Thom, Kiley Szakacs, and Lillian Stewart.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/287019/info)\n\nThe teams will head to the Trumbull County Fairgrounds this weekend to race at the Legends Meet. This is their last invitational of the year before the post season meets get started with the Federal League Championship Meet the following weekend.",
+        images: []
+    },      
+  {
         id: "2026-09-28-girls-14th-boys-7th-at-strongsville",
         sport: "xc",
         date: "2026-09-28",
