@@ -499,6 +499,17 @@
         .hamburger-icon-badge { position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 1; }
 
         /* Full-screen nav overlay */
+        .coach-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .coach-name { font-size: 16px; font-weight: 800; margin: 0; }
+        .coach-pos { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
+        .coach-tags { margin-top: 6px; display: flex; gap: 6px; }
+        .coach-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 999px; background: var(--primary); color: #fff; }
+        .coach-tag.track { background: #94a3b8; color: #000; }
+        .coach-bio { font-size: 13px; line-height: 1.5; margin-top: 10px; }
+        .coach-bio p { margin: 0 0 8px; }
+        .coach-bio.collapsed { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        .coach-bio.collapsed p { margin-bottom: 0; }
+        .coach-more { background: none; border: none; padding: 4px 0 0; font-family: inherit; font-size: 12px; font-weight: 800; color: var(--accent); cursor: pointer; }
         .nav-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: none; flex-direction: column; overflow: hidden; }
         .nav-overlay.open { display: flex; }
         .nav-header { background: var(--primary); border-bottom: 4px solid var(--accent); padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -954,6 +965,21 @@
             <button class="nav-tab" id="schedTabGirls" onclick="switchScheduleTab('F')">Girls</button>
         </div>
         <div class="nav-body" id="scheduleBody"></div>
+    </div>
+
+    <!-- ── Coaches (hidden page: only reachable at  yoursite/#coaches ) ── -->
+    <div class="nav-overlay" id="coachesOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" onclick="closeCoachesOverlay()">← 🏃</div>
+            <span class="nav-header-title">👥 Coaches</span>
+            <button class="nav-close-btn" onclick="closeCoachesOverlay()">✕ Close</button>
+        </div>
+        <div style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
+            <button class="nav-tab active" id="coachTabAll" onclick="switchCoachTab('all')">All</button>
+            <button class="nav-tab" id="coachTabXC" onclick="switchCoachTab('xc')">Cross Country</button>
+            <button class="nav-tab" id="coachTabTrack" onclick="switchCoachTab('track')">Track</button>
+        </div>
+        <div class="nav-body" id="coachesBody"></div>
     </div>
 
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
@@ -5383,6 +5409,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             // Skip the splash for direct links like  yoursite.com/#rankings
             if (location.hash !== '#rankings' && !/[?&]athlete=/.test(location.search)) openHome();
+            // Hidden Coaches page: only opens for the direct link  yoursite/#coaches
+            if (location.hash === '#coaches') openCoachesOverlay();
         });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
@@ -5398,6 +5426,8 @@
                 closeRecordsOverlay();
             } else if (document.getElementById('stateQualifiersOverlay').classList.contains('open')) {
                 closeStateQualifiersOverlay();
+            } else if (document.getElementById('coachesOverlay').classList.contains('open')) {
+                closeCoachesOverlay();
             } else if (document.getElementById('scheduleOverlay').classList.contains('open')) {
                 closeScheduleOverlay();
             } else if (document.getElementById('hamMenuOverlay').classList.contains('open')) {
@@ -5407,6 +5437,83 @@
                 openHome();
             }
         });
+
+        // ── Coaches page (hidden; open it with  yoursite/#coaches ) ──────
+        // Reads the published coaches Sheet: Name, XC, Track, Position, Bio.
+        // Edit the Sheet and the page updates; no code changes needed.
+        const COACHES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQScIozMgql0pI2xiCSYG8C2w5m63BESckLkyZ4xLE74IbqLMcjRipCimQltaDdXVUoPRwBWAOP9a_5/pub?gid=0&single=true&output=csv";
+        let coachesCache = null;
+        let coachFilter = 'all';
+
+        function openCoachesOverlay() {
+            history.pushState({ overlay: 'coaches' }, '');
+            document.getElementById('coachesOverlay').classList.add('open');
+            loadCoaches();
+        }
+
+        function closeCoachesOverlay() {
+            document.getElementById('coachesOverlay').classList.remove('open');
+        }
+
+        function switchCoachTab(f) {
+            coachFilter = f;
+            document.getElementById('coachTabAll').classList.toggle('active', f === 'all');
+            document.getElementById('coachTabXC').classList.toggle('active', f === 'xc');
+            document.getElementById('coachTabTrack').classList.toggle('active', f === 'track');
+            renderCoaches();
+        }
+
+        async function loadCoaches() {
+            const body = document.getElementById('coachesBody');
+            if (coachesCache) { renderCoaches(); return; }
+            body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-weight:700;">Loading coaches…</div>';
+            try {
+                const res = await fetch(cacheBustUrl(COACHES_CSV_URL));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = parseCSVText(await res.text());
+                const head = rows[0].map(h => h.trim().toLowerCase());
+                const col = n => head.indexOf(n);
+                const yes = v => String(v || '').trim().toUpperCase() === 'TRUE';
+                coachesCache = rows.slice(1).filter(r => (r[col('name')] || '').trim()).map(r => ({
+                    name: r[col('name')],
+                    xc: yes(r[col('xc')]),
+                    track: yes(r[col('track')]),
+                    position: (r[col('position')] || '').replace(/Asssistant/g, 'Assistant'),
+                    bio: r[col('bio')] || ''
+                }));
+                renderCoaches();
+            } catch (e) {
+                body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-weight:700;">Couldn\'t load the coaches right now. Check your connection and try again.</div>';
+            }
+        }
+
+        function renderCoaches() {
+            const body = document.getElementById('coachesBody');
+            if (!coachesCache) return;
+            const list = coachesCache.filter(c => coachFilter === 'all' || c[coachFilter]);
+            if (!list.length) {
+                body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-weight:700;">No coaches listed.</div>';
+                return;
+            }
+            body.innerHTML = list.map((c, i) => {
+                const paras = c.bio.split(/\n\s*\n/).map(t => t.trim()).filter(Boolean)
+                    .map(t => '<p>' + homeEsc(t) + '</p>').join('');
+                const long = c.bio.length > 260;
+                return `<div class="coach-card">
+                    <h3 class="coach-name">${homeEsc(c.name)}</h3>
+                    <div class="coach-pos">${homeEsc(c.position)}</div>
+                    <div class="coach-tags">${c.xc ? '<span class="coach-tag">XC</span>' : ''}${c.track ? '<span class="coach-tag track">TRACK</span>' : ''}</div>
+                    ${paras ? `<div class="coach-bio ${long ? 'collapsed' : ''}" id="coachBio${i}">${paras}</div>` : ''}
+                    ${long ? `<button class="coach-more" onclick="toggleCoachBio(${i}, this)">Read more</button>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function toggleCoachBio(i, btn) {
+            const el = document.getElementById('coachBio' + i);
+            const collapsed = el.classList.toggle('collapsed');
+            btn.textContent = collapsed ? 'Read more' : 'Show less';
+        }
 
         function openScheduleOverlay() {
             history.pushState({ overlay: 'schedule' }, '');
