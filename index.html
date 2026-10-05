@@ -459,6 +459,8 @@
         .sched-meet-name { font-size: 14px; font-weight: 800; color: var(--text); padding: 10px 14px 2px; }
         .sched-location { font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 0 14px 8px; display: flex; align-items: center; gap: 4px; }
         .sched-races { border-top: 1px solid var(--border); padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .sched-races + .sched-races { border-top: none; padding-top: 0; }
+        .sched-race-team { font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); min-width: 38px; }
         .sched-race-chip { display: flex; align-items: center; gap: 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; }
         .sched-race-div { font-weight: 800; color: var(--primary); }
         .sched-race-time { color: var(--text-muted); font-weight: 600; }
@@ -965,10 +967,6 @@
             <button class="nav-close-btn" onclick="closeScheduleOverlay()">✕ Close</button>
         </div>
         <div id="schedControls" class="sched-controls" style="display:none;"></div>
-        <div id="schedGenderTabs" style="display:flex;border-bottom:2px solid var(--border);background:var(--bg);">
-            <button class="nav-tab active" id="schedTabBoys" onclick="switchScheduleTab('M')">Boys</button>
-            <button class="nav-tab" id="schedTabGirls" onclick="switchScheduleTab('F')">Girls</button>
-        </div>
         <div class="nav-body" id="scheduleBody"></div>
     </div>
 
@@ -5249,13 +5247,12 @@
 
         // ── Schedule (read from the schedule Google Sheet) ───────
         // One row per meet. Edit the Sheet and the site follows; no code changes.
-        // Columns: Sport, Date, Meet, Location, Badge, Boys Races, Girls Races,
-        //          Address (optional), Results Link
+        // Columns: Sport, Date, Meet, Location, Badge, All Races, Boys Races,
+        //          Girls Races, Address (optional), Results Link
         const SCHEDULE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfQfvrPiHchW18andXtVV_z8jEduICZ-wVtfzshF1PCg0IK2WZWSjsk_Wxf2IsjNpbcvLkqH3lfW3k/pub?gid=229430438&single=true&output=csv";
         let scheduleData = null;          // array of meets, sorted by date
         let scheduleLoadPromise = null;
         let scheduleLoadFailed = false;
-        let scheduleGender = 'M';
         let scheduleSport = 'all';        // 'all' | 'xc' | 'track'
         let scheduleYear = null;          // e.g. 2026
 
@@ -5293,7 +5290,7 @@
             const col = name => head.findIndex(h => h === name || h.startsWith(name));
             const ix = {
                 sport: col('sport'), date: col('date'), meet: col('meet'), location: col('location'),
-                badge: col('badge'), boys: col('boys races'), girls: col('girls races'),
+                badge: col('badge'), all: col('all races'), boys: col('boys races'), girls: col('girls races'),
                 address: col('address'), results: col('results link')
             };
             const get = (r, i) => (i < 0 ? '' : (r[i] || '').trim());
@@ -5302,8 +5299,17 @@
                 const dateVal = normalizeMeetDate(get(r, ix.date));
                 const meet = get(r, ix.meet);
                 if (!dateVal || !meet) return;
+                const all = parseRaces(get(r, ix.all));
                 const boys = parseRaces(get(r, ix.boys));
                 const girls = parseRaces(get(r, ix.girls));
+                // What to show: "All Races" (or identical / single-team times) as one
+                // unlabeled row; otherwise separate Boys and Girls rows.
+                let groups;
+                if (all.length) groups = [{ label: '', races: all }];
+                else if (boys.length && girls.length && JSON.stringify(boys) !== JSON.stringify(girls))
+                    groups = [{ label: 'Boys', races: boys }, { label: 'Girls', races: girls }];
+                else if (boys.length || girls.length) groups = [{ label: '', races: boys.length ? boys : girls }];
+                else groups = [];
                 const link = get(r, ix.results);
                 meets.push({
                     sport: get(r, ix.sport).toLowerCase() === 'track' ? 'track' : 'xc',
@@ -5312,8 +5318,7 @@
                     badge: get(r, ix.badge),
                     address: get(r, ix.address),
                     results: /^https?:\/\//i.test(link) ? link : '',
-                    racesM: boys.length ? boys : girls,   // blank column = same as the other team
-                    racesF: girls.length ? girls : boys
+                    groups
                 });
             });
             return meets.sort((a, b) => a.dateVal.localeCompare(b.dateVal));
@@ -5614,23 +5619,14 @@
             document.getElementById('scheduleOverlay').classList.remove('open');
         }
 
-        function switchScheduleTab(gender) {
-            scheduleGender = gender;
-            document.getElementById('schedTabBoys').classList.toggle('active', gender === 'M');
-            document.getElementById('schedTabGirls').classList.toggle('active', gender === 'F');
-            renderSchedule();
-        }
-
         function setScheduleSport(sp) { scheduleSport = sp; renderSchedule(); }
         function setScheduleYear(y) { scheduleYear = Number(y); scheduleSport = 'all'; renderSchedule(); }
 
         function renderSchedule() {
             const body = document.getElementById('scheduleBody');
             const controls = document.getElementById('schedControls');
-            const tabs = document.getElementById('schedGenderTabs');
             if (!scheduleData) {
                 controls.style.display = 'none';
-                tabs.style.display = 'none';
                 if (scheduleLoadFailed) {
                     body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-weight:700;">Couldn\'t load the schedule right now. Check your connection and try again.</div>';
                 } else {
@@ -5650,7 +5646,6 @@
             const sports = [...new Set(inYear.map(m => m.sport))];
             if (scheduleSport !== 'all' && !sports.includes(scheduleSport)) scheduleSport = 'all';
             const meets = inYear.filter(m => scheduleSport === 'all' || m.sport === scheduleSport);
-            const racesOf = m => (scheduleGender === 'M' ? m.racesM : m.racesF);
 
             // Controls: sport pills (only if the year has both) + year picker (only if several years)
             let ctl = '';
@@ -5665,10 +5660,6 @@
             controls.innerHTML = ctl;
             controls.style.display = ctl ? 'flex' : 'none';
 
-            // Boys/Girls tabs only matter when start times actually differ
-            const timesDiffer = meets.some(m => JSON.stringify(m.racesM) !== JSON.stringify(m.racesF));
-            tabs.style.display = timesDiffer ? 'flex' : 'none';
-
             const nextIdx = meets.findIndex(m => m.dateVal >= today);
             let html = `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change.</p>`;
 
@@ -5677,10 +5668,13 @@
             meets.forEach((m, i) => {
                 const isPast = m.dateVal < today;
                 const isNext = i === nextIdx;
-                const racesHtml = racesOf(m).map(r =>
-                    `<div class="sched-race-chip">
-                        <span class="sched-race-div">${homeEsc(r.div)}</span>
-                        <span class="sched-race-time">${homeEsc(r.time)}</span>
+                const racesHtml = m.groups.map(g =>
+                    `<div class="sched-races">
+                        ${g.label ? `<span class="sched-race-team">${g.label}</span>` : ''}
+                        ${g.races.map(r => `<div class="sched-race-chip">
+                            <span class="sched-race-div">${homeEsc(r.div)}</span>
+                            <span class="sched-race-time">${homeEsc(r.time)}</span>
+                        </div>`).join('')}
                     </div>`
                 ).join('');
 
@@ -5692,7 +5686,7 @@
                     </div>
                     <div class="sched-meet-name">${homeEsc(m.meet)}</div>
                     <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div>
-                    ${racesHtml ? `<div class="sched-races">${racesHtml}</div>` : ''}
+                    ${racesHtml}
                     ${m.results ? `<div style="padding:0 14px 10px;">${resultsLink(m)}</div>` : ''}
                 </div>`;
             });
