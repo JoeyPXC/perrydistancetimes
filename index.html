@@ -5283,6 +5283,13 @@
             });
         }
 
+        // Minutes after midnight for "9:30am" (Infinity if there's no readable time).
+        function raceMinutes(t) {
+            const m = String(t || '').match(/^(\d{1,2})(?::(\d{2}))?([ap])m$/i);
+            if (!m) return Infinity;
+            return ((Number(m[1]) % 12) + (m[3].toLowerCase() === 'p' ? 12 : 0)) * 60 + Number(m[2] || 0);
+        }
+
         function parseScheduleCSV(text) {
             const rows = parseCSVText(text);
             if (!rows.length) return [];
@@ -5307,7 +5314,9 @@
                 let groups;
                 if (all.length) groups = [{ label: '', races: all }];
                 else if (boys.length && girls.length && JSON.stringify(boys) !== JSON.stringify(girls))
-                    groups = [{ label: 'Boys', races: boys }, { label: 'Girls', races: girls }];
+                    groups = [{ label: 'Boys', races: boys }, { label: 'Girls', races: girls }]
+                        // list whichever team races first at the top (Boys first if tied)
+                        .sort((a, b) => Math.min(...a.races.map(x => raceMinutes(x.time))) - Math.min(...b.races.map(x => raceMinutes(x.time))) || 0);
                 else if (boys.length || girls.length) groups = [{ label: '', races: boys.length ? boys : girls }];
                 else groups = [];
                 const link = get(r, ix.results);
