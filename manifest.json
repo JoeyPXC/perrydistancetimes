@@ -1,17 +1,18 @@
 {
   "id": "/perrydistancetimes/",
-  "name": "Perry Distance Times",
-  "short_name": "PXC",
-  "description": "Perry High School XC & Track Career Leaderboards",
+  "name": "Perry Track / XC",
+  "short_name": "Perry XC/TF",
+  "description": "Perry High School Cross Country & Track and Field: rankings, records, results and schedule",
   "start_url": "/perrydistancetimes/",
   "scope": "/perrydistancetimes/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "orientation": "portrait-primary",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["sports"],
+  "categories": [
+    "sports"
+  ],
   "icons": [
     {
       "src": "icon-192.png",

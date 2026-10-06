@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perry-distance-v8';
+const CACHE_NAME = 'perry-distance-v9';
 
 const APP_SHELL = [
   './',
