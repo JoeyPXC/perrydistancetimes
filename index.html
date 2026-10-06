@@ -317,9 +317,6 @@
         .search-trigger-fab.fab-hidden { opacity: 0; transform: scale(0.7); pointer-events: none; }
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
-        .drawer-overlay.above { z-index: 700; }   /* profile opened from a news post: sit above the news overlay */
-        .news-athlete-link { text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
-        .news-athlete-link:hover { text-decoration-style: solid; }
 
         .progression-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 250; display: none; align-items: center; justify-content: center; padding: 16px; }
         .progression-overlay.active { display: flex; }
@@ -1733,7 +1730,6 @@
                 overlay.classList.remove('active');
                 expandedAthleteName = null;
                 updateUrlForAthlete(null);
-                setTimeout(() => overlay.classList.remove('above'), 400);
             }
         }
 
@@ -6079,56 +6075,7 @@
                 <div class="news-article-body">${renderNewsBody(post.body)}</div>
                 ${archivedNote}
             `;
-            linkAthleteNamesInNews(container.querySelector('.news-article-body'));
             container.scrollTop = 0;
-        }
-
-        // Turns athlete names in a news post into links that open their profile.
-        // Automatic: any full name that matches someone on the roster (case-sensitive,
-        // so write names as they appear in the rankings) is linked the FIRST time it
-        // appears in a post, like ESPN does. Later mentions stay plain text.
-        // Names already inside a link are left alone.
-        function linkAthleteNamesInNews(root) {
-            if (!root) return;
-            const names = [...new Set(Object.values(athletes || {}).map(a => a && a.name).filter(n => n && /\S+\s+\S+/.test(n) && n.length >= 5))];
-            if (!names.length) return;
-            const esc = n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp('(?<![\\w])(' + names.sort((x, y) => y.length - x.length).map(esc).join('|') + ')(?![\\w])', 'g');
-            const linked = new Set();   // athletes already linked in this post
-
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-                acceptNode: n => n.parentElement.closest('a, .news-athlete-link') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-            });
-            const nodes = [];
-            while (walker.nextNode()) nodes.push(walker.currentNode);
-
-            nodes.forEach(node => {
-                const text = node.nodeValue;
-                const frag = document.createDocumentFragment();
-                let last = 0, any = false;
-                for (const m of text.matchAll(re)) {
-                    const name = m[1];
-                    if (linked.has(name)) continue;
-                    linked.add(name);
-                    frag.appendChild(document.createTextNode(text.slice(last, m.index)));
-                    const link = document.createElement('span');
-                    link.className = 'news-athlete-link';
-                    link.setAttribute('role', 'link');
-                    link.textContent = name;
-                    link.addEventListener('click', () => openAthleteFromNews(name));
-                    frag.appendChild(link);
-                    last = m.index + name.length;
-                    any = true;
-                }
-                if (!any) return;
-                frag.appendChild(document.createTextNode(text.slice(last)));
-                node.parentNode.replaceChild(frag, node);
-            });
-        }
-
-        function openAthleteFromNews(name) {
-            document.getElementById('drawerOverlay').classList.add('above');
-            openDrawerToAthlete(name);
         }
 
         // ── YEAR BY YEAR ─────────────────────────────────────────────────
