@@ -6085,37 +6085,42 @@
 
         // Turns athlete names in a news post into links that open their profile.
         // Automatic: any full name that matches someone on the roster (case-sensitive,
-        // so write names as they appear in the rankings) becomes tappable. Names
-        // already inside a link are left alone.
+        // so write names as they appear in the rankings) is linked the FIRST time it
+        // appears in a post, like ESPN does. Later mentions stay plain text.
+        // Names already inside a link are left alone.
         function linkAthleteNamesInNews(root) {
             if (!root) return;
-            const names = [...new Set(Object.values(athletes || {}).map(a => a && a.name).filter(n => n && /\S+\s+\S+/.test(n) && n.length >= 5))]
-                .sort((a, b) => b.length - a.length);
+            const names = [...new Set(Object.values(athletes || {}).map(a => a && a.name).filter(n => n && /\S+\s+\S+/.test(n) && n.length >= 5))];
             if (!names.length) return;
             const esc = n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp('(?<![\\w])(' + names.map(esc).join('|') + ')(?![\\w])', 'g');
+            const re = new RegExp('(?<![\\w])(' + names.sort((x, y) => y.length - x.length).map(esc).join('|') + ')(?![\\w])', 'g');
+            const linked = new Set();   // athletes already linked in this post
+
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
                 acceptNode: n => n.parentElement.closest('a, .news-athlete-link') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
             });
             const nodes = [];
             while (walker.nextNode()) nodes.push(walker.currentNode);
+
             nodes.forEach(node => {
                 const text = node.nodeValue;
-                re.lastIndex = 0;
-                if (!re.test(text)) return;
-                re.lastIndex = 0;
                 const frag = document.createDocumentFragment();
-                let last = 0, m;
-                while ((m = re.exec(text)) !== null) {
+                let last = 0, any = false;
+                for (const m of text.matchAll(re)) {
+                    const name = m[1];
+                    if (linked.has(name)) continue;
+                    linked.add(name);
                     frag.appendChild(document.createTextNode(text.slice(last, m.index)));
                     const link = document.createElement('span');
                     link.className = 'news-athlete-link';
                     link.setAttribute('role', 'link');
-                    link.textContent = m[1];
-                    link.addEventListener('click', () => openAthleteFromNews(m[1]));
+                    link.textContent = name;
+                    link.addEventListener('click', () => openAthleteFromNews(name));
                     frag.appendChild(link);
-                    last = m.index + m[1].length;
+                    last = m.index + name.length;
+                    any = true;
                 }
+                if (!any) return;
                 frag.appendChild(document.createTextNode(text.slice(last)));
                 node.parentNode.replaceChild(frag, node);
             });
