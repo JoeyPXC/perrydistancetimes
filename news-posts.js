@@ -44,7 +44,7 @@ const NEWS_POSTS = [
         sport: "xc",
         date: "2026-09-14",
         title: "Boys 5th, Girls 17th at Walsh Jesuit Pat Ritchie Invitational",
-        body: "The girls and boys cross country teams competed at Walsh Jesuit Saturday in the Pat Ritchie Invitational. The girls finished 17th out of 26 schools and the boys finished 5th out of 25 schools.\n\nScoring for the girls were: \n - Kiley Szackas\n - Julia Thompson\n - Annamae Rogers\n - Lillian Stewart\n - and Paige Schwab\nThe boys were led by Parker Simonson and Noah Dostal's 9th and 10th place overall finishes out of 179 runners. The other scorers for the boys were:\n - Ryan Sexton\n - Michael Norris\n - and Leo Miller\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/276429/info)\n\nThe teams compete Saturday at the Boardman Spartan Invitational which is a huge meet with around 35 teams in their D2 races.",
+        body: "The girls and boys cross country teams competed at Walsh Jesuit Saturday in the Pat Ritchie Invitational. The girls finished 17th out of 26 schools and the boys finished 5th out of 25 schools.\n\nScoring for the girls were: \n - Kiley Szakacs\n - Julia Thompson\n - Annamae Rogers\n - Lillian Stewart\n - and Paige Schwab\nThe boys were led by Parker Simonson and Noah Dostal's 9th and 10th place overall finishes out of 179 runners. The other scorers for the boys were:\n - Ryan Sexton\n - Michael Norris\n - and Leo Miller\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/276429/info)\n\nThe teams compete Saturday at the Boardman Spartan Invitational which is a huge meet with around 35 teams in their D2 races.",
         images: []
     },                 
   {
@@ -52,7 +52,7 @@ const NEWS_POSTS = [
         sport: "xc",
         date: "2026-09-07",
         title: "Ashland Arrows XC Invitational Results",
-        body: "The girls and boys cross country teams competed at the Ashland Arrows XC Invitational last Saturday. The girls finished 6th overall out of 17 schools. Annamae Rogers and Julia Thompson led the team with medal winning race finishes of 22nd and 24th place. They were followed in scoring by Kiley Szcakas, Brielle Thom, and Lillian Stewart.\n\nThe boys team finished 2nd overall out of 19 schools losing only to State #1 ranked Bowling Green. Parker Simonson and Noah Dostal led the way placing 6th and 10th overall. They were followed in scoring by Broderick Gore, Ryan Sexton, and Michael Norris. \n\nThey'll compete again this weekend at Walsh Jesuit in the Pat Ritchie Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/275618/info)",
+        body: "The girls and boys cross country teams competed at the Ashland Arrows XC Invitational last Saturday. The girls finished 6th overall out of 17 schools. Annamae Rogers and Julia Thompson led the team with medal winning race finishes of 22nd and 24th place. They were followed in scoring by Kiley Szakacs, Brielle Thom, and Lillian Stewart.\n\nThe boys team finished 2nd overall out of 19 schools losing only to State #1 ranked Bowling Green. Parker Simonson and Noah Dostal led the way placing 6th and 10th overall. They were followed in scoring by Broderick Gore, Ryan Sexton, and Michael Norris. \n\nThey'll compete again this weekend at Walsh Jesuit in the Pat Ritchie Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/275618/info)",
         images: []
     },
     {
@@ -60,7 +60,7 @@ const NEWS_POSTS = [
         sport: "xc",
         date: "2026-08-31",
         title: "Hoka Night Showcase Results",
-        body: "The cross country teams opened their season up at SPIRE Academy Saturday night at the Hoka Night Showcase. The boys varsity team finished 14th out of 53 schools with 19 teams from other states. The team was led by Parker Simonson's 44th place medal finish. The other scorers were Noah Dostal, Ryan Sexton, Andrew Ramos, and Michael Norris. \n\nThe girls finished 38th out of 51 schools. Scoring for the girls were Julia Thompson, Brielle Thom, Lillee Woods, Annamae Rogers, and Kiley Szackas\n\nThe teams competes again this Saturday at the Ashland Arrows Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/272844/info)\n",
+        body: "The cross country teams opened their season up at SPIRE Academy Saturday night at the Hoka Night Showcase. The boys varsity team finished 14th out of 53 schools with 19 teams from other states. The team was led by Parker Simonson's 44th place medal finish. The other scorers were Noah Dostal, Ryan Sexton, Andrew Ramos, and Michael Norris. \n\nThe girls finished 38th out of 51 schools. Scoring for the girls were Julia Thompson, Brielle Thom, Lillee Woods, Annamae Rogers, and Kiley Szakacs\n\nThe teams competes again this Saturday at the Ashland Arrows Invitational.\n\n[Full Results](https://www.athletic.net/CrossCountry/meet/272844/info)\n",
         images: []
     },
     {
