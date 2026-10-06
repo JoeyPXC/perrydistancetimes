@@ -2836,133 +2836,272 @@
         // Lookup falls back to (last name + HS grad year) to handle any name-
         // format differences between this list and the roster sheet.
         const COLLEGE_RUNNERS = {
-            'john hopple':        { name: 'John Hopple',        hsGradYear: 1986, colleges: ['Malone University'] },
-            'matt hopple':        { name: 'Matt Hopple',        hsGradYear: 1990, colleges: ['Malone University'] },
-            'ed wheeler':         { name: 'Ed Wheeler',         hsGradYear: 1991, colleges: ['Malone University'] },
-            'eric mccaw':         { name: 'Eric McCaw',         hsGradYear: 1993, colleges: ['Grove City College'] },
-            'seth crum':          { name: 'Seth Crum',          hsGradYear: 1994, colleges: ['Harding University'] },
-            'russ hopple':        { name: 'Russ Hopple',        hsGradYear: 1994, colleges: ['West Liberty University'] },
-            'dave braneky':       { name: 'Dave Braneky',       hsGradYear: 1995, colleges: ['Messiah University'] },
-            'luke dostal':        { name: 'Luke Dostal',        hsGradYear: 1995, colleges: ['University of Akron'] },
-            'bob zak':            { name: 'Bob Zak',            hsGradYear: 1996, colleges: ['University of Cincinnati'] },
-            'brad owen':          { name: 'Brad Owen',          hsGradYear: 1997, colleges: ['Malone University'] },
-            'kyle bair':          { name: 'Kyle Bair',          hsGradYear: 1999, colleges: ['University of Mount Union'] },
-            'joey beall':         { name: 'Joey Beall',         hsGradYear: 1999, colleges: ['University of Mount Union'] },
-            'bryan wyatt':        { name: 'Bryan Wyatt',        hsGradYear: 1999, colleges: ['University of Cincinnati'] },
-            'joe soehnlen':       { name: 'Joe Soehnlen',       hsGradYear: 2000, colleges: ['Ashland University'] },
-            'mike zak':           { name: 'Mike Zak',           hsGradYear: 2001, colleges: ['The Ohio State University'] },
-            'cj alguire':         { name: 'CJ Alguire',         hsGradYear: 2001, colleges: ['Walsh University'] },
-            'dan graber':         { name: 'Dan Graber',         hsGradYear: 2002, colleges: ['Heidelberg University'] },
-            'sean mcnair':        { name: 'Sean McNair',        hsGradYear: 2002, colleges: ['Malone University'] },
-            'david adams':        { name: 'David Adams',        hsGradYear: 2003, colleges: ['University of Cincinnati'] },
-            'chad kirkbride':     { name: 'Chad Kirkbride',     hsGradYear: 2003, colleges: ['Heidelberg University'] },
-            'dustin ford':        { name: 'Dustin Ford',        hsGradYear: 2005, colleges: ['University of Mount Union'] },
-            'tyler griffin':      { name: 'Tyler Griffin',      hsGradYear: 2007, colleges: ['University of Mount Union'] },
-            'jd horton':          { name: 'JD Horton',          hsGradYear: 2007, colleges: ['University of Kentucky'] },
-            'matt welch':         { name: 'Matt Welch',         hsGradYear: 2008, colleges: ['Walsh University'] },
-            'josh tormasi':       { name: 'Josh Tormasi',       hsGradYear: 2009, colleges: ['Coastal Carolina University', 'Malone University'] },
-            'brandon wollenberg': { name: 'Brandon Wollenberg', hsGradYear: 2009, colleges: ['Walsh University'] },
-            'justin eddy':        { name: 'Justin Eddy',        hsGradYear: 2010, colleges: ['Walsh University'] },
-            'cody sundley':       { name: 'Cody Sundley',       hsGradYear: 2010, colleges: ['University of Mount Union'] },
-            'corey williams':     { name: 'Corey Williams',     hsGradYear: 2010, colleges: ['Case Western Reserve University'] },
-            'brad linerode':      { name: 'Brad Linerode',      hsGradYear: 2011, colleges: ['University of Mount Union'] },
-            'aaron dunn':         { name: 'Aaron Dunn',         hsGradYear: 2012, colleges: ['Walsh University'] },
-            'david kamerer':      { name: 'David Kamerer',      hsGradYear: 2012, colleges: ['Walsh University'] },
-            'seth kurzen':        { name: 'Seth Kurzen',        hsGradYear: 2012, colleges: ['Walsh University'] },
-            'matt mizer':         { name: 'Matt Mizer',         hsGradYear: 2012, colleges: ['Walsh University'] },
-            'dan quinn':          { name: 'Dan Quinn',          hsGradYear: 2012, colleges: ['Walsh University'] },
-            'matt thiessen':      { name: 'Matt Thiessen',      hsGradYear: 2012, colleges: ['Walsh University'] },
-            'mitchell paxton':    { name: 'Mitchell Paxton',    hsGradYear: 2014, colleges: ['Walsh University'] },
-            'joseph volpe':       { name: 'Joseph Volpe',       hsGradYear: 2014, colleges: ['Case Western Reserve University'] },
-            'tristan williams':   { name: 'Tristan Williams',   hsGradYear: 2014, colleges: ['Walsh University', 'University of Akron'] },
-            'alex ryan':          { name: 'Alex Ryan',          hsGradYear: 2015, colleges: ['John Carroll University'] },
-            'jacob meeks':        { name: 'Jacob Meeks',        hsGradYear: 2016, colleges: ['University of Mount Union'] },
-            'jason williams':     { name: 'Jason Williams',     hsGradYear: 2018, colleges: ['Walsh University'] },
-            'kevin echelberry':   { name: 'Kevin Echelberry',   hsGradYear: 2019, colleges: ['Case Western Reserve University'] },
-            'everett ewing':      { name: 'Everett Ewing',      hsGradYear: 2019, colleges: ['Walsh University'] },
-            'john backus':        { name: 'John Backus',        hsGradYear: 2020, colleges: ['Mount Vernon Nazarene University'] },
-            'justin zapotoczny':  { name: 'Justin Zapotoczny',  hsGradYear: 2020, colleges: ['University of Akron'] },
-            'kyle woods':         { name: 'Kyle Woods',         hsGradYear: 2022, colleges: ['Walsh University'] },
-            'alex hill':          { name: 'Alex Hill',          hsGradYear: 2023, colleges: ['Malone University'] },
-            'owen rair':          { name: 'Owen Rair',          hsGradYear: 2023, colleges: ['Mount Vernon Nazarene University'] },
-            'cooper reed':        { name: 'Cooper Reed',        hsGradYear: 2023, colleges: ['University of Mount Union'] },
-            'connor reed':        { name: 'Connor Reed',        hsGradYear: 2024, colleges: ['Grand Valley State University'] },
-            'gabe weiford':       { name: 'Gabe Weiford',       hsGradYear: 2024, colleges: ['Hiram College'] },
-            'jayden simonson':    { name: 'Jayden Simonson',    hsGradYear: 2026, colleges: ['Malone University'] },
+            'john hopple':        { name: 'John Hopple',         hsGradYear: 1986, colleges: ['Malone College'] },
+            'matt hopple':        { name: 'Matt Hopple',         hsGradYear: 1990, colleges: ['Malone College'] },
+            'ed wheeler':         { name: 'Ed Wheeler',          hsGradYear: 1991, colleges: ['Malone College'] },
+            'eric mccaw':         { name: 'Eric McCaw',          hsGradYear: 1993, colleges: ['Grove City College'] },
+            'seth crum':          { name: 'Seth Crum',           hsGradYear: 1994, colleges: ['Harding University (Arkansas)'] },
+            'russ hopple':        { name: 'Russ Hopple',         hsGradYear: 1994, colleges: ['West Liberty'] },
+            'dave braneky':       { name: 'Dave Braneky',        hsGradYear: 1995, colleges: ['Messiah (Pennsylvania)'] },
+            'luke dostal':        { name: 'Luke Dostal',         hsGradYear: 1995, colleges: ['University of Akron'] },
+            'bob zak':            { name: 'Bob Zak',             hsGradYear: 1996, colleges: ['University of Cincinnati'] },
+            'brad owen':          { name: 'Brad Owen',           hsGradYear: 1997, colleges: ['Malone College'] },
+            'kyle bair':          { name: 'Kyle Bair',           hsGradYear: 1999, colleges: ['Mount Union College'] },
+            'joey beall':         { name: 'Joey Beall',          hsGradYear: 1999, colleges: ['Mount Union College'] },
+            'bryan wyatt':        { name: 'Bryan Wyatt',         hsGradYear: 1999, colleges: ['University of Cincinnati'] },
+            'joe soehnlen':       { name: 'Joe Soehnlen',        hsGradYear: 2000, colleges: ['Ashland University'] },
+            'mike zak':           { name: 'Mike Zak',            hsGradYear: 2001, colleges: ['The Ohio State University'] },
+            'cj alguire':         { name: 'CJ Alguire',          hsGradYear: 2001, colleges: ['Walsh University'] },
+            'dan graber':         { name: 'Dan Graber',          hsGradYear: 2002, colleges: ['Heidelberg College'] },
+            'sean mcnair':        { name: 'Sean McNair',         hsGradYear: 2002, colleges: ['Malone College'] },
+            'david adams':        { name: 'David Adams',         hsGradYear: 2003, colleges: ['University of Cincinnati'] },
+            'chad kirkbride':     { name: 'Chad Kirkbride',      hsGradYear: 2003, colleges: ['Heidelberg College'] },
+            'dustin ford':        { name: 'Dustin Ford',         hsGradYear: 2005, colleges: ['Mount Union College'] },
+            'tyler griffin':      { name: 'Tyler Griffin',       hsGradYear: 2007, colleges: ['Mount Union College'] },
+            'jd horton':          { name: 'JD Horton',           hsGradYear: 2007, colleges: ['University of Kentucky'] },
+            'matt welch':         { name: 'Matt Welch',          hsGradYear: 2008, colleges: ['Walsh University'] },
+            'josh tormasi':       { name: 'Josh Tormasi',        hsGradYear: 2009, colleges: ['Coastal Carolina', 'Malone'] },
+            'brandon wollenberg': { name: 'Brandon Wollenberg',  hsGradYear: 2009, colleges: ['Walsh University'] },
+            'justin eddy':        { name: 'Justin Eddy',         hsGradYear: 2010, colleges: ['Walsh University'] },
+            'cody sundley':       { name: 'Cody Sundley',        hsGradYear: 2010, colleges: ['University of Mount Union'] },
+            'corey williams':     { name: 'Corey Williams',      hsGradYear: 2010, colleges: ['Case Western Reserve University'] },
+            'brad linerode':      { name: 'Brad Linerode',       hsGradYear: 2011, colleges: ['University of Mount Union'] },
+            'aaron dunn':         { name: 'Aaron Dunn',          hsGradYear: 2012, colleges: ['Walsh University'] },
+            'david kamerer':      { name: 'David Kamerer',       hsGradYear: 2012, colleges: ['Walsh University'] },
+            'seth kurzen':        { name: 'Seth Kurzen',         hsGradYear: 2012, colleges: ['Walsh University'] },
+            'matt mizer':         { name: 'Matt Mizer',          hsGradYear: 2012, colleges: ['Walsh University'] },
+            'dan quinn':          { name: 'Dan Quinn',           hsGradYear: 2012, colleges: ['Walsh University'] },
+            'matt thiessen':      { name: 'Matt Thiessen',       hsGradYear: 2012, colleges: ['Walsh University'] },
+            'mitchell paxton':    { name: 'Mitchell Paxton',     hsGradYear: 2014, colleges: ['Walsh University'] },
+            'joseph volpe':       { name: 'Joseph Volpe',        hsGradYear: 2014, colleges: ['Case Western Reserve University'] },
+            'tristan williams':   { name: 'Tristan Williams',    hsGradYear: 2014, colleges: ['Walsh University', 'Akron'] },
+            'alex ryan':          { name: 'Alex Ryan',           hsGradYear: 2015, colleges: ['John Carroll University'] },
+            'jacob meeks':        { name: 'Jacob Meeks',         hsGradYear: 2016, colleges: ['University of Mount Union'] },
+            'jason williams':     { name: 'Jason Williams',      hsGradYear: 2018, colleges: ['Walsh University'] },
+            'kevin echelberry':   { name: 'Kevin Echelberry',    hsGradYear: 2019, colleges: ['Case Western Reserve University'] },
+            'everett ewing':      { name: 'Everett Ewing',       hsGradYear: 2019, colleges: ['Walsh University'] },
+            'john backus':        { name: 'John Backus',         hsGradYear: 2020, colleges: ['Mount Vernon Nazarene University'] },
+            'justin zapotoczny':  { name: 'Justin Zapotoczny',   hsGradYear: 2020, colleges: ['University of Akron'] },
+            'kyle woods':         { name: 'Kyle Woods',          hsGradYear: 2022, colleges: ['Walsh University'] },
+            'alex hill':          { name: 'Alex Hill',           hsGradYear: 2023, colleges: ['Malone University'] },
+            'owen rair':          { name: 'Owen Rair',           hsGradYear: 2023, colleges: ['Mount Vernon Nazarene University'] },
+            'cooper reed':        { name: 'Cooper Reed',         hsGradYear: 2023, colleges: ['University of Mount Union'] },
+            'connor reed':        { name: 'Connor Reed',         hsGradYear: 2024, colleges: ['Grand Valley State University'] },
+            'gabe weiford':       { name: 'Gabe Weiford',        hsGradYear: 2024, colleges: ['Hiram College'] },
+            'jayden simonson':    { name: 'Jayden Simonson',     hsGradYear: 2026, colleges: ['Malone University'] },
         };
 
         // Girls collegiate alumni — same shape as COLLEGE_RUNNERS above
-        // (the "Years Run" column from the source sheet isn't displayed
-        // anywhere yet, so it's omitted here).
+        // (built-in snapshot only; the live list comes from the Sheet).
         const GIRLS_COLLEGE_RUNNERS = {
-            'leslie schoppelrey': { name: 'Leslie Schoppelrey', hsGradYear: 1990, colleges: ['Miami University'] },
-            'michelle riegler':   { name: 'Michelle Riegler',   hsGradYear: 1992, colleges: ['Eastern Michigan University'] },
-            'kathy eddins':       { name: 'Kathy Eddins',       hsGradYear: 1997, colleges: ['Malone College'] },
-            'gigi hopple':        { name: 'Gigi Hopple',        hsGradYear: 1997, colleges: ['Malone College', 'University of Akron'] },
-            'kelli wise':         { name: 'Kelli Wise',         hsGradYear: 1997, colleges: ['Ohio Northern University'] },
-            'tiffany smith':      { name: 'Tiffany Smith',      hsGradYear: 1998, colleges: ['University of Mississippi'] },
-            'dara ford':          { name: 'Dara Ford',          hsGradYear: 2001, colleges: ['Mount Union College'] },
-            'sherri douglas':     { name: 'Sherri Douglas',     hsGradYear: 2003, colleges: ['Cleveland State University'] },
-            'kristen emhoff':     { name: 'Kristen Emhoff',     hsGradYear: 2005, colleges: ['Williams College'] },
-            'noelle mack':        { name: 'Noelle Mack',        hsGradYear: 2006, colleges: ['Malone College'] },
-            'katie horton':       { name: 'Katie Horton',       hsGradYear: 2009, colleges: ['Ohio Northern University'] },
-            'kaylie snyder':      { name: 'Kaylie Snyder',      hsGradYear: 2009, colleges: ['Ashland University'] },
-            'stacy cameron':      { name: 'Stacy Cameron',      hsGradYear: 2011, colleges: ['Malone University', 'University of Mount Union'] },
-            'alex hamit':         { name: 'Alex Hamit',         hsGradYear: 2012, colleges: ['University of Mount Union'] },
-            'jackie genetin':     { name: 'Jackie Genetin',     hsGradYear: 2013, colleges: ['Ashland University'] },
-            'kylie church':       { name: 'Kylie Church',       hsGradYear: 2014, colleges: ['Notre Dame College'] },
-            'sydnee fenn':        { name: 'Sydnee Fenn',        hsGradYear: 2015, colleges: ['Walsh University'] },
-            'lexi echelberry':    { name: 'Lexi Echelberry',    hsGradYear: 2017, colleges: ['Indiana Wesleyan University'] },
-            'madelyn bartolone':  { name: 'Madelyn Bartolone',  hsGradYear: 2018, colleges: ['Ohio University'] },
-            'katie williams':     { name: 'Katie Williams',     hsGradYear: 2019, colleges: ['Cuyahoga Community College'] },
-            'laura genetin':      { name: 'Laura Genetin',      hsGradYear: 2019, colleges: ['University of Akron'] },
-            'hannah groff':       { name: 'Hannah Groff',       hsGradYear: 2020, colleges: ['Walsh University'] },
-            'chloe dostal':       { name: 'Chloe Dostal',       hsGradYear: 2025, colleges: ['The Ohio State University'] },
+            'leslie schoppelrey': { name: 'Leslie Schoppelrey',  hsGradYear: 1990, colleges: ['Miami University'] },
+            'michelle riegler':   { name: 'Michelle Riegler',    hsGradYear: 1992, colleges: ['Eastern Michigan University'] },
+            'kathy eddins':       { name: 'Kathy Eddins',        hsGradYear: 1997, colleges: ['Malone College'] },
+            'gigi hopple':        { name: 'Gigi Hopple',         hsGradYear: 1997, colleges: ['Malone College', 'University of Akron'] },
+            'kelli wise':         { name: 'Kelli Wise',          hsGradYear: 1997, colleges: ['Ohio Northern University'] },
+            'tiffany smith':      { name: 'Tiffany Smith',       hsGradYear: 1998, colleges: ['University of Mississippi'] },
+            'dara ford':          { name: 'Dara Ford',           hsGradYear: 2001, colleges: ['University of Mount Union'] },
+            'sherri douglas':     { name: 'Sherri Douglas',      hsGradYear: 2003, colleges: ['Cleveland State University'] },
+            'kristen emhoff':     { name: 'Kristen Emhoff',      hsGradYear: 2005, colleges: ['Williams College'] },
+            'noelle mack':        { name: 'Noelle Mack',         hsGradYear: 2006, colleges: ['Malone College'] },
+            'katie horton':       { name: 'Katie Horton',        hsGradYear: 2009, colleges: ['Ohio Northern University'] },
+            'kaylie snyder':      { name: 'Kaylie Snyder',       hsGradYear: 2009, colleges: ['Ashland University'] },
+            'stacy cameron':      { name: 'Stacy Cameron',       hsGradYear: 2011, colleges: ['Malone University', 'University of Mount Union'] },
+            'alex hamit':         { name: 'Alex Hamit',          hsGradYear: 2012, colleges: ['University of Mount Union'] },
+            'jackie genetin':     { name: 'Jackie Genetin',      hsGradYear: 2013, colleges: ['Ashland University'] },
+            'kylie church':       { name: 'Kylie Church',        hsGradYear: 2014, colleges: ['Notre Dame College'] },
+            'sydnee fenn':        { name: 'Sydnee Fenn',         hsGradYear: 2015, colleges: ['Walsh University'] },
+            'lexi echelberry':    { name: 'Lexi Echelberry',     hsGradYear: 2017, colleges: ['Indiana Wesleyan University'] },
+            'madelyn bartolone':  { name: 'Madelyn Bartolone',   hsGradYear: 2018, colleges: ['Ohio University'] },
+            'katie williams':     { name: 'Katie Williams',      hsGradYear: 2019, colleges: ['Cuyahoga Community College'] },
+            'laura genetin':      { name: 'Laura Genetin',       hsGradYear: 2019, colleges: ['University of Akron'] },
+            'hannah groff':       { name: 'Hannah Groff',        hsGradYear: 2020, colleges: ['Walsh University'] },
+            'chloe dostal':       { name: 'Chloe Dostal',        hsGradYear: 2025, colleges: ['The Ohio State University'] },
         };
 
-        // School name -> TFRRS team logo (https://logos.tfrrs.org/<slug>.png).
-        // Confirmed pattern from Walsh ("walsh.png"); the rest are best-guess
-        // slugs following the same lowercase/hyphenated short-name convention
-        // TFRRS uses for team filters. The <img onerror> in renderRoster hides
-        // any that don't resolve, so a wrong guess just silently shows no logo.
+        // School name -> logo link. Built-in snapshot only; the live list comes from the
+        // Logos tab of the alumni Sheet (see loadCollegeLogos below).
         const COLLEGE_LOGOS = {
-            'Walsh University': 'https://logos.tfrrs.org/walsh.png',
-            'University of Mount Union': 'https://logos.tfrrs.org/svgs/mount-union.svg',
-            'Malone University': 'https://logos.tfrrs.org/malone.png',
-            'University of Akron': 'https://logos.tfrrs.org/akron.png',
-            'University of Cincinnati': 'https://logos.tfrrs.org/cincinnati.png',
-            'Case Western Reserve University': 'https://logos.tfrrs.org/case-western-reserve.png',
-            'Heidelberg University': 'https://logos.tfrrs.org/heidelberg.png',
-            'Mount Vernon Nazarene University': 'https://logos.tfrrs.org/mount-vernon-nazarene-ohio.png',
             'Ashland University': 'https://logos.tfrrs.org/ashland.png',
-            'The Ohio State University': 'https://logos.tfrrs.org/ohio-state.png',
-            'University of Kentucky': 'https://logos.tfrrs.org/kentucky.png',
+            'Case Western Reserve University': 'https://logos.tfrrs.org/case-western-reserve.png',
+            'Cleveland State University': 'https://logos.tfrrs.org/cleveland-state.png',
             'Coastal Carolina University': 'https://logos.tfrrs.org/coastal-carolina.png',
-            'John Carroll University': 'https://logos.tfrrs.org/john-carroll.png',
+            'Cuyahoga Community College': 'https://logos.tfrrs.org/cuyahoga-ohio-cc.png',
+            'Eastern Michigan University': 'https://logos.tfrrs.org/eastern-michigan.png',
             'Grand Valley State University': 'https://logos.tfrrs.org/grand-valley-state.png',
-            'Hiram College': 'https://logos.tfrrs.org/svgs/hiram.svg',
             'Grove City College': 'https://logos.tfrrs.org/grove-city.png',
             'Harding University': 'https://logos.tfrrs.org/harding.png',
-            'West Liberty University': 'https://logos.tfrrs.org/west-liberty-state.png',
-            'Messiah University': 'https://logos.tfrrs.org/messiah.png',
-            // Girls-program additions, plus a couple of name-change aliases
-            // (the alumni sheet uses the school's name at the time the
-            // athlete attended, e.g. "Malone College" pre-2007).
-            'Malone College': 'https://logos.tfrrs.org/malone.png',
-            'Mount Union College': 'https://logos.tfrrs.org/svgs/mount-union.svg',
-            'Miami University': 'https://logos.tfrrs.org/miami-ohio.png',
-            'Eastern Michigan University': 'https://logos.tfrrs.org/eastern-michigan.png',
-            'Ohio Northern University': 'https://logos.tfrrs.org/ohio-northern.png',
-            'University of Mississippi': 'https://logos.tfrrs.org/ole-miss.png',
-            'Cleveland State University': 'https://logos.tfrrs.org/cleveland-state.png',
-            'Williams College': 'https://logos.tfrrs.org/williams.png',
-            // Notre Dame College closed in 2024, but TFRRS still has them
-            // listed under "Notre Dame Ohio".
-            'Notre Dame College': 'https://logos.tfrrs.org/notre-dame-ohio.png',
+            'Heidelberg University': 'https://logos.tfrrs.org/heidelberg.png',
+            'Hiram College': 'https://logos.tfrrs.org/svgs/hiram.svg',
             'Indiana Wesleyan University': 'https://logos.tfrrs.org/indiana-wesleyan.png',
+            'John Carroll University': 'https://logos.tfrrs.org/john-carroll.png',
+            'Malone University': 'https://logos.tfrrs.org/malone.png',
+            'Messiah University': 'https://logos.tfrrs.org/messiah.png',
+            'Miami University': 'https://logos.tfrrs.org/miami-ohio.png',
+            'Mount Vernon Nazarene University': 'https://logos.tfrrs.org/mount-vernon-nazarene-ohio.png',
+            'Notre Dame College': 'https://logos.tfrrs.org/notre-dame-ohio.png',
+            'Ohio Northern University': 'https://logos.tfrrs.org/ohio-northern.png',
+            'The Ohio State University': 'https://logos.tfrrs.org/ohio-state.png',
             'Ohio University': 'https://logos.tfrrs.org/ohio.png',
-            'Cuyahoga Community College': 'https://logos.tfrrs.org/cuyahoga-ohio-cc.png',
+            'University of Akron': 'https://logos.tfrrs.org/akron.png',
+            'University of Cincinnati': 'https://logos.tfrrs.org/cincinnati.png',
+            'University of Kentucky': 'https://logos.tfrrs.org/kentucky.png',
+            'University of Mississippi': 'https://logos.tfrrs.org/ole-miss.png',
+            'University of Mount Union': 'https://logos.tfrrs.org/svgs/mount-union.svg',
+            'Walsh University': 'https://logos.tfrrs.org/walsh.png',
+            'West Liberty University': 'https://logos.tfrrs.org/west-liberty-state.png',
+            'Williams College': 'https://logos.tfrrs.org/williams.png',
         };
+
+        // ── College runners: live from the alumni Sheets ─────────────────
+        // The two lists above are only a built-in snapshot, used until the
+        // Sheets load (and if they can't be reached). Once a Sheet loads it
+        // replaces its list, so edit the Sheets, not this file.
+        // Sheet columns: Name, HS Graduation, College, Years Run (ignored).
+        // Use "/" between colleges for athletes who ran at two schools.
+        const COLLEGE_BOYS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fYMALp5HMTQHaoESqD_yiuQnlcV5Ru4puoJn8l7J22KclK2sE9MgMhvrPZvJrG92h2iUaW46BMJT/pub?gid=0&single=true&output=csv";
+        const COLLEGE_GIRLS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fYMALp5HMTQHaoESqD_yiuQnlcV5Ru4puoJn8l7J22KclK2sE9MgMhvrPZvJrG92h2iUaW46BMJT/pub?gid=1547514612&single=true&output=csv";
+
+        // Older / shorter school names -> the current name (built-in snapshot of the
+        // "Also Listed As" column; the live list comes from the Logos tab). Names are shown
+        // exactly as typed in the alumni Sheets, but this lets them share a logo and be
+        // counted together in "Colleges Represented".
+        const COLLEGE_NAME_ALIASES = {
+            'coastal carolina': 'Coastal Carolina University',
+            'harding': 'Harding University',
+            'harding university (arkansas)': 'Harding University',
+            'heidelberg': 'Heidelberg University',
+            'heidelberg college': 'Heidelberg University',
+            'malone': 'Malone University',
+            'malone college': 'Malone University',
+            'messiah': 'Messiah University',
+            'messiah (pennsylvania)': 'Messiah University',
+            'ohio state': 'The Ohio State University',
+            'ohio state university': 'The Ohio State University',
+            'akron': 'University of Akron',
+            'cincinnati': 'University of Cincinnati',
+            'kentucky': 'University of Kentucky',
+            'ole miss': 'University of Mississippi',
+            'mount union': 'University of Mount Union',
+            'mount union college': 'University of Mount Union',
+            'walsh': 'Walsh University',
+            'west liberty': 'West Liberty University',
+        };
+
+        const COLLEGE_LOGOS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fYMALp5HMTQHaoESqD_yiuQnlcV5Ru4puoJn8l7J22KclK2sE9MgMhvrPZvJrG92h2iUaW46BMJT/pub?gid=1199872074&single=true&output=csv";
+
+        // Sheet columns: College, Also Listed As (comma-separated), Logo Link.
+        function parseCollegeLogosCSV(text) {
+            const rows = parseCSVText(text);
+            const h = rows.findIndex(r => (r[0] || '').trim().toLowerCase() === 'college');
+            if (h < 0) return null;
+            const head = rows[h].map(c => c.trim().toLowerCase());
+            const iAlso = head.findIndex(c => c.startsWith('also'));
+            const iLogo = head.findIndex(c => c.startsWith('logo'));
+            if (iLogo < 0) return null;
+            const logos = {}, aliases = {};
+            rows.slice(h + 1).forEach(r => {
+                const college = (r[0] || '').trim();
+                if (!college) return;
+                const link = (r[iLogo] || '').trim();
+                if (/^https?:\/\//i.test(link)) logos[college] = link;
+                if (iAlso >= 0) (r[iAlso] || '').split(',').map(a => a.trim()).filter(Boolean)
+                    .forEach(a => { aliases[a.toLowerCase()] = college; });
+            });
+            return { logos, aliases };
+        }
+
+        // Re-draws anything already built from the old college data.
+        async function refreshCollegeViews() {
+            navCache.alumni = { M: null, F: null, ALL: null };
+            await renderRoster();
+            const navBody = document.getElementById('navBody');
+            if (navBody && navCurrentTab === 'alumni') renderAlumniPage(navBody);
+        }
+
+        let collegeLogosLoading = false;
+        async function loadCollegeLogos() {
+            if (collegeLogosLoading) return;
+            collegeLogosLoading = true;
+            try {
+                const res = await fetch(cacheBustUrl(COLLEGE_LOGOS_CSV_URL));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const parsed = parseCollegeLogosCSV(await res.text());
+                if (!parsed || !Object.keys(parsed.logos).length) return;   // keep the built-in list
+                const before = JSON.stringify([COLLEGE_LOGOS, COLLEGE_NAME_ALIASES]);
+                Object.keys(COLLEGE_LOGOS).forEach(k => delete COLLEGE_LOGOS[k]);
+                Object.assign(COLLEGE_LOGOS, parsed.logos);
+                Object.keys(COLLEGE_NAME_ALIASES).forEach(k => delete COLLEGE_NAME_ALIASES[k]);
+                Object.assign(COLLEGE_NAME_ALIASES, parsed.aliases);
+                if (JSON.stringify([COLLEGE_LOGOS, COLLEGE_NAME_ALIASES]) !== before) await refreshCollegeViews();
+            } catch (e) {
+                console.warn('College logo sheet unavailable; using built-in list.', e);
+            } finally {
+                collegeLogosLoading = false;
+            }
+        }
+
+        function canonicalCollege(name) {
+            return COLLEGE_NAME_ALIASES[String(name).trim().toLowerCase()] || String(name).trim();
+        }
+        function collegeLogoFor(name) {
+            if (COLLEGE_LOGOS[name]) return COLLEGE_LOGOS[name];
+            const canon = canonicalCollege(name);
+            if (COLLEGE_LOGOS[canon]) return COLLEGE_LOGOS[canon];
+            const k = Object.keys(COLLEGE_LOGOS).find(x => x.toLowerCase() === canon.toLowerCase());
+            return k ? COLLEGE_LOGOS[k] : '';
+        }
+
+        function cleanCollegeRunnerName(n) {
+            return n.trim().replace(/\s+/g, ' ').split(' ').map(w =>
+                (w[0] && w[0] === w[0].toLowerCase() && w[0] !== w[0].toUpperCase()) ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
+        }
+
+        function parseCollegeRunnersCSV(text) {
+            const rows = parseCSVText(text);
+            const h = rows.findIndex(r => (r[0] || '').trim().toLowerCase() === 'name');
+            if (h < 0) return null;
+            const head = rows[h].map(c => c.trim().toLowerCase());
+            const iName = head.indexOf('name');
+            const iYear = head.findIndex(c => c.startsWith('hs grad'));
+            const iCollege = head.findIndex(c => c.startsWith('college'));
+            if (iYear < 0 || iCollege < 0) return null;
+            const out = {};
+            rows.slice(h + 1).forEach(r => {
+                const name = cleanCollegeRunnerName(r[iName] || '');
+                const year = parseInt((r[iYear] || '').trim(), 10);
+                const colleges = (r[iCollege] || '').split('/').map(c => c.trim()).filter(Boolean);
+                if (!name || !year || !colleges.length) return;   // skips blank rows and footnotes
+                out[name.toLowerCase()] = { name, hsGradYear: year, colleges };
+            });
+            return out;
+        }
+
+        let collegeRunnersLoading = false;
+        async function loadCollegeRunners() {
+            if (collegeRunnersLoading) return;
+            collegeRunnersLoading = true;
+            try {
+                const [bTxt, gTxt] = await Promise.all([COLLEGE_BOYS_CSV_URL, COLLEGE_GIRLS_CSV_URL].map(async u => {
+                    const res = await fetch(cacheBustUrl(u));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.text();
+                }));
+                const boys = parseCollegeRunnersCSV(bTxt);
+                const girls = parseCollegeRunnersCSV(gTxt);
+                const before = JSON.stringify([COLLEGE_RUNNERS, GIRLS_COLLEGE_RUNNERS]);
+                // Only swap in a list that parsed into something sensible.
+                if (boys && Object.keys(boys).length) { Object.keys(COLLEGE_RUNNERS).forEach(k => delete COLLEGE_RUNNERS[k]); Object.assign(COLLEGE_RUNNERS, boys); }
+                if (girls && Object.keys(girls).length) { Object.keys(GIRLS_COLLEGE_RUNNERS).forEach(k => delete GIRLS_COLLEGE_RUNNERS[k]); Object.assign(GIRLS_COLLEGE_RUNNERS, girls); }
+                if (JSON.stringify([COLLEGE_RUNNERS, GIRLS_COLLEGE_RUNNERS]) !== before) {
+                    await refreshCollegeViews();
+                }
+            } catch (e) {
+                console.warn('College runner sheets unavailable; using built-in list.', e);
+            } finally {
+                collegeRunnersLoading = false;
+            }
+        }
 
         function getCollegeInfo(athlete) {
             const runnersMap = athlete.gender === 'F' ? GIRLS_COLLEGE_RUNNERS : COLLEGE_RUNNERS;
@@ -3596,7 +3735,7 @@
             let collegeRowHtml = '';
             if (collegeInfo) {
                 let logosHtml = collegeInfo.colleges.map(c => {
-                    const logo = COLLEGE_LOGOS[c];
+                    const logo = collegeLogoFor(c);
                     return logo ? `<img src="${logo}" alt="" class="college-logo-mini" onerror="this.remove()">` : '';
                 }).join('');
                 collegeRowHtml = `
@@ -4904,6 +5043,8 @@
         }
 
         async function fetchLiveGoogleSheets(isManualClick = false) {
+            loadCollegeRunners();   // alumni Sheets load alongside the leaderboard sheets
+            loadCollegeLogos();
             let updatedAthletes = {}; 
             let count = 0;
             const syncBtn = document.querySelector('.header-sync-btn');
@@ -6168,7 +6309,7 @@
             // counts toward both).
             const collegeCounts = {};
             entries.forEach(e => {
-                e.colleges.forEach(c => { collegeCounts[c] = (collegeCounts[c] || 0) + 1; });
+                e.colleges.forEach(c => { const cc = canonicalCollege(c); collegeCounts[cc] = (collegeCounts[cc] || 0) + 1; });
             });
             const collegeList = Object.entries(collegeCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
@@ -6189,7 +6330,7 @@
                 <div class="collapsible-body">
                     ${collegeList.map(([college, count]) => `
                         <div class="alumni-breakdown-row">
-                            ${COLLEGE_LOGOS[college] ? `<img src="${COLLEGE_LOGOS[college]}" class="college-logo-mini" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'alumni-breakdown-spacer'}))">` : '<span class="alumni-breakdown-spacer"></span>'}
+                            ${collegeLogoFor(college) ? `<img src="${collegeLogoFor(college)}" class="college-logo-mini" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'alumni-breakdown-spacer'}))">` : '<span class="alumni-breakdown-spacer"></span>'}
                             <span class="alumni-breakdown-name">${college}</span>
                             <span class="alumni-breakdown-count">${count}</span>
                         </div>`).join('')}
@@ -6200,7 +6341,7 @@
                 const hasData = athleteHasEventData(rosterAthlete);
 
                 const logosHtml = e.colleges
-                    .map(c => COLLEGE_LOGOS[c] ? `<img src="${COLLEGE_LOGOS[c]}" alt="" class="college-logo-mini" onerror="this.remove()">` : '')
+                    .map(c => collegeLogoFor(c) ? `<img src="${collegeLogoFor(c)}" alt="" class="college-logo-mini" onerror="this.remove()">` : '')
                     .join('');
                 const collegeRowHtml = `
                     <span class="athlete-college-row">
