@@ -851,6 +851,7 @@
                 <button class="home-tile" onclick="openRecordsOverlay()"><span class="home-tile-icon">🏅</span><span class="home-tile-name">Track History</span><span class="home-tile-desc">Records &amp; state qualifiers</span></button>
                 <button class="home-tile" onclick="openScheduleOverlay()"><span class="home-tile-icon">📋</span><span class="home-tile-name">Schedule</span><span class="home-tile-desc">Meets, times &amp; locations</span></button>
                 <button class="home-tile" onclick="openNewsOverlay()"><span class="home-tile-icon">📰</span><span class="home-tile-name">News &amp; Updates</span><span class="home-tile-desc">Recaps and announcements</span></button>
+                <button class="home-tile" onclick="openCoachesOverlay()"><span class="home-tile-icon">👥</span><span class="home-tile-name">Coaches</span><span class="home-tile-desc">Our coaching staff</span></button>
             </div>
         </div>
         <div class="checker-border checker-border-footer"></div>
@@ -933,6 +934,9 @@
                 </button>
                 <button class="ham-menu-item" onclick="closeHamMenu();openScheduleOverlay()">
                     <span class="ham-menu-item-icon">📋</span> Schedule
+                </button>
+                <button class="ham-menu-item" onclick="closeHamMenu();openCoachesOverlay()">
+                    <span class="ham-menu-item-icon">👥</span> Coaches
                 </button>
                 <hr class="ham-menu-divider">
                 <div class="ham-menu-section-label">External Links</div>
@@ -5637,7 +5641,7 @@
             if (location.hash !== '#rankings' && !/[?&]athlete=/.test(location.search)) openHome();
             loadSchedule().catch(() => {});
             // Hidden Coaches page: only opens for the direct link  yoursite/#coaches
-            if (location.hash === '#coaches') openCoachesOverlay();
+            if (location.hash === '#coaches') openCoachesOverlay(true);
         });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
@@ -5672,7 +5676,14 @@
         let coachesCache = null;
         let coachFilter = 'all';
 
-        function openCoachesOverlay() {
+        // Two views of the same Sheet:
+        //  - Staff list (default; linked from Home + menu): name, role and sport tags only.
+        //  - Full page with bios: still hidden, open it with  yoursite/#coaches
+        //    When bios are ready, change the Home/menu links to openCoachesOverlay(true).
+        let coachesShowBios = false;
+
+        function openCoachesOverlay(showBios = false) {
+            coachesShowBios = showBios === true;
             history.pushState({ overlay: 'coaches' }, '');
             document.getElementById('coachesOverlay').classList.add('open');
             loadCoaches();
@@ -5737,6 +5748,14 @@
             const list = coachesCache.filter(c => coachFilter === 'all' || c[coachFilter]);
             if (!list.length) {
                 body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-weight:700;">No coaches listed.</div>';
+                return;
+            }
+            if (!coachesShowBios) {
+                body.innerHTML = list.map(c => `<div class="coach-card" style="padding:12px 14px;">
+                    <h3 class="coach-name">${homeEsc(c.name)}</h3>
+                    <div class="coach-pos">${homeEsc(c.position)}</div>
+                    <div class="coach-tags">${c.xc ? '<span class="coach-tag">XC</span>' : ''}${c.track ? '<span class="coach-tag track">TRACK</span>' : ''}</div>
+                </div>`).join('');
                 return;
             }
             body.innerHTML = list.map((c, i) => {
