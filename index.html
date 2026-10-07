@@ -6170,7 +6170,9 @@
             controls.style.display = ctl ? 'flex' : 'none';
 
             const nextIdx = meets.findIndex(m => m.dateVal >= today);
-            let html = `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change.</p>`;
+            // The "subject to change" note only makes sense for the current/upcoming school year.
+            const isPastYear = scheduleYear < schoolYearOf(today);
+            let html = isPastYear ? '' : `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change.</p>`;
 
             if (!meets.length) html += '<div style="padding:20px 0;color:var(--text-muted);font-weight:700;">No meets listed.</div>';
 
