@@ -6191,7 +6191,7 @@
 
                 html += `<div class="sched-card ${isPast ? 'sched-past' : ''} ${isNext ? 'sched-next' : ''}">
                     <div class="sched-date-bar">
-                        <span>${homeEsc(m.date)}</span>
+                        <span>${homeEsc(m.date)} · ${m.sport === 'track' ? 'Track' : 'XC'}</span>
                         ${isNext ? `<span class="sched-next-badge">▶ Next Up</span>` : ''}
                         ${m.badge && !isPast ? `<span style="font-size:10px;opacity:0.9;">${homeEsc(m.badge)}</span>` : ''}
                     </div>
