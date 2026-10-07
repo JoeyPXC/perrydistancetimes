@@ -2050,10 +2050,13 @@
             const okUrl = u => (/^https?:\/\//i.test(u) ? u : '');
             const defs = [];
             rows.slice(h + 1).forEach(r => {
-                const key = get(r, ix.event);
+                let key = get(r, ix.event);
                 if (!key) return;
                 const type = get(r, ix.type).toLowerCase();
                 const seated = type === 'seated' || get(r, ix.division).toLowerCase() === 'seated';
+                // Seated events share names with the standard ones ("100m", "Shot Put"),
+                // but each event needs a unique key, so seated rows get a "Seated " prefix.
+                if (seated && !/^seated\b/i.test(key)) key = 'Seated ' + key;
                 const kind = (type === 'field' || (type === 'seated' && FIELD_WORDS.test(key))) ? 'field' : 'running';
                 const vis = get(r, ix.visible).toLowerCase();
                 const builtin = Object.prototype.hasOwnProperty.call(BUILTIN_EVENT_LABELS, key);
@@ -2064,8 +2067,14 @@
                     girlsUrl: builtin ? GIRLS_GOOGLE_SHEET_CSV_URLS[key] : okUrl(get(r, ix.girls)),
                     visible: (vis === 'yes' || vis === 'preview') ? vis : 'no'
                 };
-                if (!builtin && !def.boysUrl && !def.girlsUrl) return;   // nothing to show yet
-                if (defs.some(d => d.key === key)) return;               // skip duplicate event rows
+                if (!builtin && !def.boysUrl && !def.girlsUrl) {          // nothing to show yet
+                    console.warn('Events sheet: skipped "' + key + '" (needs a Boys or Girls link starting with http)');
+                    return;
+                }
+                if (defs.some(d => d.key === key)) {                      // skip duplicate event rows
+                    console.warn('Events sheet: skipped duplicate row for "' + key + '"');
+                    return;
+                }
                 defs.push(def);
             });
             // The original events always exist, even if someone deletes their rows.
