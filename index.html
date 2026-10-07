@@ -1903,7 +1903,16 @@
         // conversion to compare fairly against Fully Automatic Timed marks
         // (2 decimals, e.g. "2:00.43"). XC is intentionally excluded — this is
         // a track-only convention.
-        const HAND_TIME_CONVERSION_EVENTS = new Set(['800m', '1600m', '3200m']);
+        // Applies to every running event (800m, 1600m, 3200m, 100m, 400m, hurdles,
+        // relays, etc. — anything the Events sheet marks as Running), except XC.
+        const HAND_TIME_CONVERSION_FALLBACK = new Set(['800m', '1600m', '3200m']);
+        function usesHandTimeConversion(eventType) {
+            if (!eventType) return false;
+            const def = eventDef(eventType);
+            if (!def) return HAND_TIME_CONVERSION_FALLBACK.has(eventType);
+            if (def.kind !== 'running') return false;
+            return !/^xc\b|cross\s*country/i.test(def.key + ' ' + def.label);
+        }
         // Standard hand-time -> FAT conversion offset, in seconds.
         const HAND_TIME_FAT_OFFSET = 0.24;
 
@@ -2149,7 +2158,7 @@
             // A time recorded to the hundredth (2 decimal digits) is FAT.
             // Anything else (1 decimal, or a whole number) is hand-timed, so
             // we add the standard offset to make it comparable to FAT marks.
-            if (eventType && HAND_TIME_CONVERSION_EVENTS.has(eventType)) {
+            if (usesHandTimeConversion(eventType)) {
                 let secondsPart = clean.includes(':') ? clean.split(':').pop() : clean;
                 let decimalDigits = secondsPart.includes('.') ? secondsPart.split('.')[1].length : 0;
                 if (decimalDigits !== 2) {
