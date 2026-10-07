@@ -1903,8 +1903,197 @@
         // Standard hand-time -> FAT conversion offset, in seconds.
         const HAND_TIME_FAT_OFFSET = 0.24;
 
+        // ── Events (driven by the Events tab of the events Sheet) ─────────────
+        // Columns: Event, Display Name (optional), Type (Running / Field / Seated),
+        //          Boys Link, Girls Link, Visible (Yes / Preview / No).
+        // The four original events stay built in and load at startup. Every other
+        // event loads in the background once the page is up, or when it is picked.
+        // "Preview" events only show on a device that has opened  yoursite/#preview
+        // (turn it off again with  yoursite/#preview-off ).
+        const EVENTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThMsYeM-yci13eeXM6gGKE7dPwiOx8FcrgRe8naxKtmL7qmU_B_YazIPVZiLzNUl6kc3USHJdxWiea/pub?gid=1750503631&single=true&output=csv";
+        const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
+        const FIELD_EVENT_KEYS = new Set();
+        const FIELD_WORDS = /shot|discus|javelin|club|throw|jump|vault/i;
+        let EVENT_DEFS = Object.keys(BUILTIN_EVENT_LABELS).map(k => ({
+            key: k, label: BUILTIN_EVENT_LABELS[k], kind: 'running', seated: false, builtin: true,
+            boysUrl: GOOGLE_SHEET_CSV_URLS[k], girlsUrl: GIRLS_GOOGLE_SHEET_CSV_URLS[k], visible: 'yes'
+        }));
+
+        function eventDef(key) { return EVENT_DEFS.find(d => d.key === key) || null; }
+        function allEventKeys() { return EVENT_DEFS.map(d => d.key); }
+        function isFieldEvent(key) { return FIELD_EVENT_KEYS.has(key); }
+
+        (function handlePreviewHash() {
+            try {
+                if (location.hash === '#preview') localStorage.setItem('perry_preview', '1');
+                else if (location.hash === '#preview-off') localStorage.removeItem('perry_preview');
+            } catch (e) {}
+        })();
+        function previewEnabled() { try { return localStorage.getItem('perry_preview') === '1'; } catch (e) { return false; } }
+        function eventIsShown(d) { return d.visible === 'yes' || (d.visible === 'preview' && previewEnabled()); }
+
+        // Field marks ("16-05.25", "16-5.25", 16' 5.25", "5.62m") -> total inches, or NaN.
+        function parseFieldMark(str) {
+            const t = String(str || '').split('(')[0].trim();
+            let m = t.match(/^(\d+)\s*[-'\u2019\u2032]\s*(\d+(?:\.\d+)?)\s*(?:["\u201d\u2033])?$/);
+            if (m) return Number(m[1]) * 12 + Number(m[2]);
+            m = t.match(/^(\d+(?:\.\d+)?)\s*m$/i);
+            if (m) return Number(m[1]) * 39.3701;
+            return NaN;
+        }
+
+        function parseEventsCSV(text) {
+            const rows = parseCSVText(text);
+            const h = rows.findIndex(r => (r[0] || '').trim().toLowerCase() === 'event');
+            if (h < 0) return null;
+            const head = rows[h].map(c => c.trim().toLowerCase());
+            const col = n => head.findIndex(c => c === n || c.startsWith(n));
+            const ix = { event: col('event'), display: col('display'), type: col('type'), division: col('division'), boys: col('boys'), girls: col('girls'), visible: col('visible') };
+            const get = (r, i) => (i < 0 ? '' : (r[i] || '').trim());
+            const okUrl = u => (/^https?:\/\//i.test(u) ? u : '');
+            const defs = [];
+            rows.slice(h + 1).forEach(r => {
+                const key = get(r, ix.event);
+                if (!key) return;
+                const type = get(r, ix.type).toLowerCase();
+                const seated = type === 'seated' || get(r, ix.division).toLowerCase() === 'seated';
+                const kind = (type === 'field' || (type === 'seated' && FIELD_WORDS.test(key))) ? 'field' : 'running';
+                const vis = get(r, ix.visible).toLowerCase();
+                const builtin = Object.prototype.hasOwnProperty.call(BUILTIN_EVENT_LABELS, key);
+                const def = {
+                    key, kind, seated, builtin,
+                    label: get(r, ix.display) || (builtin ? BUILTIN_EVENT_LABELS[key] : key),
+                    boysUrl: builtin ? GOOGLE_SHEET_CSV_URLS[key] : okUrl(get(r, ix.boys)),
+                    girlsUrl: builtin ? GIRLS_GOOGLE_SHEET_CSV_URLS[key] : okUrl(get(r, ix.girls)),
+                    visible: (vis === 'yes' || vis === 'preview') ? vis : 'no'
+                };
+                if (!builtin && !def.boysUrl && !def.girlsUrl) return;   // nothing to show yet
+                defs.push(def);
+            });
+            // The original events always exist, even if someone deletes their rows.
+            Object.keys(BUILTIN_EVENT_LABELS).slice().reverse().forEach(k => {
+                if (!defs.some(d => d.key === k)) defs.unshift({
+                    key: k, label: BUILTIN_EVENT_LABELS[k], kind: 'running', seated: false, builtin: true,
+                    boysUrl: GOOGLE_SHEET_CSV_URLS[k], girlsUrl: GIRLS_GOOGLE_SHEET_CSV_URLS[k], visible: 'yes'
+                });
+            });
+            return defs;
+        }
+
+        function populateEventDropdown() {
+            const sel = document.getElementById('leaderboardEvent');
+            if (!sel) return;
+            const shown = EVENT_DEFS.filter(eventIsShown);
+            if (!shown.length) return;
+            const prev = sel.value;
+            const opt = d => `<option value="${homeEsc(d.key)}">${homeEsc(d.label)}${d.visible === 'preview' ? ' (preview)' : ''}</option>`;
+            const standard = shown.filter(d => !d.seated), seated = shown.filter(d => d.seated);
+            sel.innerHTML = standard.map(opt).join('') + (seated.length ? `<optgroup label="Seated">${seated.map(opt).join('')}</optgroup>` : '');
+            if (shown.some(d => d.key === prev)) sel.value = prev;
+            else renderLeaderboard();
+        }
+
+        async function loadEventsSheet() {
+            try {
+                const res = await fetch(cacheBustUrl(EVENTS_CSV_URL));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const defs = parseEventsCSV(await res.text());
+                if (defs && defs.length) {
+                    EVENT_DEFS = defs;
+                    FIELD_EVENT_KEYS.clear();
+                    defs.forEach(d => { if (d.kind === 'field') FIELD_EVENT_KEYS.add(d.key); });
+                }
+            } catch (e) {
+                console.warn('Events sheet unavailable; using the built-in events.', e);
+            }
+            populateEventDropdown();
+        }
+
+        // Events beyond the original four are fetched separately and merged into `athletes`.
+        const extraEventRows = {};      // key -> { M: rows, F: rows }
+        const extraEventPromises = {};  // key -> in-flight load
+        function isEventLoaded(key) { return !!extraEventRows[key]; }
+
+        // Same column layout as the 800m/1600m/3200m sheets (PR in column 5; Sr/Jr/So/Fr
+        // year+mark pairs at columns 8-9, 12-13, 16-17, 20-21).
+        function ingestEventRows(store, eventName, rows, gender) {
+            for (let i = 1; i < (rows || []).length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 5) continue;
+                const name = row[1] ? row[1].trim() : '';
+                if (!name || ['name', 'athlete', 'team total'].includes(name.toLowerCase())) continue;
+                if (!store[name]) store[name] = { name: name, gradYear: null, gender: gender };
+                const g = idx => (row.length > idx && row[idx] ? row[idx].trim() : '');
+                const pr = g(4);
+                const blocks = { '12th': [g(7), g(8)], '11th': [g(11), g(12)], '10th': [g(15), g(16)], '9th': [g(19), g(20)] };
+                const shown = {};
+                Object.keys(blocks).forEach(k => {
+                    const yr = blocks[k][0], t = blocks[k][1];
+                    shown[k] = (t && t !== '--' && t !== '0.0' && t !== '0') ? (t + (yr ? ` (${yr})` : '')) : '--';
+                });
+                store[name][eventName] = {
+                    'PR': (pr && pr !== '0.0' && pr !== '0') ? pr : '--',
+                    '9th': shown['9th'], '10th': shown['10th'], '11th': shown['11th'], '12th': shown['12th']
+                };
+                if (!store[name].gradYear) {
+                    const num = k => parseInt(blocks[k][0], 10);
+                    if (!isNaN(num('12th'))) store[name].gradYear = num('12th');
+                    else if (!isNaN(num('11th'))) store[name].gradYear = num('11th') + 1;
+                    else if (!isNaN(num('10th'))) store[name].gradYear = num('10th') + 2;
+                    else if (!isNaN(num('9th'))) store[name].gradYear = num('9th') + 3;
+                }
+            }
+        }
+
+        function ingestExtraEvent(key) {
+            const r = extraEventRows[key];
+            if (!r) return;
+            ingestEventRows(athletes, key, r.M, 'M');
+            ingestEventRows(athletes, key, r.F, 'F');
+        }
+        function applyExtraEvents() { Object.keys(extraEventRows).forEach(ingestExtraEvent); }
+        function resetExtraEvents() { Object.keys(extraEventRows).forEach(k => delete extraEventRows[k]); }
+
+        function loadExtraEvent(def) {
+            if (extraEventRows[def.key]) return Promise.resolve();
+            if (extraEventPromises[def.key]) return extraEventPromises[def.key];
+            const grab = async url => {
+                if (!url) return [];
+                try {
+                    const res = await fetch(cacheBustUrl(url));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return parseCSVText(await res.text());
+                } catch (e) {
+                    console.warn('Event sheet unavailable (' + def.key + ')', e);
+                    return [];
+                }
+            };
+            extraEventPromises[def.key] = Promise.all([grab(def.boysUrl), grab(def.girlsUrl)]).then(([M, F]) => {
+                extraEventRows[def.key] = { M, F };
+                ingestExtraEvent(def.key);
+                recalculateAllRankings();
+            }).finally(() => { delete extraEventPromises[def.key]; });
+            return extraEventPromises[def.key];
+        }
+
+        async function backgroundLoadVisibleEvents() {
+            const todo = EVENT_DEFS.filter(d => !d.builtin && eventIsShown(d) && (d.boysUrl || d.girlsUrl) && !isEventLoaded(d.key));
+            if (!todo.length) return;
+            await Promise.all(todo.map(loadExtraEvent));
+            recalculateAllRankings();
+            renderLeaderboard();
+            await renderRoster();
+        }
+
         function cleanTimeToSeconds(timeStr, eventType) {
             if (!timeStr || timeStr.trim() === "" || timeStr.toUpperCase() === "NT" || timeStr === "--") return Infinity;
+
+            // Field events: marks are ranked biggest-first. Returning the NEGATIVE of the
+            // mark in inches lets every existing "smaller is better" comparison keep working.
+            if (eventType && FIELD_EVENT_KEYS.has(eventType)) {
+                const inches = parseFieldMark(timeStr);
+                return (isFinite(inches) && inches > 0) ? -inches : Infinity;
+            }
             
             let clean = timeStr.split('(')[0].split('-')[0].trim();
             clean = clean.replace(/[^\d:.]/g, '');
@@ -2506,7 +2695,7 @@
 
         function recalculateAllRankings() {
             rankingsCache = {};
-            const events = ['XC 5K', '800m', '1600m', '3200m'];
+            const events = allEventKeys();
             const categories = ['PR', '9th', '10th', '11th', '12th'];
 
             events.forEach(ev => {
@@ -3146,7 +3335,7 @@
 
         function athleteHasEventData(athlete) {
             if (!athlete) return false;
-            return ['XC 5K', '800m', '1600m', '3200m'].some(ev => athlete[ev]);
+            return allEventKeys().some(ev => athlete[ev]);
         }
 
         // Builds the PR + 9th/10th/11th/12th progression grid markup for one
@@ -3154,7 +3343,7 @@
         // cards so both use identical card internals.
         function buildEventsGridHtml(athlete) {
             let eventsHtml = '';
-            ['XC 5K', '800m', '1600m', '3200m'].forEach(ev => {
+            allEventKeys().forEach(ev => {
                 if (athlete[ev]) {
                     let evData = athlete[ev];
                     let prBadge = getRankBadgeHtml(ev, 'PR', athlete.name, true);
@@ -4303,6 +4492,17 @@
                 <th class="col-athlete">Athlete</th>
                 <th id="rankHeaderTime" class="col-time" style="text-align:center;">Time</th>`;
 
+            // Events beyond the original four load when first picked.
+            const pickedDef = eventDef(eventType);
+            if (pickedDef && !pickedDef.builtin && !isEventLoaded(eventType)) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;font-weight:600;">Loading ' + homeEsc(pickedDef.label) + '…</td></tr>';
+                careerContainer.innerHTML = '';
+                loadExtraEvent(pickedDef).then(() => {
+                    if (document.getElementById('leaderboardEvent').value === eventType) renderLeaderboard();
+                });
+                return;
+            }
+
             tbody.innerHTML = '';
             careerContainer.innerHTML = '';
 
@@ -4432,6 +4632,7 @@
             if (oldStat) oldStat.remove();
             if (rankType === 'SEASON_YEAR') {
                 let teamSize = list.length;
+                const fieldEv = isFieldEvent(eventType);
                 let fastestTime = list[0].calculatedDisplayTime.split('(')[0].trim();
                 // Only include athletes who have an actual numeric time (exclude DNR, INJ, NT, --, etc.)
                 const timedList = list.filter(a => {
@@ -4442,7 +4643,7 @@
                 let avgSecs = timedList.length > 0 ? totalSecs / timedList.length : 0;
                 let avgMin = Math.floor(avgSecs / 60);
                 let avgSecPart = (avgSecs % 60).toFixed(2);
-                let avgDisplay = timedList.length > 0 ? `${avgMin}:${parseFloat(avgSecPart) < 10 ? '0' : ''}${avgSecPart}` : '—';
+                let avgDisplay = (!fieldEv && timedList.length > 0) ? `${avgMin}:${parseFloat(avgSecPart) < 10 ? '0' : ''}${avgSecPart}` : '—';
 
                 // Top-5 average: only for XC 5K, only when there are at least 5 timed runners
                 let top5Html = '';
@@ -4469,14 +4670,14 @@
                         <div class="stat-value">${teamSize}</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-label">Fastest Time</div>
+                        <div class="stat-label">${fieldEv ? 'Best Mark' : 'Fastest Time'}</div>
                         <div class="stat-value accent">${fastestTime}</div>
                     </div>
                     ${top5Html}
-                    <div class="stat-item">
+                    ${fieldEv ? '' : `<div class="stat-item">
                         <div class="stat-label">Team Average</div>
                         <div class="stat-value">${avgDisplay}</div>
-                    </div>
+                    </div>`}
                 `;
                 const tableWrapper = document.querySelector('.rank-table-wrapper');
                 tableWrapper.parentNode.insertBefore(statBlock, tableWrapper);
@@ -4672,7 +4873,7 @@
             const body = document.getElementById('comparePanelBody');
             panel.classList.add('open');
 
-            const events = ['XC 5K', '800m', '1600m', '3200m'];
+            const events = allEventKeys();
             const grades = ['9th', '10th', '11th', '12th'];
             const gradeLabels = {'9th':'Fr','10th':'So','11th':'Jr','12th':'Sr'};
 
@@ -5063,6 +5264,7 @@
                 if(syncBtn) syncBtn.classList.add('spinning');
                 showMessage("Syncing real-time records from Google Sheets...");
                 clearSecondaryDataCaches();
+                resetExtraEvents();
             }
 
             // Loads one gender's set of leaderboard sheets into
@@ -5178,12 +5380,14 @@
                 if (count > 0) {
                     athletes = updatedAthletes;
                     localStorage.setItem('perry_athlete_db_v20', JSON.stringify(athletes));
+                    applyExtraEvents();   // events beyond the original four (not saved to the cached copy)
                     
                     recalculateAllRankings();
                     populateSeasonYearDropdown();
                     renderLeaderboard();
                     await renderRoster();
                     tryOpenAthleteFromUrl();
+                    if (isManualClick) backgroundLoadVisibleEvents();
 
                     // All nav-tab and underlying data caches were already
                     // cleared at the top of this function on a manual sync.
@@ -5248,9 +5452,11 @@
             // visible data for bandwidth on slow connections. Cards still
             // open instantly in practice; the prefetch just starts a
             // couple seconds later.
+            const eventsReady = loadEventsSheet();   // builds the event dropdown; runs alongside the leaderboards
             await fetchLiveGoogleSheets(false);
             getXCHistoryData();
             getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
+            eventsReady.then(backgroundLoadVisibleEvents);   // remaining events load quietly in the background
         });
 
 
