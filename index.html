@@ -805,9 +805,69 @@
         .ios-install-share { display: inline-block; font-size: 13px; }
         .ios-install-close { flex-shrink: 0; background: none; border: none; color: var(--text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 4px; }
     </style>
+    <style>
+        .hand-flag { font-size: 0.7em; font-weight: 700; opacity: 0.6; margin-left: 2px; vertical-align: baseline; cursor: help; }
+    </style>
 </head>
 <body>
     <script>
+        // ── Google Sheets CSV cache ──────────────────────────────────────────
+        // Recent copies (< 2 min) are served instantly from IndexedDB; otherwise
+        // the network is tried first (8s timeout) and, if it fails or is slow,
+        // the last good copy is used so the app still loads. Any cache error
+        // quietly falls back to a normal fetch.
+        (function installSheetCache() {
+            const FRESH_MS = 2 * 60 * 1000, TIMEOUT_MS = 8000, DB = 'sheet_cache_v1', STORE = 'csv';
+            const realFetch = window.fetch.bind(window);
+            let dbPromise = null;
+            function db() {
+                if (!dbPromise) dbPromise = new Promise((res, rej) => {
+                    try {
+                        const r = indexedDB.open(DB, 1);
+                        r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+                        r.onsuccess = () => res(r.result);
+                        r.onerror = () => rej(r.error);
+                    } catch (e) { rej(e); }
+                });
+                return dbPromise;
+            }
+            async function getEntry(key) {
+                try {
+                    const d = await db();
+                    return await new Promise(res => {
+                        const q = d.transaction(STORE).objectStore(STORE).get(key);
+                        q.onsuccess = () => res(q.result || null);
+                        q.onerror = () => res(null);
+                    });
+                } catch (e) { return null; }
+            }
+            async function putEntry(key, val) {
+                try { (await db()).transaction(STORE, 'readwrite').objectStore(STORE).put(val, key); } catch (e) {}
+            }
+            const asResponse = text => new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8' } });
+            window.fetch = async function (input, init) {
+                const url = typeof input === 'string' ? input : (input && input.url) || '';
+                const isSheet = /^https:\/\/docs\.google\.com\/spreadsheets\//.test(url) && (!init || !init.method || init.method === 'GET');
+                if (!isSheet || !window.indexedDB) return realFetch(input, init);
+                const key = url.replace(/([?&])cachebust=\d+&?/, '$1').replace(/[?&]$/, '');
+                const cached = await getEntry(key);
+                if (cached && Date.now() - cached.t < FRESH_MS) return asResponse(cached.text);
+                try {
+                    const ctl = new AbortController();
+                    const timer = setTimeout(() => ctl.abort(), cached ? TIMEOUT_MS : 30000);
+                    const res = await realFetch(input, Object.assign({}, init, { signal: ctl.signal }));
+                    clearTimeout(timer);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    putEntry(key, { t: Date.now(), text });
+                    return asResponse(text);
+                } catch (e) {
+                    if (cached) return asResponse(cached.text);
+                    throw e;
+                }
+            };
+        })();
+
         // Prevent the rankings from flashing before the home page appears:
         // the home overlay starts open in the HTML; only skip it for #rankings links.
         var skipHome = location.hash === '#rankings' || /[?&]athlete=/.test(location.search);
@@ -2121,6 +2181,17 @@
             recalculateAllRankings();
             renderLeaderboard();
             await renderRoster();
+        }
+
+        // True when a displayed mark is hand-timed (not 2 decimals) in an event
+        // that gets the hand -> FAT conversion. Used for the little "h" marker.
+        function isHandTimeMark(timeStr, eventType) {
+            if (!timeStr || !usesHandTimeConversion(eventType)) return false;
+            const clean = String(timeStr).split('(')[0].split('-')[0].trim().replace(/[^\d:.]/g, '');
+            if (!/\d/.test(clean)) return false;
+            const secondsPart = clean.includes(':') ? clean.split(':').pop() : clean;
+            const decimals = secondsPart.includes('.') ? secondsPart.split('.')[1].length : 0;
+            return decimals !== 2;
         }
 
         function cleanTimeToSeconds(timeStr, eventType) {
@@ -4791,9 +4862,11 @@
                 }
                 let medal = listRank === 1 ? '🥇' : listRank === 2 ? '🥈' : listRank === 3 ? '🥉' : listRank;
                 let isTopTime = (rankType === 'PR' && listRank === 1);
+                let handFlag = isHandTimeMark(athlete.calculatedDisplayTime, eventType)
+                    ? '<span class="hand-flag" title="Hand time (converted +0.24s for ranking)">h</span>' : '';
                 let timeHtml = isTopTime
-                    ? `<span class="time-pr-pill">${athlete.calculatedDisplayTime.split('(')[0].trim()}</span>`
-                    : athlete.calculatedDisplayTime.split('(')[0].trim();
+                    ? `<span class="time-pr-pill">${athlete.calculatedDisplayTime.split('(')[0].trim()}</span>${handFlag}`
+                    : athlete.calculatedDisplayTime.split('(')[0].trim() + handFlag;
 
                 // Determine year the mark occurred
                 let markYear = extractYearFromTimeValue(athlete.calculatedDisplayTime);
