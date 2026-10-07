@@ -6120,6 +6120,14 @@
             document.getElementById('scheduleOverlay').classList.remove('open');
         }
 
+        // School year a meet belongs to, as its starting year: Jul-Dec -> that year,
+        // Jan-Jun -> the year before (fall 2026 XC + spring 2027 track = 2026).
+        function schoolYearOf(dateVal) {
+            const y = Number(dateVal.slice(0, 4)), mo = Number(dateVal.slice(5, 7));
+            return mo >= 7 ? y : y - 1;
+        }
+        function schoolYearLabel(y) { return y + '-' + (y + 1); }
+
         function setScheduleSport(sp) { scheduleSport = sp; renderSchedule(); }
         function setScheduleYear(y) { scheduleYear = Number(y); scheduleSport = 'all'; renderSchedule(); }
 
@@ -6138,12 +6146,12 @@
             }
 
             const today = localToday();
-            const years = [...new Set(scheduleData.map(m => Number(m.dateVal.slice(0, 4))))].sort((a, b) => b - a);
+            const years = [...new Set(scheduleData.map(m => schoolYearOf(m.dateVal)))].sort((a, b) => b - a);
             if (scheduleYear === null || !years.includes(scheduleYear)) {
-                const cur = new Date().getFullYear();
+                const cur = schoolYearOf(today);
                 scheduleYear = years.includes(cur) ? cur : (years.find(y => y <= cur) || years[0]);
             }
-            const inYear = scheduleData.filter(m => Number(m.dateVal.slice(0, 4)) === scheduleYear);
+            const inYear = scheduleData.filter(m => schoolYearOf(m.dateVal) === scheduleYear);
             const sports = [...new Set(inYear.map(m => m.sport))];
             if (scheduleSport !== 'all' && !sports.includes(scheduleSport)) scheduleSport = 'all';
             const meets = inYear.filter(m => scheduleSport === 'all' || m.sport === scheduleSport);
@@ -6156,7 +6164,7 @@
             }
             if (years.length > 1) {
                 ctl += `<select class="sched-year" onchange="setScheduleYear(this.value)" aria-label="Year">` +
-                    years.map(y => `<option value="${y}" ${y === scheduleYear ? 'selected' : ''}>${y}</option>`).join('') + `</select>`;
+                    years.map(y => `<option value="${y}" ${y === scheduleYear ? 'selected' : ''}>${schoolYearLabel(y)}</option>`).join('') + `</select>`;
             }
             controls.innerHTML = ctl;
             controls.style.display = ctl ? 'flex' : 'none';
