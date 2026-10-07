@@ -1920,8 +1920,32 @@
         }));
 
         function eventDef(key) { return EVENT_DEFS.find(d => d.key === key) || null; }
-        function allEventKeys() { return EVENT_DEFS.map(d => d.key); }
         function isFieldEvent(key) { return FIELD_EVENT_KEYS.has(key); }
+
+        // Display order: running events longest->shortest, then hurdles
+        // longest->shortest, then field events (field events keep their
+        // original relative order — sort is stable).
+        function eventSortBucket(d) {
+            if (d.kind === 'field') return 2;
+            const isHurdle = /hurdle/i.test(d.label) || /^\d+\s*h$/i.test(String(d.key).trim());
+            return isHurdle ? 1 : 0;
+        }
+        function eventDistanceMeters(d) {
+            const s = d.key + ' ' + d.label;
+            let m = s.match(/(\d+(\.\d+)?)\s*k\b/i);
+            if (m) return parseFloat(m[1]) * 1000;
+            m = s.match(/(\d+(\.\d+)?)/);
+            return m ? parseFloat(m[1]) : 0;
+        }
+        function sortedEventDefs(defs) {
+            return defs.slice().sort((a, b) => {
+                const ba = eventSortBucket(a), bb = eventSortBucket(b);
+                if (ba !== bb) return ba - bb;
+                if (ba === 2) return 0; // field events: keep original order
+                return eventDistanceMeters(b) - eventDistanceMeters(a);
+            });
+        }
+        function allEventKeys() { return sortedEventDefs(EVENT_DEFS).map(d => d.key); }
 
         (function handlePreviewHash() {
             try {
@@ -1968,6 +1992,7 @@
                     visible: (vis === 'yes' || vis === 'preview') ? vis : 'no'
                 };
                 if (!builtin && !def.boysUrl && !def.girlsUrl) return;   // nothing to show yet
+                if (defs.some(d => d.key === key)) return;               // skip duplicate event rows
                 defs.push(def);
             });
             // The original events always exist, even if someone deletes their rows.
@@ -1987,7 +2012,7 @@
             if (!shown.length) return;
             const prev = sel.value;
             const opt = d => `<option value="${homeEsc(d.key)}">${homeEsc(d.label)}${d.visible === 'preview' ? ' (preview)' : ''}</option>`;
-            const standard = shown.filter(d => !d.seated), seated = shown.filter(d => d.seated);
+            const standard = sortedEventDefs(shown.filter(d => !d.seated)), seated = sortedEventDefs(shown.filter(d => d.seated));
             sel.innerHTML = standard.map(opt).join('') + (seated.length ? `<optgroup label="Seated">${seated.map(opt).join('')}</optgroup>` : '');
             if (shown.some(d => d.key === prev)) sel.value = prev;
             else renderLeaderboard();
