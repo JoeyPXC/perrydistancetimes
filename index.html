@@ -660,6 +660,23 @@
         .card-share-btn { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; background:var(--primary); color:var(--accent); border:none; border-radius:6px; padding:6px 12px; cursor:pointer; white-space:nowrap; }
         .card-share-btn:hover { opacity:0.85; }
         .card-share-btn:disabled { opacity:0.6; cursor:default; }
+        .card-share-row { gap:8px; flex-wrap:wrap; }
+        .prcard-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:10000; display:none; align-items:center; justify-content:center; padding:12px; }
+        .prcard-overlay.open { display:flex; }
+        .prcard-modal { background:var(--card-bg); color:var(--text); border-radius:14px; width:100%; max-width:460px; max-height:94vh; overflow-y:auto; padding:16px; box-shadow:0 10px 40px rgba(0,0,0,0.4); }
+        .prcard-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .prcard-title { font-size:15px; font-weight:800; }
+        .prcard-close { background:none; border:none; font-size:22px; line-height:1; cursor:pointer; color:var(--text-muted); padding:2px 6px; }
+        .prcard-hint { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+        .prcard-events { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+        .prcard-opt { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer; background:var(--bg); }
+        .prcard-opt input { accent-color:#000; }
+        .prcard-opt.disabled { opacity:0.45; cursor:not-allowed; }
+        .prcard-preview { display:block; width:100%; height:auto; border-radius:10px; border:1px solid var(--border); margin-bottom:10px; background:#000; }
+        .prcard-actions { display:flex; gap:8px; }
+        .prcard-actions button { flex:1; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; border:none; border-radius:8px; padding:10px 12px; cursor:pointer; background:var(--primary); color:var(--accent); }
+        .prcard-actions button.secondary { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+        .prcard-actions button:disabled { opacity:0.5; cursor:default; }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -3485,6 +3502,248 @@
             return eventsHtml;
         }
 
+        // ── Shareable PR Card ────────────────────────────────────────────
+        // "🏅 PR Card" on an athlete card opens a picker (up to 4 of the
+        // athlete's events), draws a 1080x1080 image on a <canvas> from the
+        // PR data already loaded for the card, and shares it (phone share
+        // sheet) or downloads it as a PNG.
+        const PRCARD_MAX_EVENTS = 4;
+        const PRCARD_LOGO_SRC = 'Mass. Perry Black Outline.png';
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false };
+
+        function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
+        function prCardEventLabel(ev) {
+            const d = (typeof eventDef === 'function') ? eventDef(ev) : null;
+            return ((d && d.label) || ev).replace(/\s*Track$/i, '');
+        }
+        function prCardAvailableEvents(athlete) {
+            return allEventKeys().filter(ev => {
+                const m = prCardCleanMark(athlete[ev] && athlete[ev].PR);
+                return m && m !== '--';
+            });
+        }
+
+        function prCardEnsureModal() {
+            let ov = document.getElementById('prCardOverlay');
+            if (ov) return ov;
+            ov = document.createElement('div');
+            ov.id = 'prCardOverlay';
+            ov.className = 'prcard-overlay';
+            ov.innerHTML = `
+                <div class="prcard-modal" role="dialog" aria-modal="true" aria-label="Share PR card">
+                    <div class="prcard-head">
+                        <span class="prcard-title" id="prCardTitle">PR Card</span>
+                        <button type="button" class="prcard-close" id="prCardClose" aria-label="Close">×</button>
+                    </div>
+                    <div class="prcard-hint">Pick up to ${PRCARD_MAX_EVENTS} events to feature.</div>
+                    <div class="prcard-events" id="prCardEvents"></div>
+                    <canvas class="prcard-preview" id="prCardCanvas" width="1080" height="1080"></canvas>
+                    <div class="prcard-actions">
+                        <button type="button" id="prCardShare">📤 Share</button>
+                        <button type="button" class="secondary" id="prCardDownload">⬇ Download</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(ov);
+            ov.addEventListener('click', e => { if (e.target === ov) closePrCard(); });
+            ov.querySelector('#prCardClose').addEventListener('click', closePrCard);
+            ov.querySelector('#prCardShare').addEventListener('click', () => prCardExport(true));
+            ov.querySelector('#prCardDownload').addEventListener('click', () => prCardExport(false));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrCard(); });
+            return ov;
+        }
+
+        function closePrCard() {
+            const ov = document.getElementById('prCardOverlay');
+            if (ov) ov.classList.remove('open');
+        }
+
+        function openPrCard(name) {
+            const athlete = athletes[name] || Object.values(athletes).find(a => a.name === name);
+            if (!athlete) { showMessage('Could not find that athlete.', true); return; }
+            const events = prCardAvailableEvents(athlete);
+            if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
+
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried };
+            const ov = prCardEnsureModal();
+            ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
+            prCardRenderPicker();
+            ov.classList.add('open');
+
+            // Load the school logo once; redraw when it arrives.
+            if (!prCardState.logoTried) {
+                prCardState.logoTried = true;
+                const img = new Image();
+                img.onload = () => { prCardState.logo = img; prCardDraw(); };
+                img.onerror = () => { prCardState.logo = null; };
+                img.src = PRCARD_LOGO_SRC;
+            }
+            prCardDraw();
+        }
+
+        function prCardRenderPicker() {
+            const box = document.getElementById('prCardEvents');
+            const st = prCardState;
+            box.innerHTML = '';
+            st.events.forEach(ev => {
+                const lab = document.createElement('label');
+                lab.className = 'prcard-opt';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.dataset.ev = ev;
+                cb.checked = st.selected.includes(ev);
+                cb.addEventListener('change', () => {
+                    if (cb.checked) { if (st.selected.length < PRCARD_MAX_EVENTS) st.selected.push(ev); }
+                    else st.selected = st.selected.filter(x => x !== ev);
+                    // keep the card in the athlete's normal event order
+                    st.selected = st.events.filter(x => st.selected.includes(x));
+                    prCardSyncPicker();
+                    prCardDraw();
+                });
+                lab.appendChild(cb);
+                lab.appendChild(document.createTextNode(prCardEventLabel(ev)));
+                box.appendChild(lab);
+            });
+            prCardSyncPicker();
+        }
+
+        // Updates checkbox/disabled states in place (keeps focus on the box
+        // the user just toggled) and enables/disables the action buttons.
+        function prCardSyncPicker() {
+            const st = prCardState;
+            const atMax = st.selected.length >= PRCARD_MAX_EVENTS;
+            document.querySelectorAll('#prCardEvents input').forEach(cb => {
+                const on = st.selected.includes(cb.dataset.ev);
+                cb.checked = on;
+                cb.disabled = !on && atMax;
+                cb.parentElement.classList.toggle('disabled', cb.disabled);
+            });
+            const none = st.selected.length === 0;
+            document.getElementById('prCardShare').disabled = none;
+            document.getElementById('prCardDownload').disabled = none;
+        }
+
+        // Shrinks the font until the text fits maxW; returns the size used.
+        function prCardFit(ctx, text, weight, maxSize, maxW) {
+            let size = maxSize;
+            const fam = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+            while (size > 18) {
+                ctx.font = `${weight} ${size}px ${fam}`;
+                if (ctx.measureText(text).width <= maxW) break;
+                size -= 2;
+            }
+            ctx.font = `${weight} ${size}px ${fam}`;
+            return size;
+        }
+
+        function prCardDraw(withLogo = true) {
+            const cv = document.getElementById('prCardCanvas');
+            const st = prCardState;
+            if (!cv || !st.athlete) return;
+            const ctx = cv.getContext('2d');
+            const W = 1080, H = 1080, YEL = '#ffdd00';
+            const fam = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+
+            // Header band
+            ctx.fillStyle = YEL; ctx.fillRect(0, 0, W, 170);
+            let textX = 56;
+            if (withLogo && st.logo && st.logo.naturalWidth) {
+                const lh = 130, lw = lh * (st.logo.naturalWidth / st.logo.naturalHeight);
+                ctx.drawImage(st.logo, 50, 20, lw, lh);
+                textX = 50 + lw + 28;
+            }
+            ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, W - textX - 40);
+            ctx.fillText('PERRY TRACK / XC', textX, 70);
+            prCardFit(ctx, 'PERSONAL RECORDS', 700, 32, W - textX - 40);
+            ctx.fillText('PERSONAL RECORDS', textX, 120);
+
+            // Name + class
+            const a = st.athlete;
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+            prCardFit(ctx, a.name.toUpperCase(), 900, 104, W - 120);
+            ctx.fillText(a.name.toUpperCase(), W / 2, 265);
+            let y = 265;
+            if (a.gradYear) {
+                ctx.fillStyle = YEL;
+                prCardFit(ctx, `CLASS OF ${a.gradYear}`, 700, 40, W - 120);
+                ctx.fillText(`CLASS OF ${a.gradYear}`, W / 2, 335);
+                y = 335;
+            }
+            ctx.fillStyle = YEL; ctx.fillRect(W / 2 - 60, y + 40, 120, 6);
+
+            // PRs
+            const sel = st.selected;
+            const top = 440, bottom = 1000;
+            if (sel.length === 1) {
+                const ev = sel[0], mark = prCardCleanMark(a[ev].PR);
+                ctx.fillStyle = '#9ca3af';
+                prCardFit(ctx, 'PERSONAL RECORD', 700, 36, W - 120);
+                ctx.fillText('PERSONAL RECORD', W / 2, 540);
+                ctx.fillStyle = YEL;
+                prCardFit(ctx, prCardEventLabel(ev).toUpperCase(), 800, 78, W - 120);
+                ctx.fillText(prCardEventLabel(ev).toUpperCase(), W / 2, 640);
+                ctx.fillStyle = '#fff';
+                prCardFit(ctx, mark, 900, 260, W - 120);
+                ctx.fillText(mark, W / 2, 810);
+            } else if (sel.length > 1) {
+                const rowH = Math.min(150, (bottom - top) / sel.length);
+                const startY = top + ((bottom - top) - rowH * sel.length) / 2;
+                sel.forEach((ev, i) => {
+                    const cy = startY + rowH * i + rowH / 2;
+                    const mark = prCardCleanMark(a[ev].PR);
+                    if (i > 0) { ctx.fillStyle = '#2a2a2a'; ctx.fillRect(80, startY + rowH * i, W - 160, 2); }
+                    ctx.textAlign = 'left'; ctx.fillStyle = YEL;
+                    prCardFit(ctx, prCardEventLabel(ev).toUpperCase(), 800, 52, 400);
+                    ctx.fillText(prCardEventLabel(ev).toUpperCase(), 80, cy);
+                    ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+                    prCardFit(ctx, mark, 900, 96, 500);
+                    ctx.fillText(mark, W - 80, cy);
+                });
+                ctx.textAlign = 'center';
+            }
+            ctx.textBaseline = 'alphabetic';
+        }
+
+        function prCardToBlob() {
+            const cv = document.getElementById('prCardCanvas');
+            return new Promise((resolve, reject) => {
+                try { cv.toBlob(b => b ? resolve(b) : reject(new Error('empty')), 'image/png'); }
+                catch (e) { reject(e); }
+            });
+        }
+
+        async function prCardExport(share) {
+            let blob;
+            try { blob = await prCardToBlob(); }
+            catch (e) {
+                // A logo from another origin can block exporting — redraw without it.
+                prCardDraw(false);
+                try { blob = await prCardToBlob(); }
+                catch (e2) { showMessage('Could not create the image on this device.', true); return; }
+            }
+            const fname = `${prCardState.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}-PR-card.png`;
+            if (share && navigator.canShare && navigator.share) {
+                try {
+                    const file = new File([blob], fname, { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: `${prCardState.name} — PRs` });
+                        return;
+                    }
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return; // user closed the share sheet
+                }
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url; link.download = fname;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            if (share) showMessage('Image downloaded — attach it to your post or message.');
+        }
+
         // ── Athlete Profile Videos ───────────────────────────────────────
         // Fetches the athlete videos sheet once and builds a normalized-name
         // lookup: { 'josh tormasi': [{label, url}, ...], ... }
@@ -4077,6 +4336,7 @@
                 <div class="card-expand-body">
                     <div class="card-share-row">
                         <button type="button" class="card-share-btn" onclick="event.stopPropagation(); shareAthleteProfile(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🔗 Share Profile</button>
+                        <button type="button" class="card-share-btn" onclick="event.stopPropagation(); openPrCard(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🏅 PR Card</button>
                     </div>
                     <div class="events-grid">${eventsHtml}</div>
                     ${honorDetailHtml}
