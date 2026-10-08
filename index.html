@@ -3743,12 +3743,12 @@
             ctx.clearRect(0, 0, W, H);
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
 
-            // Faint P-with-wings watermark behind the black area.
+            // Faint P-with-wings watermark behind the black area (alpha = strength).
             const HB = 160;
             if (withLogo && st.watermark && st.watermark._box) {
                 const bx = st.watermark._box, ww = 960, wh = ww * bx.sh / bx.sw;
                 ctx.save();
-                ctx.globalAlpha = 0.07;
+                ctx.globalAlpha = 0.16;
                 ctx.drawImage(st.watermark, bx.sx, bx.sy, bx.sw, bx.sh, (W - ww) / 2, HB + (H - HB - wh) / 2 + 10, ww, wh);
                 ctx.restore();
             }
