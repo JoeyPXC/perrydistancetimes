@@ -677,6 +677,37 @@
         .prcard-actions button { flex:1; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; border:none; border-radius:8px; padding:10px 12px; cursor:pointer; background:var(--primary); color:var(--accent); }
         .prcard-actions button.secondary { background:var(--bg); color:var(--text); border:1px solid var(--border); }
         .prcard-actions button:disabled { opacity:0.5; cursor:default; }
+        .ps-modal { max-width:800px; }
+        .ps-opts { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+        .ps-paper { background:#fff; color:#111; border:1px solid var(--border); border-radius:8px; padding:0; margin-bottom:10px; max-height:55vh; overflow:auto; }
+        #printSheetRoot { display:none; }
+        .ps-sheet { font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#111; background:#fff; font-size:13px; line-height:1.35; }
+        .ps-head { background:#ffdd00; color:#000; display:flex; align-items:center; gap:14px; padding:14px 20px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .ps-head img { height:56px; width:auto; }
+        .ps-head .ps-site { font-size:20px; font-weight:900; letter-spacing:0.3px; }
+        .ps-head .ps-sub { font-size:12px; font-weight:700; }
+        .ps-body { padding:18px 22px 14px; }
+        .ps-name { font-size:34px; font-weight:900; text-transform:uppercase; line-height:1.05; margin:0; }
+        .ps-class { font-size:14px; font-weight:800; margin-top:4px; color:#444; }
+        .ps-college { font-size:13px; font-weight:700; margin-top:2px; color:#444; }
+        .ps-h { font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.6px; border-bottom:2px solid #ffdd00; padding-bottom:3px; margin:18px 0 8px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .ps-table { width:100%; border-collapse:collapse; }
+        .ps-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#555; padding:4px 6px; border-bottom:1px solid #ccc; }
+        .ps-table td { padding:6px; border-bottom:1px solid #e5e5e5; font-weight:600; }
+        .ps-table td.ps-ev { font-weight:800; }
+        .ps-table td.ps-pr { font-weight:900; font-size:15px; }
+        .ps-table th.c, .ps-table td.c { text-align:right; }
+        .ps-row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px dotted #ccc; }
+        .ps-row b { font-weight:800; }
+        .ps-link { word-break:break-all; font-size:11px; color:#444; }
+        .ps-foot { margin-top:16px; padding-top:8px; border-top:1px solid #ccc; font-size:11px; color:#555; word-break:break-all; }
+        @media print {
+            body.ps-printing > *:not(#printSheetRoot) { display:none !important; }
+            body.ps-printing #printSheetRoot { display:block !important; }
+            body.ps-printing { background:#fff !important; }
+            @page { margin:0.5in; }
+            .ps-table tr, .ps-row { page-break-inside:avoid; }
+        }
         @media (max-width: 480px) {
             .records-table th, .records-table td { padding:6px 5px; font-size:12px; }
             .col-record-mark { width:64px; font-size:11px; }
@@ -3744,6 +3775,191 @@
             if (share) showMessage('Image downloaded — attach it to your post or message.');
         }
 
+        // ── Copy Stats + Print Sheet ─────────────────────────────────────
+        function psEsc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // XC + track honors as [{label, years}] — same sources and labels the
+        // card's Honors section uses.
+        function psHonorRows(name, honorsMap, trackMap) {
+            const key = (name || '').toLowerCase().trim();
+            const h = (honorsMap && honorsMap[key]) || {};
+            const t = (trackMap && trackMap[key]) || {};
+            const xc = [
+                ['XC All-Ohio', h.allOhio], ['XC State Qualifier', h.stateQual], ['XC District Champion', h.distChamp],
+                ['XC FL Champion', h.fedChamp], ['XC County Champion', h.countyChamp], ['XC Regional Qualifier', h.regQual],
+                ['1st Team All-Federal', h.allFed], ['1st Team All-County', h.allCounty],
+            ].filter(r => r[1] && r[1].length).map(r => ({ label: r[0], years: r[1].slice().sort((a, b) => a - b).join(', ') }));
+            const tr = [
+                ['Track State Champion', t.tStateChamp], ['Track State Runner-Up', t.tStateRunnerUp], ['Track All-Ohio', t.tAllOhio],
+                ['Track State Qualifier', t.tStateQual], ['Track Regional Champ', t.tRegChamp], ['Track District Champ', t.tDistChamp],
+                ['Track FL Champion', t.tFLChamp], ['Track County Champ', t.tCountyChamp], ['Track Regional Qual', t.tRegQual],
+            ].filter(r => r[1] && r[1].length).map(r => ({ label: r[0], years: r[1].slice().sort().join(', ') }));
+            return xc.concat(tr);
+        }
+
+        async function psLoadProfileData(athlete) {
+            let honors = [], videos = [];
+            try {
+                const [hm, tm] = await Promise.all([getXCHonorsMap(), getTrackHonorsMap()]);
+                honors = psHonorRows(athlete.name, hm, tm);
+            } catch (e) { /* honors are optional */ }
+            try {
+                const vm = await getAthleteVideosMap();
+                videos = (vm && vm[(athlete.name || '').toLowerCase().trim()]) || [];
+            } catch (e) { /* videos are optional */ }
+            let college = '';
+            try { const ci = getCollegeInfo(athlete); if (ci && ci.colleges) college = ci.colleges.join(' & '); } catch (e) {}
+            const events = allEventKeys().filter(ev => athlete[ev]);
+            return { honors, videos, college, events };
+        }
+
+        // 📋 Copy Stats — short plain-text summary for a text or group chat.
+        async function copyAthleteStats(name) {
+            const athlete = athletes[name] || Object.values(athletes).find(a => a.name === name);
+            if (!athlete) { showMessage('Could not find that athlete.', true); return; }
+            const d = await psLoadProfileData(athlete);
+            const lines = [athlete.name + (athlete.gradYear ? ` — Class of ${athlete.gradYear}` : '')];
+            const prs = d.events.filter(ev => { const m = prCardCleanMark(athlete[ev].PR); return m && m !== '--'; });
+            if (prs.length) {
+                lines.push('', 'PRs:');
+                prs.forEach(ev => lines.push(`• ${prCardEventLabel(ev)}: ${prCardCleanMark(athlete[ev].PR)}`));
+            }
+            if (d.honors.length) {
+                lines.push('', 'Honors:');
+                d.honors.forEach(r => lines.push(`• ${r.label} (${r.years})`));
+            }
+            if (d.college) lines.push('', `College: ${d.college}`);
+            lines.push('', getAthleteShareUrl(athlete.name));
+            const text = lines.join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                } catch (e2) { showMessage('Could not copy stats', true); return; }
+            }
+            showMessage(`Stats copied for ${athlete.name}!`);
+        }
+
+        // 🖨 Print Sheet — one-page profile with checkboxes for what to include.
+        const PS_SECTIONS = [
+            ['prs', 'PRs & progression'],
+            ['honors', 'Honors'],
+            ['college', 'College'],
+            ['videos', 'Video links'],
+            ['link', 'Profile link'],
+        ];
+        let psState = { athlete: null, data: null, on: { prs: true, honors: true, college: true, videos: true, link: true } };
+
+        function psSheetHtml() {
+            const { athlete: a, data: d, on } = psState;
+            const mark = v => { const m = prCardCleanMark(v); return m && m !== '--' ? psEsc(m) : '—'; };
+            let h = `<div class="ps-sheet"><div class="ps-head">
+                <img src="${psEsc(PRCARD_LOGO_SRC)}" alt="" onerror="this.remove()">
+                <div><div class="ps-site">PERRY TRACK / XC</div><div class="ps-sub">Athlete Profile</div></div></div>
+                <div class="ps-body"><h1 class="ps-name">${psEsc(a.name)}</h1>`;
+            if (a.gradYear) h += `<div class="ps-class">Class of ${psEsc(a.gradYear)}</div>`;
+            if (on.college && d.college) h += `<div class="ps-college">🎓 ${psEsc(d.college)}</div>`;
+
+            if (on.prs && d.events.length) {
+                h += `<div class="ps-h">Personal Records &amp; Progression</div><table class="ps-table"><thead><tr>
+                    <th>Event</th><th class="c">PR</th><th class="c">9th</th><th class="c">10th</th><th class="c">11th</th><th class="c">12th</th></tr></thead><tbody>`;
+                d.events.forEach(ev => {
+                    const e = a[ev];
+                    h += `<tr><td class="ps-ev">${psEsc(prCardEventLabel(ev))}</td><td class="c ps-pr">${mark(e.PR)}</td>
+                        <td class="c">${mark(e['9th'])}</td><td class="c">${mark(e['10th'])}</td><td class="c">${mark(e['11th'])}</td><td class="c">${mark(e['12th'])}</td></tr>`;
+                });
+                h += `</tbody></table>`;
+            }
+            if (on.honors && d.honors.length) {
+                h += `<div class="ps-h">Honors</div>` + d.honors.map(r => `<div class="ps-row"><b>${psEsc(r.label)}</b><span>${psEsc(r.years)}</span></div>`).join('');
+            }
+            if (on.videos && d.videos.length) {
+                h += `<div class="ps-h">Videos</div>` + d.videos.map(v => `<div class="ps-row"><b>${psEsc(v.label || 'Video')}</b><a class="ps-link" href="${psEsc(v.url)}">${psEsc(v.url)}</a></div>`).join('');
+            }
+            if (on.link) h += `<div class="ps-foot">Full profile: ${psEsc(getAthleteShareUrl(a.name))}</div>`;
+            return h + `</div></div>`;
+        }
+
+        function psRefresh() {
+            const paper = document.getElementById('psPaper');
+            if (paper) paper.innerHTML = psSheetHtml();
+        }
+
+        function psEnsureModal() {
+            let ov = document.getElementById('psOverlay');
+            if (ov) return ov;
+            ov = document.createElement('div');
+            ov.id = 'psOverlay';
+            ov.className = 'prcard-overlay';
+            ov.innerHTML = `
+                <div class="prcard-modal ps-modal" role="dialog" aria-modal="true" aria-label="Print profile sheet">
+                    <div class="prcard-head">
+                        <span class="prcard-title" id="psTitle">Print Sheet</span>
+                        <button type="button" class="prcard-close" id="psClose" aria-label="Close">×</button>
+                    </div>
+                    <div class="prcard-hint">Choose what to include, then print or save as a PDF.</div>
+                    <div class="ps-opts" id="psOpts"></div>
+                    <div class="ps-paper" id="psPaper"></div>
+                    <div class="prcard-actions"><button type="button" id="psPrint">🖨 Print / Save PDF</button></div>
+                </div>`;
+            document.body.appendChild(ov);
+            ov.addEventListener('click', e => { if (e.target === ov) closePrintSheet(); });
+            ov.querySelector('#psClose').addEventListener('click', closePrintSheet);
+            ov.querySelector('#psPrint').addEventListener('click', psPrint);
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrintSheet(); });
+            const opts = ov.querySelector('#psOpts');
+            PS_SECTIONS.forEach(([key, label]) => {
+                const lab = document.createElement('label');
+                lab.className = 'prcard-opt';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.dataset.sec = key;
+                cb.addEventListener('change', () => { psState.on[key] = cb.checked; psRefresh(); });
+                lab.appendChild(cb); lab.appendChild(document.createTextNode(label));
+                opts.appendChild(lab);
+            });
+            return ov;
+        }
+
+        function closePrintSheet() {
+            const ov = document.getElementById('psOverlay');
+            if (ov) ov.classList.remove('open');
+        }
+
+        async function openPrintSheet(name) {
+            const athlete = athletes[name] || Object.values(athletes).find(a => a.name === name);
+            if (!athlete) { showMessage('Could not find that athlete.', true); return; }
+            const data = await psLoadProfileData(athlete);
+            psState = { athlete, data, on: { prs: true, honors: true, college: true, videos: true, link: true } };
+            const ov = psEnsureModal();
+            ov.querySelector('#psTitle').textContent = `${athlete.name} — Print Sheet`;
+            // Only offer sections that have something to show.
+            const has = { prs: data.events.length > 0, honors: data.honors.length > 0, college: !!data.college, videos: data.videos.length > 0, link: true };
+            ov.querySelectorAll('#psOpts input').forEach(cb => {
+                const k = cb.dataset.sec;
+                cb.checked = has[k];
+                psState.on[k] = has[k];
+                cb.parentElement.style.display = has[k] ? '' : 'none';
+            });
+            psRefresh();
+            ov.classList.add('open');
+        }
+
+        function psPrint() {
+            let root = document.getElementById('printSheetRoot');
+            if (!root) { root = document.createElement('div'); root.id = 'printSheetRoot'; document.body.appendChild(root); }
+            root.innerHTML = psSheetHtml();
+            document.body.classList.add('ps-printing');
+            const done = () => { document.body.classList.remove('ps-printing'); window.removeEventListener('afterprint', done); };
+            window.addEventListener('afterprint', done);
+            // Give the logo a moment to be in the DOM before the print dialog snapshots it.
+            setTimeout(() => { window.print(); setTimeout(done, 1500); }, 150);
+        }
+
         // ── Athlete Profile Videos ───────────────────────────────────────
         // Fetches the athlete videos sheet once and builds a normalized-name
         // lookup: { 'josh tormasi': [{label, url}, ...], ... }
@@ -4337,6 +4553,8 @@
                     <div class="card-share-row">
                         <button type="button" class="card-share-btn" onclick="event.stopPropagation(); shareAthleteProfile(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🔗 Share Profile</button>
                         <button type="button" class="card-share-btn" onclick="event.stopPropagation(); openPrCard(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🏅 PR Card</button>
+                        <button type="button" class="card-share-btn" onclick="event.stopPropagation(); copyAthleteStats(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">📋 Copy Stats</button>
+                        <button type="button" class="card-share-btn" onclick="event.stopPropagation(); openPrintSheet(&quot;${athlete.name.replace(/"/g, '&quot;')}&quot;)">🖨 Print Sheet</button>
                     </div>
                     <div class="events-grid">${eventsHtml}</div>
                     ${honorDetailHtml}
