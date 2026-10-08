@@ -3640,24 +3640,23 @@
             const st = prCardState;
             if (!cv || !st.athlete) return;
             const ctx = cv.getContext('2d');
-            const W = 1080, H = 1080, YEL = '#ffdd00', GRAY = '#53565A';
+            const W = 1080, H = 1080, YEL = '#ffdd00';
             const fam = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
             ctx.clearRect(0, 0, W, H);
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
 
             // Header band
-            ctx.fillStyle = GRAY; ctx.fillRect(0, 0, W, 170);
+            ctx.fillStyle = YEL; ctx.fillRect(0, 0, W, 170);
             let textX = 56;
             if (withLogo && st.logo && st.logo.naturalWidth) {
                 const lh = 130, lw = lh * (st.logo.naturalWidth / st.logo.naturalHeight);
                 ctx.drawImage(st.logo, 50, 20, lw, lh);
                 textX = 50 + lw + 28;
             }
-            ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
             prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, W - textX - 40);
             ctx.fillText('PERRY TRACK / XC', textX, 70);
-            ctx.fillStyle = '#e5e7eb';
             prCardFit(ctx, 'PERSONAL RECORDS', 700, 32, W - textX - 40);
             ctx.fillText('PERSONAL RECORDS', textX, 120);
 
