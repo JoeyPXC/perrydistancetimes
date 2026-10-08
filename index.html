@@ -3533,9 +3533,10 @@
         // PR data already loaded for the card, and shares it (phone share
         // sheet) or downloads it as a PNG.
         const PRCARD_MAX_EVENTS = 4;
-        const PRCARD_LOGO_SRC = 'Mass. Perry Black Outline.png';
+        const PRCARD_LOGO_SRC = 'Mass. Perry Black P.png';             // header, top left
+        const PRCARD_WATERMARK_SRC = 'Mass. Perry Black Outline.png';  // P with double wings, faint background
         const PRCARD_PANTHER_SRC = 'Perry_Panthers.png';
-        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false };
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false };
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
         function prCardEventLabel(ev) {
@@ -3589,26 +3590,32 @@
             const events = prCardAvailableEvents(athlete);
             if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
 
-            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried };
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried };
             const ov = prCardEnsureModal();
             ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
             prCardRenderPicker();
             ov.classList.add('open');
 
-            // Load the two header logos once; redraw as each arrives.
+            // Load the images once; redraw as each arrives.
+            const loadImg = (src, onOk, onFail) => {
+                const im = new Image();
+                im.onload = () => onOk(im);
+                im.onerror = () => { if (onFail) onFail(); };
+                im.src = src;
+            };
             if (!prCardState.logoTried) {
                 prCardState.logoTried = true;
-                const img = new Image();
-                img.onload = () => { img._box = prCardTrimBox(img); prCardState.logo = img; prCardDraw(); };
-                img.onerror = () => { prCardState.logo = null; };
-                img.src = PRCARD_LOGO_SRC;
+                const useLogo = im => { im._box = prCardTrimBox(im); prCardState.logo = im; prCardDraw(); };
+                // If the P file isn't uploaded yet, fall back to the winged logo.
+                loadImg(PRCARD_LOGO_SRC, useLogo, () => loadImg(PRCARD_WATERMARK_SRC, useLogo));
             }
             if (!prCardState.pantherTried) {
                 prCardState.pantherTried = true;
-                const img2 = new Image();
-                img2.onload = () => { img2._box = prCardTrimBox(img2); prCardState.panther = img2; prCardDraw(); };
-                img2.onerror = () => { prCardState.panther = null; };
-                img2.src = PRCARD_PANTHER_SRC;
+                loadImg(PRCARD_PANTHER_SRC, im => { im._box = prCardTrimBox(im); prCardState.panther = im; prCardDraw(); });
+            }
+            if (!prCardState.watermarkTried) {
+                prCardState.watermarkTried = true;
+                loadImg(PRCARD_WATERMARK_SRC, im => { prCardState.watermark = prCardMakeWatermark(im); prCardDraw(); });
             }
             prCardDraw();
         }
@@ -3694,6 +3701,37 @@
             } catch (e) { return full; }   // e.g. file:// pages can't read pixels
         }
 
+        // Turns the dark logo into a white silhouette (dark pixels become
+        // opaque white, light/transparent pixels vanish) so it can be drawn
+        // faintly on the black part of the card. Returns null if the browser
+        // won't let us read the pixels (e.g. a file:// page).
+        function prCardMakeWatermark(img) {
+            try {
+                const c = document.createElement('canvas');
+                c.width = img.naturalWidth; c.height = img.naturalHeight;
+                const cx = c.getContext('2d');
+                cx.drawImage(img, 0, 0);
+                const im = cx.getImageData(0, 0, c.width, c.height);
+                const d = im.data;
+                let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+                for (let i = 0; i < d.length; i += 4) {
+                    const lum = (d[i] + d[i + 1] + d[i + 2]) / 3;
+                    const a = Math.round(d[i + 3] * (1 - lum / 255));
+                    d[i] = d[i + 1] = d[i + 2] = 255;
+                    d[i + 3] = a;
+                    if (a > 24) {
+                        const p = i / 4, x = p % c.width, y = (p / c.width) | 0;
+                        if (x < x0) x0 = x; if (x > x1) x1 = x;
+                        if (y < y0) y0 = y; if (y > y1) y1 = y;
+                    }
+                }
+                if (x1 < x0 || y1 < y0) return null;
+                cx.putImageData(im, 0, 0);
+                c._box = { sx: x0, sy: y0, sw: x1 - x0 + 1, sh: y1 - y0 + 1 };
+                return c;
+            } catch (e) { return null; }
+        }
+
         function prCardDraw(withLogo = true) {
             const cv = document.getElementById('prCardCanvas');
             const st = prCardState;
@@ -3705,9 +3743,18 @@
             ctx.clearRect(0, 0, W, H);
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
 
-            // Header band: P-with-wings on the left, panther on the right,
-            // site name centered between them.
+            // Faint P-with-wings watermark behind the black area.
             const HB = 160;
+            if (withLogo && st.watermark && st.watermark._box) {
+                const bx = st.watermark._box, ww = 960, wh = ww * bx.sh / bx.sw;
+                ctx.save();
+                ctx.globalAlpha = 0.07;
+                ctx.drawImage(st.watermark, bx.sx, bx.sy, bx.sw, bx.sh, (W - ww) / 2, HB + (H - HB - wh) / 2 + 10, ww, wh);
+                ctx.restore();
+            }
+
+            // Header band: P on the left, panther on the right (same height),
+            // site name centered between them.
             ctx.fillStyle = YEL; ctx.fillRect(0, 0, W, HB);
             // Size each logo from its trimmed (visible) area.
             const placeImg = (img, maxH, maxW) => {
@@ -3719,16 +3766,17 @@
             };
             let leftEnd = 36, rightStart = W - 36;
             if (withLogo && st.logo && st.logo.naturalWidth) {
-                const d = placeImg(st.logo, 136, 560);
+                const d = placeImg(st.logo, 124, 320);
                 ctx.drawImage(st.logo, d.bx.sx, d.bx.sy, d.bx.sw, d.bx.sh, 36, (HB - d.h) / 2, d.w, d.h);
                 leftEnd = 36 + d.w;
             }
             if (withLogo && st.panther && st.panther.naturalWidth) {
-                const d = placeImg(st.panther, 130, 200);
+                const d = placeImg(st.panther, 124, 220);
                 ctx.drawImage(st.panther, d.bx.sx, d.bx.sy, d.bx.sw, d.bx.sh, W - 36 - d.w, (HB - d.h) / 2, d.w, d.h);
                 rightStart = W - 36 - d.w;
             }
-            const midX = (leftEnd + rightStart) / 2, midW = rightStart - leftEnd - 40;
+            // Text is centered on the card, sized to fit the room left by the wider logo.
+            const midX = W / 2, midW = 2 * (Math.min(W / 2 - leftEnd, rightStart - W / 2) - 24);
             ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, midW);
             ctx.fillText('PERRY TRACK / XC', midX, HB / 2 - 18);
