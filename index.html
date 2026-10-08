@@ -3540,7 +3540,8 @@
         // sheet) or downloads it as a PNG.
         const PRCARD_MAX_EVENTS = 4;
         const PRCARD_LOGO_SRC = 'Mass. Perry Black Outline.png';
-        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false };
+        const PRCARD_PANTHER_SRC = 'Perry_Panthers.png';
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false };
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
         function prCardEventLabel(ev) {
@@ -3594,19 +3595,26 @@
             const events = prCardAvailableEvents(athlete);
             if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
 
-            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried };
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried };
             const ov = prCardEnsureModal();
             ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
             prCardRenderPicker();
             ov.classList.add('open');
 
-            // Load the school logo once; redraw when it arrives.
+            // Load the two header logos once; redraw as each arrives.
             if (!prCardState.logoTried) {
                 prCardState.logoTried = true;
                 const img = new Image();
                 img.onload = () => { prCardState.logo = img; prCardDraw(); };
                 img.onerror = () => { prCardState.logo = null; };
                 img.src = PRCARD_LOGO_SRC;
+            }
+            if (!prCardState.pantherTried) {
+                prCardState.pantherTried = true;
+                const img2 = new Image();
+                img2.onload = () => { prCardState.panther = img2; prCardDraw(); };
+                img2.onerror = () => { prCardState.panther = null; };
+                img2.src = PRCARD_PANTHER_SRC;
             }
             prCardDraw();
         }
@@ -3677,48 +3685,62 @@
             ctx.clearRect(0, 0, W, H);
             ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
 
-            // Header band
-            ctx.fillStyle = YEL; ctx.fillRect(0, 0, W, 170);
-            let textX = 56;
+            // Header band: P-with-wings on the left, panther on the right,
+            // site name centered between them.
+            const HB = 200;
+            ctx.fillStyle = YEL; ctx.fillRect(0, 0, W, HB);
+            const fitImg = (img, maxH, maxW) => {
+                const r = img.naturalWidth / img.naturalHeight;
+                let h = maxH, w = h * r;
+                if (w > maxW) { w = maxW; h = w / r; }
+                return { w, h };
+            };
+            let leftEnd = 40, rightStart = W - 40;
             if (withLogo && st.logo && st.logo.naturalWidth) {
-                const lh = 130, lw = lh * (st.logo.naturalWidth / st.logo.naturalHeight);
-                ctx.drawImage(st.logo, 50, 20, lw, lh);
-                textX = 50 + lw + 28;
+                const d = fitImg(st.logo, 170, 280);
+                ctx.drawImage(st.logo, 40, (HB - d.h) / 2, d.w, d.h);
+                leftEnd = 40 + d.w;
             }
-            ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-            prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, W - textX - 40);
-            ctx.fillText('PERRY TRACK / XC', textX, 70);
-            prCardFit(ctx, 'PERSONAL RECORDS', 700, 32, W - textX - 40);
-            ctx.fillText('PERSONAL RECORDS', textX, 120);
+            if (withLogo && st.panther && st.panther.naturalWidth) {
+                const d = fitImg(st.panther, 150, 240);
+                ctx.drawImage(st.panther, W - 40 - d.w, (HB - d.h) / 2, d.w, d.h);
+                rightStart = W - 40 - d.w;
+            }
+            const midX = (leftEnd + rightStart) / 2, midW = rightStart - leftEnd - 40;
+            ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, midW);
+            ctx.fillText('PERRY TRACK / XC', midX, HB / 2 - 20);
+            prCardFit(ctx, 'PERSONAL RECORDS', 700, 32, midW);
+            ctx.fillText('PERSONAL RECORDS', midX, HB / 2 + 28);
 
             // Name + class
             const a = st.athlete;
             ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
             prCardFit(ctx, a.name.toUpperCase(), 900, 104, W - 120);
-            ctx.fillText(a.name.toUpperCase(), W / 2, 265);
-            let y = 265;
+            ctx.fillText(a.name.toUpperCase(), W / 2, 295);
+            let y = 295;
             if (a.gradYear) {
                 ctx.fillStyle = YEL;
                 prCardFit(ctx, `CLASS OF ${a.gradYear}`, 700, 40, W - 120);
-                ctx.fillText(`CLASS OF ${a.gradYear}`, W / 2, 335);
-                y = 335;
+                ctx.fillText(`CLASS OF ${a.gradYear}`, W / 2, 365);
+                y = 365;
             }
             ctx.fillStyle = YEL; ctx.fillRect(W / 2 - 60, y + 40, 120, 6);
 
             // PRs
             const sel = st.selected;
-            const top = 440, bottom = 1000;
+            const top = 470, bottom = 1010;
             if (sel.length === 1) {
                 const ev = sel[0], mark = prCardCleanMark(a[ev].PR);
                 ctx.fillStyle = '#9ca3af';
                 prCardFit(ctx, 'PERSONAL RECORD', 700, 36, W - 120);
-                ctx.fillText('PERSONAL RECORD', W / 2, 540);
+                ctx.fillText('PERSONAL RECORD', W / 2, 570);
                 ctx.fillStyle = YEL;
                 prCardFit(ctx, prCardEventLabel(ev).toUpperCase(), 800, 78, W - 120);
-                ctx.fillText(prCardEventLabel(ev).toUpperCase(), W / 2, 640);
+                ctx.fillText(prCardEventLabel(ev).toUpperCase(), W / 2, 670);
                 ctx.fillStyle = '#fff';
                 prCardFit(ctx, mark, 900, 260, W - 120);
-                ctx.fillText(mark, W / 2, 810);
+                ctx.fillText(mark, W / 2, 840);
             } else if (sel.length > 1) {
                 const rowH = Math.min(150, (bottom - top) / sel.length);
                 const startY = top + ((bottom - top) - rowH * sel.length) / 2;
