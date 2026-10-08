@@ -3462,8 +3462,64 @@
             }
         }
 
-        function getCollegeInfo(athlete) {
-            const runnersMap = athlete.gender === 'F' ? GIRLS_COLLEGE_RUNNERS : COLLEGE_RUNNERS;
+        // ── Other college track athletes (profile-only) ─────────────────
+        // A separate Google Sheet tab for alumni who competed in college in
+        // sprints, jumps, etc. They only get the college logo + name on their
+        // profile card — they are NOT added to the Collegiate Runners page.
+        // Tab columns: Name, HS Graduation, College, Gender (M or F).
+        // Use "/" between colleges for athletes who ran at two schools.
+        // Publish the tab as CSV and paste the link below (leave '' to turn off).
+        const OTHER_COLLEGE_TRACK_CSV_URL = '';
+        const OTHER_COLLEGE_TRACK = { M: {}, F: {} };
+
+        function parseOtherCollegeTrackCSV(text) {
+            const rows = parseCSVText(text);
+            const h = rows.findIndex(r => (r[0] || '').trim().toLowerCase() === 'name');
+            if (h < 0) return null;
+            const head = rows[h].map(c => c.trim().toLowerCase());
+            const iName = head.indexOf('name');
+            const iYear = head.findIndex(c => c.startsWith('hs grad'));
+            const iCollege = head.findIndex(c => c.startsWith('college'));
+            const iGender = head.findIndex(c => c.startsWith('gender') || c === 'sex' || c === 'm/f');
+            if (iYear < 0 || iCollege < 0 || iGender < 0) return null;
+            const out = { M: {}, F: {} };
+            rows.slice(h + 1).forEach(r => {
+                const name = cleanCollegeRunnerName(r[iName] || '');
+                const year = parseInt((r[iYear] || '').trim(), 10);
+                const colleges = (r[iCollege] || '').split('/').map(c => c.trim()).filter(Boolean);
+                const g = (r[iGender] || '').trim().toLowerCase();
+                const gender = (g === 'f' || g.startsWith('girl') || g.startsWith('fem') || g.startsWith('w')) ? 'F'
+                             : (g === 'm' || g.startsWith('boy') || g.startsWith('male') || g === 'b') ? 'M' : null;
+                if (!name || !year || !colleges.length || !gender) return;   // skips blank rows and footnotes
+                out[gender][name.toLowerCase()] = { name, hsGradYear: year, colleges };
+            });
+            return out;
+        }
+
+        let otherCollegeTrackLoading = false;
+        async function loadOtherCollegeTrack() {
+            if (otherCollegeTrackLoading || !/^https?:/.test(OTHER_COLLEGE_TRACK_CSV_URL)) return;
+            otherCollegeTrackLoading = true;
+            try {
+                const res = await fetch(cacheBustUrl(OTHER_COLLEGE_TRACK_CSV_URL));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const parsed = parseOtherCollegeTrackCSV(await res.text());
+                if (!parsed) { console.warn('Other college track sheet: needs Name, HS Graduation, College and Gender columns.'); return; }
+                const before = JSON.stringify(OTHER_COLLEGE_TRACK);
+                ['M', 'F'].forEach(g => {
+                    Object.keys(OTHER_COLLEGE_TRACK[g]).forEach(k => delete OTHER_COLLEGE_TRACK[g][k]);
+                    Object.assign(OTHER_COLLEGE_TRACK[g], parsed[g]);
+                });
+                if (JSON.stringify(OTHER_COLLEGE_TRACK) !== before) await renderRoster();
+            } catch (e) {
+                console.warn('Other college track sheet unavailable.', e);
+            } finally {
+                otherCollegeTrackLoading = false;
+            }
+        }
+
+        // Exact name first, then last name + HS grad year (handles name-format differences).
+        function lookupCollegeIn(runnersMap, athlete) {
             const key = (athlete.name || '').toLowerCase().trim();
             if (runnersMap[key]) return runnersMap[key];
             if (!athlete.gradYear) return null;
@@ -3471,11 +3527,17 @@
             const grad = String(athlete.gradYear);
             for (const k in runnersMap) {
                 const info = runnersMap[k];
-                if (String(info.hsGradYear) === grad && getLastName(info.name) === lastName) {
-                    return info;
-                }
+                if (String(info.hsGradYear) === grad && getLastName(info.name) === lastName) return info;
             }
             return null;
+        }
+
+        function getCollegeInfo(athlete) {
+            const runnersMap = athlete.gender === 'F' ? GIRLS_COLLEGE_RUNNERS : COLLEGE_RUNNERS;
+            const main = lookupCollegeIn(runnersMap, athlete);
+            if (main) return main;
+            // Not a Collegiate Runners entry — check the profile-only track list.
+            return lookupCollegeIn(OTHER_COLLEGE_TRACK[athlete.gender === 'F' ? 'F' : 'M'], athlete);
         }
 
         // Reverse of getCollegeInfo(): given a COLLEGE_RUNNERS entry, find the
@@ -5843,6 +5905,7 @@
 
         async function fetchLiveGoogleSheets(isManualClick = false) {
             loadCollegeRunners();   // alumni Sheets load alongside the leaderboard sheets
+            loadOtherCollegeTrack();   // profile-only college track athletes
             loadCollegeLogos();
             let updatedAthletes = {}; 
             let count = 0;
