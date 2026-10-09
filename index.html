@@ -442,7 +442,15 @@
         .ham-menu-social-row { display: flex; gap: 8px; padding: 10px 16px; }
         .ham-menu-social-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--border); background: none; color: var(--text); cursor: pointer; text-decoration: none; transition: background 0.15s; }
         .ham-menu-social-btn:hover { background: var(--border); }
-        .ham-menu-footer { padding: 8px 16px 14px; }
+        .ham-menu-footer { padding: 8px 16px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        a.ham-menu-footer-btn { text-decoration:none; display:inline-block; }
+        .sched-note-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .sched-sub-btn { background:var(--primary); color:var(--accent); border:none; border-radius:999px; font-size:11px; font-weight:800; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+        .prcard-actions a { flex:1; text-align:center; text-decoration:none; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; border-radius:8px; padding:10px 12px; background:var(--primary); color:var(--accent); }
+        .cal-field { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; font-size:13px; font-weight:700; }
+        .cal-field select { font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+        .cal-url { font-size:11px; color:var(--text-muted); word-break:break-all; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px; margin:10px 0; }
+        .cal-note { font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.4; }
         .ham-menu-footer-btn { background: none; border: none; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; }
         .ham-menu-footer-btn:hover { color: var(--text); }
         .ham-menu-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
@@ -1043,6 +1051,7 @@
                 </div>
                 <div class="ham-menu-footer">
                     <button class="ham-menu-footer-btn" onclick="closeHamMenu();fetchLiveGoogleSheets(true)">🔄 Force Sync</button>
+                    <a class="ham-menu-footer-btn" id="hamCorrectionsLink" href="#" target="_blank" rel="noopener" style="display:none;" onclick="closeHamMenu()">✏️ Corrections</a>
                 </div>
             </div>
         </div>
@@ -1906,7 +1915,8 @@
         async function tryOpenAthleteFromUrl() {
             if (!pendingShareAthleteName || Object.keys(athletes).length === 0) return;
             const target = pendingShareAthleteName.toLowerCase().trim();
-            const match = Object.values(athletes).find(a => a.name.toLowerCase() === target);
+            const match = Object.values(athletes).find(a => a.name.toLowerCase() === target)
+                || Object.values(athletes).find(a => (a.aliases || []).some(n => n.toLowerCase() === target));
             if (!match) return;
             pendingShareAthleteName = null;
             if ((match.gender === 'M' || match.gender === 'F') && genderFilter !== 'ALL' && genderFilter !== match.gender) {
@@ -2140,6 +2150,171 @@
 
         // Same column layout as the 800m/1600m/3200m sheets (PR in column 5; Sr/Jr/So/Fr
         // year+mark pairs at columns 8-9, 12-13, 16-17, 20-21).
+        // ── Merging duplicate athletes (misspellings / nicknames) ────────
+        // The same athlete can appear under two spellings across the sheets
+        // ("Mike Smith" / "Michael Smith", "Meyers" / "Myers"). After each
+        // load we merge entries that are the same gender AND graduating
+        // class and whose names are clearly variants of each other. Safety
+        // check: two entries are never merged if they have different marks
+        // in the same event and grade (that means two different people).
+        // For anything the automatic rules miss, add a manual entry below:
+        //   'name as it appears wrongly': 'name to keep'
+        const NAME_MERGE_OVERRIDES = {
+            // 'Mikey Smith': 'Michael Smith',
+        };
+        const NICKNAME_GROUPS = [
+            ['mike', 'michael', 'mikey'], ['matt', 'matthew'], ['nick', 'nicholas', 'nicolas'], ['chris', 'christopher', 'christian', 'christine', 'christina'],
+            ['ben', 'benjamin', 'benji'], ['alex', 'alexander', 'alexandra', 'alexis', 'alexa'], ['abby', 'abigail', 'abbie', 'abbey'],
+            ['kate', 'katie', 'katherine', 'kathryn', 'katelyn', 'kaitlyn', 'kathy', 'kat'], ['liz', 'lizzy', 'elizabeth', 'beth', 'eliza', 'libby'],
+            ['jon', 'jonathan', 'john', 'johnny', 'jonny'], ['josh', 'joshua'], ['dan', 'danny', 'daniel'], ['dave', 'david'],
+            ['sam', 'samuel', 'samantha', 'sammy'], ['tom', 'tommy', 'thomas'], ['will', 'william', 'billy', 'bill', 'liam'],
+            ['zach', 'zack', 'zachary', 'zachariah'], ['andy', 'drew', 'andrew'], ['tony', 'anthony'], ['jake', 'jacob'],
+            ['joe', 'joey', 'joseph'], ['jim', 'jimmy', 'james', 'jamie'], ['steve', 'steven', 'stephen', 'stephan'],
+            ['tim', 'timmy', 'timothy'], ['rob', 'robby', 'bob', 'bobby', 'robert', 'robbie'], ['rick', 'ricky', 'richard', 'rich', 'dick'],
+            ['ted', 'teddy', 'theodore', 'edward', 'eddie', 'ed'], ['ken', 'kenny', 'kenneth'], ['greg', 'gregory'], ['jeff', 'jeffrey', 'geoff', 'geoffrey'],
+            ['pat', 'patrick', 'patricia', 'patty'], ['jen', 'jenny', 'jennifer', 'jenna'], ['becky', 'rebecca', 'becca'], ['maddie', 'madison', 'maddy', 'madeline', 'madelyn'],
+            ['hannah', 'hanna', 'hana'], ['emily', 'emmy', 'emma', 'em'], ['gabby', 'gabrielle', 'gabriella', 'gabriel', 'gabe'], ['nate', 'nathan', 'nathaniel'],
+            ['cam', 'cameron'], ['trey', 'trevor'], ['ally', 'allie', 'allison', 'alison'], ['cassie', 'cassandra', 'cass'], ['sophie', 'sophia', 'sofia'],
+            ['lexi', 'alexis'], ['jess', 'jessie', 'jessica'], ['tay', 'taylor'], ['ty', 'tyler'], ['mackenzie', 'kenzie', 'mckenzie'], ['danielle', 'dani', 'danni'],
+            ['isabel', 'isabelle', 'izzy', 'isabella', 'bella'], ['kayla', 'kayleigh', 'kaylee'], ['brandon', 'brandan'], ['dominic', 'dom', 'dominick'],
+            ['vincent', 'vince', 'vinny'], ['frank', 'francis', 'frankie'], ['charlie', 'charles', 'chuck', 'charliee'], ['harry', 'henry', 'hank'], ['leo', 'leonard', 'leonardo'],
+        ];
+        const NICKNAME_LOOKUP = (() => {
+            const m = {};
+            NICKNAME_GROUPS.forEach((g, i) => g.forEach(n => { (m[n] = m[n] || new Set()).add(i); }));
+            return m;
+        })();
+
+        function levenshtein(a, b) {
+            if (a === b) return 0;
+            const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+            for (let i = 1; i <= a.length; i++) {
+                let last = prev[0]; prev[0] = i;
+                for (let j = 1; j <= b.length; j++) {
+                    const tmp = prev[j];
+                    prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, last + (a[i - 1] === b[j - 1] ? 0 : 1));
+                    last = tmp;
+                }
+            }
+            return prev[b.length];
+        }
+
+        function splitAthleteName(n) {
+            const parts = String(n || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/[^a-z\s'-]/g, ' ').replace(/['-]/g, '')
+                .split(/\s+/).filter(Boolean).filter(p => !['jr', 'sr', 'ii', 'iii', 'iv'].includes(p));
+            if (parts.length < 2) return null;
+            return { first: parts[0], last: parts[parts.length - 1] };
+        }
+
+        function sameFirstName(a, b) {
+            if (a === b) return true;
+            const ga = NICKNAME_LOOKUP[a], gb = NICKNAME_LOOKUP[b];
+            if (ga && gb) for (const i of ga) if (gb.has(i)) return true;
+            const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+            if (short.length >= 3 && long.startsWith(short)) return true;           // Alex / Alexander
+            const maxLen = Math.max(a.length, b.length);
+            if (maxLen >= 4 && levenshtein(a, b) <= (maxLen >= 8 ? 2 : 1)) return true;   // one-letter misspelling
+            return false;
+        }
+
+        function sameLastName(a, b) {
+            if (a === b) return true;
+            return Math.max(a.length, b.length) >= 5 && levenshtein(a, b) <= 1;      // Meyers / Myers
+        }
+
+        function namesAreVariants(n1, n2) {
+            const a = splitAthleteName(n1), b = splitAthleteName(n2);
+            if (!a || !b) return false;
+            // Only one kind of difference at a time: a nickname/misspelled first name
+            // with the same last name, or a misspelled last name with the same first name.
+            if (a.last === b.last) return sameFirstName(a.first, b.first);
+            if (sameLastName(a.last, b.last)) return a.first === b.first || (NICKNAME_LOOKUP[a.first] && NICKNAME_LOOKUP[b.first] && sameFirstName(a.first, b.first) && a.first[0] === b.first[0]);
+            return false;
+        }
+
+        function athleteEventKeys(a) {
+            return Object.keys(a).filter(k => a[k] && typeof a[k] === 'object' && !Array.isArray(a[k]) && 'PR' in a[k]);
+        }
+        function athleteDataCount(a) {
+            let n = 0;
+            athleteEventKeys(a).forEach(k => ['PR', '9th', '10th', '11th', '12th'].forEach(f => { if (a[k][f] && a[k][f] !== '--') n++; }));
+            return n;
+        }
+        // Different marks in the same event + grade = two different people.
+        function athletesConflict(a, b) {
+            return athleteEventKeys(a).some(k => b[k] && ['9th', '10th', '11th', '12th'].some(g => {
+                const x = a[k][g], y = b[k][g];
+                return x && y && x !== '--' && y !== '--' && x !== y;
+            }));
+        }
+
+        function mergeAthleteInto(main, other) {
+            athleteEventKeys(other).forEach(k => {
+                if (!main[k]) { main[k] = JSON.parse(JSON.stringify(other[k])); return; }
+                ['9th', '10th', '11th', '12th'].forEach(g => {
+                    if ((!main[k][g] || main[k][g] === '--') && other[k][g] && other[k][g] !== '--') main[k][g] = other[k][g];
+                });
+                // PR = the better of the two (field events: bigger; times: faster)
+                const pm = cleanTimeToSeconds(main[k].PR, k), po = cleanTimeToSeconds(other[k].PR, k);
+                if (po < pm) main[k].PR = other[k].PR;
+            });
+            if (!main.gradYear && other.gradYear) main.gradYear = other.gradYear;
+            main.aliases = [...new Set([...(main.aliases || []), other.name, ...(other.aliases || [])])].filter(n => n !== main.name);
+        }
+
+        // Keep whichever entry already carries the other as an alias, else the one
+        // with more results, else the fuller name.
+        function pickMainAthlete(a, b) {
+            if ((a.aliases || []).includes(b.name)) return [a, b];
+            if ((b.aliases || []).includes(a.name)) return [b, a];
+            const da = athleteDataCount(a), db = athleteDataCount(b);
+            if (da !== db) return da > db ? [a, b] : [b, a];
+            return b.name.length > a.name.length ? [b, a] : [a, b];
+        }
+
+        function mergeDuplicateAthletes(store) {
+            store = store || athletes;
+            const merged = [];
+            // 1) manual merges
+            Object.keys(NAME_MERGE_OVERRIDES).forEach(wrong => {
+                const keepName = NAME_MERGE_OVERRIDES[wrong];
+                const w = Object.values(store).find(a => a.name.toLowerCase() === wrong.toLowerCase());
+                const k = Object.values(store).find(a => a.name.toLowerCase() === keepName.toLowerCase());
+                if (w && k && w !== k && w.gender === k.gender) {
+                    mergeAthleteInto(k, w); delete store[w.name]; merged.push(`${w.name} → ${k.name} (manual)`);
+                }
+            });
+            // 2) automatic, within the same gender + graduating class
+            const buckets = {};
+            Object.values(store).forEach(a => { if (a.gradYear) (buckets[a.gender + '|' + a.gradYear] = buckets[a.gender + '|' + a.gradYear] || []).push(a); });
+            Object.values(buckets).forEach(list => {
+                if (list.length < 2) return;
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    outer:
+                    for (let i = 0; i < list.length; i++) {
+                        for (let j = i + 1; j < list.length; j++) {
+                            const a = list[i], b = list[j];
+                            if (!namesAreVariants(a.name, b.name) || athletesConflict(a, b)) continue;
+                            const [main, other] = pickMainAthlete(a, b);
+                            mergeAthleteInto(main, other);
+                            delete store[other.name];
+                            list.splice(list.indexOf(other), 1);
+                            merged.push(`${other.name} → ${main.name}`);
+                            changed = true;
+                            break outer;
+                        }
+                    }
+                }
+            });
+            if (merged.length) {
+                window.__athleteMerges = (window.__athleteMerges || []).concat(merged);
+                console.info('Merged duplicate athletes:\n' + merged.join('\n'));
+            }
+            return merged.length;
+        }
+
         function ingestEventRows(store, eventName, rows, gender) {
             for (let i = 1; i < (rows || []).length; i++) {
                 const row = rows[i];
@@ -2174,6 +2349,7 @@
             if (!r) return;
             ingestEventRows(athletes, key, r.M, 'M');
             ingestEventRows(athletes, key, r.F, 'F');
+            mergeDuplicateAthletes(athletes);
         }
         function applyExtraEvents() { Object.keys(extraEventRows).forEach(ingestExtraEvent); }
         function resetExtraEvents() { Object.keys(extraEventRows).forEach(k => delete extraEventRows[k]); }
@@ -2893,6 +3069,7 @@
         try {
             if (localStorage.getItem('perry_athlete_db_v20')) {
                 athletes = JSON.parse(localStorage.getItem('perry_athlete_db_v20'));
+                mergeDuplicateAthletes(athletes);
                 recalculateAllRankings();
             }
         } catch(e) {
@@ -3079,15 +3256,37 @@
 
             let targetLookupKey = athleteName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-            function findMatch(historyData) {
-                if (!historyData) return null;
-                let match = historyData[targetLookupKey];
+            // Merged duplicates keep their other spellings in `aliases`; pull the
+            // season history for every spelling and combine it.
+            const lookupKeys = [targetLookupKey];
+            const athleteForAliases = athletes[athleteName] || Object.values(athletes).find(a => a.name === athleteName);
+            ((athleteForAliases && athleteForAliases.aliases) || []).forEach(n => {
+                const k = n.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (k && !lookupKeys.includes(k)) lookupKeys.push(k);
+            });
+
+            function findMatchFor(historyData, key) {
+                let match = historyData[key];
                 if (!match) {
                     let keys = Object.keys(historyData);
-                    let foundKey = keys.find(k => k.includes(targetLookupKey) || targetLookupKey.includes(k));
+                    let foundKey = keys.find(k => k.includes(key) || key.includes(k));
                     if (foundKey) match = historyData[foundKey];
                 }
                 return (match && match.seasons) ? match.seasons : null;
+            }
+
+            function findMatch(historyData) {
+                if (!historyData) return null;
+                const found = lookupKeys.map(k => findMatchFor(historyData, k)).filter(Boolean);
+                if (!found.length) return null;
+                if (found.length === 1) return found[0];
+                const combined = {};
+                found.forEach(seasons => Object.entries(seasons).forEach(([yr, entries]) => {
+                    const list = combined[yr] = combined[yr] || [];
+                    const seen = new Set(list.map(e => JSON.stringify(e)));
+                    (entries || []).forEach(e => { const j = JSON.stringify(e); if (!seen.has(j)) { seen.add(j); list.push(e); } });
+                }));
+                return combined;
             }
 
             let xcSeasons = findMatch(xcHistory) || {};
@@ -3469,7 +3668,7 @@
         // Tab columns: Name, HS Graduation, College, Gender (M or F).
         // Use "/" between colleges for athletes who ran at two schools.
         // Publish the tab as CSV and paste the link below (leave '' to turn off).
-        const OTHER_COLLEGE_TRACK_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fYMALp5HMTQHaoESqD_yiuQnlcV5Ru4puoJn8l7J22KclK2sE9MgMhvrPZvJrG92h2iUaW46BMJT/pub?gid=1932255566&single=true&output=csv';
+        const OTHER_COLLEGE_TRACK_CSV_URL = '';
         const OTHER_COLLEGE_TRACK = { M: {}, F: {} };
 
         function parseOtherCollegeTrackCSV(text) {
@@ -6030,6 +6229,7 @@
 
                 if (count > 0) {
                     athletes = updatedAthletes;
+                    mergeDuplicateAthletes(athletes);
                     localStorage.setItem('perry_athlete_db_v20', JSON.stringify(athletes));
                     applyExtraEvents();   // events beyond the original four (not saved to the cached copy)
                     
@@ -6662,6 +6862,92 @@
         function setScheduleSport(sp) { scheduleSport = sp; renderSchedule(); }
         function setScheduleYear(y) { scheduleYear = Number(y); scheduleSport = 'all'; renderSchedule(); }
 
+        // ── Calendar subscribe + Corrections link ───────────────────────
+        // CALENDAR_FEED_URL: the Web app URL from Calendar_Feed.gs (ends in /exec).
+        // CORRECTIONS_FORM_URL: your Google Form link. Leave either as '' to hide it.
+        const CALENDAR_FEED_URL = '';
+        const CORRECTIONS_FORM_URL = '';
+
+        function calendarFeedEnabled() { return /^https:\/\//.test(CALENDAR_FEED_URL); }
+
+        function calendarFeedUrl(sport, team) {
+            const q = [];
+            if (sport && sport !== 'all') q.push('sport=' + encodeURIComponent(sport));
+            if (team && team !== 'both') q.push('team=' + encodeURIComponent(team));
+            return CALENDAR_FEED_URL + (q.length ? (CALENDAR_FEED_URL.includes('?') ? '&' : '?') + q.join('&') : '');
+        }
+
+        function calendarSubscribeLinks(sport, team) {
+            const https = calendarFeedUrl(sport, team);
+            const webcal = https.replace(/^https:/, 'webcal:');
+            return { https, webcal, google: 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal) };
+        }
+
+        function calendarRefreshLinks() {
+            const sport = document.getElementById('calSport').value;
+            const team = document.getElementById('calTeam').value;
+            const l = calendarSubscribeLinks(sport, team);
+            document.getElementById('calGoogle').href = l.google;
+            document.getElementById('calApple').href = l.webcal;
+            document.getElementById('calUrl').textContent = l.https;
+        }
+
+        function openCalendarSubscribe() {
+            if (!calendarFeedEnabled()) return;
+            let ov = document.getElementById('calSubOverlay');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'calSubOverlay';
+                ov.className = 'prcard-overlay';
+                ov.innerHTML = `
+                    <div class="prcard-modal" role="dialog" aria-modal="true" aria-label="Subscribe to calendar">
+                        <div class="prcard-head">
+                            <span class="prcard-title">📅 Subscribe to the schedule</span>
+                            <button type="button" class="prcard-close" id="calClose" aria-label="Close">×</button>
+                        </div>
+                        <div class="prcard-hint">Meets, race times and results links appear in your calendar and update automatically when the schedule changes.</div>
+                        <label class="cal-field">Sport
+                            <select id="calSport"><option value="all">XC + Track</option><option value="xc">XC only</option><option value="track">Track only</option></select></label>
+                        <label class="cal-field">Team
+                            <select id="calTeam"><option value="both">Boys + Girls</option><option value="boys">Boys</option><option value="girls">Girls</option></select></label>
+                        <div class="prcard-actions">
+                            <a id="calGoogle" target="_blank" rel="noopener">Google Calendar</a>
+                            <a id="calApple">Apple / Outlook</a>
+                        </div>
+                        <div class="cal-url" id="calUrl"></div>
+                        <div class="prcard-actions"><button type="button" class="secondary" id="calCopy">📋 Copy link</button></div>
+                        <div class="cal-note">Calendar apps refresh on their own schedule, so a change can take a few hours (sometimes up to a day in Google Calendar) to show up.</div>
+                    </div>`;
+                document.body.appendChild(ov);
+                ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+                ov.querySelector('#calClose').addEventListener('click', () => ov.classList.remove('open'));
+                ov.querySelector('#calSport').addEventListener('change', calendarRefreshLinks);
+                ov.querySelector('#calTeam').addEventListener('change', calendarRefreshLinks);
+                ov.querySelector('#calCopy').addEventListener('click', async () => {
+                    const url = document.getElementById('calUrl').textContent;
+                    try { await navigator.clipboard.writeText(url); }
+                    catch (e) {
+                        const ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                        document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) {} document.body.removeChild(ta);
+                    }
+                    showMessage('Calendar link copied!');
+                });
+                document.addEventListener('keydown', e => { if (e.key === 'Escape') ov.classList.remove('open'); });
+            }
+            // Start from whatever sport filter the schedule is showing
+            document.getElementById('calSport').value = (scheduleSport === 'xc' || scheduleSport === 'track') ? scheduleSport : 'all';
+            document.getElementById('calTeam').value = 'both';
+            calendarRefreshLinks();
+            ov.classList.add('open');
+        }
+
+        function initCorrectionsLink() {
+            const a = document.getElementById('hamCorrectionsLink');
+            if (a && /^https?:\/\//.test(CORRECTIONS_FORM_URL)) { a.href = CORRECTIONS_FORM_URL; a.style.display = ''; }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCorrectionsLink);
+        else initCorrectionsLink();
+
         function renderSchedule() {
             const body = document.getElementById('scheduleBody');
             const controls = document.getElementById('schedControls');
@@ -6703,7 +6989,9 @@
             const nextIdx = meets.findIndex(m => m.dateVal >= today);
             // The "subject to change" note only makes sense for the current/upcoming school year.
             const isPastYear = scheduleYear < schoolYearOf(today);
-            let html = isPastYear ? '' : `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change.</p>`;
+            const calBtn = (!isPastYear && calendarFeedEnabled())
+                ? `<button type="button" class="sched-sub-btn" onclick="openCalendarSubscribe()">📅 Subscribe to calendar</button>` : '';
+            let html = isPastYear ? '' : `<div class="sched-note-row"><p style="font-size:11px;color:var(--text-muted);font-weight:600;margin:0;font-style:italic;">Times subject to change.</p>${calBtn}</div>`;
 
             if (!meets.length) html += '<div style="padding:20px 0;color:var(--text-muted);font-weight:700;">No meets listed.</div>';
 
