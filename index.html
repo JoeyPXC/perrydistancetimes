@@ -2451,7 +2451,7 @@
         // For sheets where the event is free text ("400m", "Long Jump"):
         // converts only when the event doesn't look like a field event.
         function formatOver60ForLabel(mark, eventLabel) {
-            if (/jump|vault|put|discus|javelin|hammer|throw|\b(lj|tj|hj|pv|sp|dt|jt)\b/i.test(String(eventLabel || ''))) return mark;
+            if (/jump|vault|put|shot|disc|javelin|hammer|throw|weight|athlon|\b(lj|tj|hj|pv|sp|dt|jt|ht|wt|jav|pent|hept|dec)\b/i.test(String(eventLabel || ''))) return mark;
             return formatOver60(mark, null);
         }
 
@@ -6986,8 +6986,35 @@
         // event. Running events rank fastest-first; field events are converted
         // to inches (parseFieldMark) and rank farthest/highest-first. Gender
         // comes from the roster, matched by name.
-        const AP_FIELD_RE = /jump|vault|put|shot|discus|javelin|hammer|throw|\b(lj|tj|hj|pv|sp|dt|jt)\b/i;
-        const AP_POINTS_RE = /decathlon|heptathlon|pentathlon/i;
+        const AP_FIELD_RE = /jump|vault|put|shot|disc|javelin|hammer|throw|weight|\b(lj|tj|hj|pv|sp|dt|jt|ht|wt|jav)\b/i;
+        const AP_POINTS_RE = /athlon|\b(pent|hept|dec)\b/i;
+        // Short sheet labels -> one canonical event (so "Shot" and "Shot Put" land together).
+        // Order here is the order they appear in the dropdown.
+        const AP_FIELD_ALIASES = [
+            ['Shot Put',     /^(shot( ?put)?|sp)$/i,                  'field'],
+            ['Discus',       /^(disc(us)?( throw)?|dt)$/i,            'field'],
+            ['Hammer Throw', /^(hammer( throw)?|ht)$/i,               'field'],
+            ['Weight Throw', /^(weight( throw)?|wt)$/i,               'field'],
+            ['Javelin',      /^(jav(elin)?( throw)?|jt)$/i,           'field'],
+            ['High Jump',    /^(high ?jump|hj)$/i,                    'field'],
+            ['Pole Vault',   /^(pole ?vault|pv)$/i,                   'field'],
+            ['Long Jump',    /^(long ?jump|lj)$/i,                    'field'],
+            ['Triple Jump',  /^(triple ?jump|tj)$/i,                  'field'],
+            ['Pentathlon',   /^(pent(athlon)?)$/i,                    'points'],
+            ['Heptathlon',   /^(hept(athlon)?)$/i,                    'points'],
+            ['Decathlon',    /^(dec(athlon)?)$/i,                     'points']
+        ];
+        // -> { key, label, type: 'run' | 'field' | 'points', order }
+        function apCanonEvent(raw) {
+            const t = String(raw || '').trim();
+            for (let i = 0; i < AP_FIELD_ALIASES.length; i++) {
+                const [label, re, type] = AP_FIELD_ALIASES[i];
+                if (re.test(t)) return { key: label.toLowerCase(), label, type, order: i };
+            }
+            if (AP_POINTS_RE.test(t)) return { key: t.toLowerCase(), label: t, type: 'points', order: 99 };
+            if (AP_FIELD_RE.test(t))  return { key: t.toLowerCase(), label: t, type: 'field',  order: 99 };
+            return { key: t.toLowerCase(), label: t, type: 'run', order: 0 };
+        }
         let apState = { gender: (function () { try { const g = localStorage.getItem('perry_gender_filter'); return (g === 'M' || g === 'F') ? g : 'M'; } catch (e) { return 'M'; } })(), event: null };
         let apEvents = null;   // { 'eventkey': { key, label, field, entries:[...] } }
 
@@ -7008,13 +7035,13 @@
             return secs > 0 ? secs : NaN;
         }
 
-        // Returns { val, higherBetter } for any mark, based on the event label.
-        function apMarkValue(label, mark) {
-            if (AP_POINTS_RE.test(label)) {
-                const n = parseFloat(String(mark).replace(/[^\d.]/g, ''));
+        // Returns { val, higherBetter } for a mark of the given event type.
+        function apMarkValue(type, mark) {
+            if (type === 'points') {
+                const n = parseFloat(String(mark).replace(/[^\d.]/g, ''));   // handles "5,432"
                 return { val: (isFinite(n) && n > 0) ? n : NaN, higherBetter: true };
             }
-            if (AP_FIELD_RE.test(label)) {
+            if (type === 'field') {
                 const inches = parseFieldMark(mark);
                 return { val: (isFinite(inches) && inches > 0) ? inches : NaN, higherBetter: true };
             }
@@ -7030,11 +7057,10 @@
             });
             const events = {};
             Object.keys(map).forEach(k => map[k].forEach(b => {
-                const ek = b.distance.toLowerCase().trim();
-                if (!events[ek]) {
-                    events[ek] = { key: ek, label: b.distance.trim(), field: AP_FIELD_RE.test(b.distance) || AP_POINTS_RE.test(b.distance), byName: {} };
-                }
-                const mv = apMarkValue(b.distance, b.time);
+                const canon = apCanonEvent(b.distance);
+                const ek = canon.key;
+                if (!events[ek]) events[ek] = { key: ek, label: canon.label, type: canon.type, order: canon.order, byName: {} };
+                const mv = apMarkValue(canon.type, b.time);
                 const entry = { name: b.name || k, gender: genderOf[k] || '', grad: gradOf[k] || null, mark: b.time, val: mv.val, higher: mv.higherBetter };
                 // If the same athlete is listed twice for an event, keep the better mark.
                 const prev = events[ek].byName[k];
@@ -7064,12 +7090,15 @@
                 apState.event = avail.slice().sort((a, b) => apEntriesFor(b, g).length - apEntriesFor(a, g).length)[0].key;
             }
             const opt = ev => `<option value="${apEsc(ev.key)}"${ev.key === apState.event ? ' selected' : ''}>${apEsc(ev.label)} (${apEntriesFor(ev, g).length})</option>`;
-            const running = avail.filter(ev => !ev.field).sort((a, b) => comparePostHSDistances(a.label, b.label));
-            const field = avail.filter(ev => ev.field).sort((a, b) => a.label.localeCompare(b.label));
+            const running = avail.filter(ev => ev.type === 'run').sort((a, b) => comparePostHSDistances(a.label, b.label));
+            const byOrder = (a, b) => (a.order - b.order) || a.label.localeCompare(b.label);
+            const field = avail.filter(ev => ev.type === 'field').sort(byOrder);
+            const multi = avail.filter(ev => ev.type === 'points').sort(byOrder);
             controls.innerHTML = apToggleHtml() +
                 `<select class="ap-select" onchange="apSetEvent(this.value)">` +
                 (running.length ? `<optgroup label="Running">${running.map(opt).join('')}</optgroup>` : '') +
                 (field.length ? `<optgroup label="Field">${field.map(opt).join('')}</optgroup>` : '') +
+                (multi.length ? `<optgroup label="Multi-events">${multi.map(opt).join('')}</optgroup>` : '') +
                 `</select>`;
 
             const ev = apEvents[apState.event];
