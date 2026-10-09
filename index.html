@@ -3934,13 +3934,31 @@
             } catch (e) {}
             const jobs = colleges.map(c => ({ college: c, url: collegeLogoFor(c) })).filter(j => j.url);
             if (!jobs.length) return;
+            // Try a CORS-safe ("anonymous") load first, since that's what lets the
+            // finished card be exported as a PNG. Some logo hosts (e.g. tfrrs.org)
+            // don't send the headers that mode requires, which makes the image fail
+            // to load at all rather than just losing export access — so if that
+            // happens, fall back to a plain load. A plain-loaded logo still shows in
+            // the picker and the on-screen preview; it's only dropped automatically
+            // at export time (see prCardExport) if the browser actually refuses to
+            // save a canvas containing it.
             const loadOne = job => new Promise(resolve => {
                 if (job.url in prCardCollegeImgs) { resolve(prCardCollegeImgs[job.url]); return; }
-                const im = new Image();
-                im.crossOrigin = 'anonymous';   // required so the finished card can still be saved
-                im.onload = () => { prCardCollegeImgs[job.url] = (im.naturalWidth > 0 ? im : null); resolve(prCardCollegeImgs[job.url]); };
-                im.onerror = () => { prCardCollegeImgs[job.url] = null; resolve(null); };
-                im.src = job.url;
+                const tryLoad = anon => {
+                    const im = new Image();
+                    if (anon) im.crossOrigin = 'anonymous';
+                    im.onload = () => {
+                        im._tainted = !anon;
+                        prCardCollegeImgs[job.url] = (im.naturalWidth > 0 ? im : null);
+                        resolve(prCardCollegeImgs[job.url]);
+                    };
+                    im.onerror = () => {
+                        if (anon) tryLoad(false);
+                        else { prCardCollegeImgs[job.url] = null; resolve(null); }
+                    };
+                    im.src = job.url;
+                };
+                tryLoad(true);
             });
             Promise.all(jobs.map(loadOne)).then(imgs => {
                 if (prCardState.name !== athlete.name) return;   // modal moved on to someone else
@@ -4105,7 +4123,7 @@
             } catch (e) { return null; }
         }
 
-        function prCardDraw(withLogo = true) {
+        function prCardDraw(withLogo = true, skipTaintedCollege = false) {
             const cv = document.getElementById('prCardCanvas');
             const st = prCardState;
             if (!cv || !st.athlete) return;
@@ -4144,7 +4162,9 @@
                 leftEnd = 36 + d.w;
             }
             // Right side: the panther, or (if chosen) the college logo(s) side by side
-            const rightImgs = (st.useCollege && st.collegeLogos && st.collegeLogos.length) ? st.collegeLogos : (st.panther ? [st.panther] : []);
+            let rightImgs = (st.useCollege && st.collegeLogos && st.collegeLogos.length) ? st.collegeLogos : (st.panther ? [st.panther] : []);
+            if (skipTaintedCollege) rightImgs = rightImgs.filter(im => !im._tainted);
+            if (!rightImgs.length && st.panther) rightImgs = [st.panther];
             if (withLogo && rightImgs.length) {
                 const n = rightImgs.length, gap = 18;
                 const maxW = n === 1 ? 220 : Math.floor((330 - gap * (n - 1)) / n);
@@ -4257,14 +4277,23 @@
         }
 
         async function prCardExport(share) {
-            let blob;
+            let blob, droppedLogo = false;
             try { blob = await prCardToBlob(); }
             catch (e) {
-                // A logo from another origin can block exporting — redraw without it.
-                prCardDraw(false);
-                try { blob = await prCardToBlob(); }
-                catch (e2) { showMessage('Could not create the image on this device.', true); return; }
+                // A college logo that only loaded in plain (non-CORS-safe) mode can
+                // block exporting — redraw with it skipped (everything else, incl.
+                // the Perry crest/panther, stays) before giving up on logos entirely.
+                prCardDraw(true, true);
+                try { blob = await prCardToBlob(); droppedLogo = true; }
+                catch (e2) {
+                    prCardDraw(false);
+                    try { blob = await prCardToBlob(); droppedLogo = true; }
+                    catch (e3) { showMessage('Could not create the image on this device.', true); prCardDraw(true, true); return; }
+                }
             }
+            // The on-screen preview should keep showing the logo even if the saved
+            // file had to drop it, so put the normal (non-export-safe) draw back.
+            if (droppedLogo) { prCardDraw(true); if (prCardState.useCollege) showMessage('College logo couldn\'t be included in the saved image on this device.'); }
             const fname = `${prCardState.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}-PR-card.png`;
             if (share && navigator.canShare && navigator.share) {
                 try {
