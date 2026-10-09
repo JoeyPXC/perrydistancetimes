@@ -3723,18 +3723,30 @@
             }
         }
 
-        // Exact name first, then last name + HS grad year (handles name-format differences).
+        // Exact name first, then last name + HS grad year + matching first
+        // name/initial (handles name-format differences like "Bob" vs "Robert"
+        // without conflating two different people who share a last name and
+        // graduation year, e.g. "Kyson Walker" vs "Angelo Walker").
         function lookupCollegeIn(runnersMap, athlete) {
             const key = (athlete.name || '').toLowerCase().trim();
             if (runnersMap[key]) return runnersMap[key];
             if (!athlete.gradYear) return null;
             const lastName = getLastName(athlete.name);
             const grad = String(athlete.gradYear);
+            const athleteFirst = (athlete.name || '').trim().split(/\s+/)[0].toLowerCase();
+            let fallback = null;
             for (const k in runnersMap) {
                 const info = runnersMap[k];
-                if (String(info.hsGradYear) === grad && getLastName(info.name) === lastName) return info;
+                if (String(info.hsGradYear) === grad && getLastName(info.name) === lastName) {
+                    const infoFirst = (info.name || '').trim().split(/\s+/)[0].toLowerCase();
+                    if (infoFirst === athleteFirst) return info;
+                    // Also accept initial-only matches (e.g. "J. Smith" vs "John Smith")
+                    if (infoFirst[0] === athleteFirst[0] && (infoFirst.length === 1 || athleteFirst.length === 1)) {
+                        fallback = fallback || info;
+                    }
+                }
             }
-            return null;
+            return fallback;
         }
 
         function getCollegeInfo(athlete) {
@@ -3756,7 +3768,18 @@
             let found = Object.values(athletes).find(a => a.name.toLowerCase().trim() === key);
             if (found) return found;
             const lastName = getLastName(entry.name);
-            found = Object.values(athletes).find(a => a.gradYear === entry.hsGradYear && getLastName(a.name) === lastName);
+            const entryFirst = (entry.name || '').trim().split(/\s+/)[0].toLowerCase();
+            const candidates = Object.values(athletes).filter(a => a.gradYear === entry.hsGradYear && getLastName(a.name) === lastName);
+            if (candidates.length <= 1) return candidates[0] || null;
+            // Multiple roster athletes share the last name + grad year — require
+            // the first name/initial to also line up so e.g. "Tristan Williams"
+            // doesn't get matched to "Danny Williams".
+            found = candidates.find(a => (a.name || '').trim().split(/\s+/)[0].toLowerCase() === entryFirst);
+            if (found) return found;
+            found = candidates.find(a => {
+                const aFirst = (a.name || '').trim().split(/\s+/)[0].toLowerCase();
+                return aFirst[0] === entryFirst[0] && (aFirst.length === 1 || entryFirst.length === 1);
+            });
             return found || null;
         }
 
