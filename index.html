@@ -3803,7 +3803,8 @@
         const PRCARD_LOGO_SRC = 'Mass. Perry Black P.png';             // header, top left
         const PRCARD_WATERMARK_SRC = 'Mass. Perry Black Outline.png';  // P with double wings, faint background
         const PRCARD_PANTHER_SRC = 'Perry_Panthers.png';
-        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false };
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false, collegeLogos: [], useCollege: false };
+        const prCardCollegeImgs = {};   // logo URL -> loaded <img>, or null if it couldn't be loaded for the card
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
         function prCardEventLabel(ev) {
@@ -3831,6 +3832,9 @@
                     </div>
                     <div class="prcard-hint">Pick up to ${PRCARD_MAX_EVENTS} events to feature.</div>
                     <div class="prcard-events" id="prCardEvents"></div>
+                    <div class="prcard-events" id="prCardCollegeRow" style="display:none;">
+                        <label class="prcard-opt"><input type="checkbox" id="prCardCollege"><span id="prCardCollegeLabel">College logo</span></label>
+                    </div>
                     <canvas class="prcard-preview" id="prCardCanvas" width="1080" height="1080"></canvas>
                     <div class="prcard-actions">
                         <button type="button" id="prCardShare">📤 Share</button>
@@ -3840,6 +3844,7 @@
             document.body.appendChild(ov);
             ov.addEventListener('click', e => { if (e.target === ov) closePrCard(); });
             ov.querySelector('#prCardClose').addEventListener('click', closePrCard);
+            ov.querySelector('#prCardCollege').addEventListener('change', e => { prCardState.useCollege = e.target.checked; prCardDraw(); });
             ov.querySelector('#prCardShare').addEventListener('click', () => prCardExport(true));
             ov.querySelector('#prCardDownload').addEventListener('click', () => prCardExport(false));
             document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrCard(); });
@@ -3857,10 +3862,11 @@
             const events = prCardAvailableEvents(athlete);
             if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
 
-            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried };
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeLogos: [], useCollege: false };
             const ov = prCardEnsureModal();
             ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
             prCardRenderPicker();
+            prCardSetupCollege(athlete);
             ov.classList.add('open');
 
             // Load the images once; redraw as each arrives.
@@ -3886,6 +3892,42 @@
             }
             prCardDraw();
         }
+
+        // College logo option: offered when the athlete has a college AND at least one logo
+        // can be loaded in a way that still lets the card be saved as an image. An athlete
+        // who competed at two schools gets both logos side by side.
+        function prCardSetupCollege(athlete) {
+            const row = document.getElementById('prCardCollegeRow');
+            const box = document.getElementById('prCardCollege');
+            row.style.display = 'none'; box.checked = false;
+            prCardState.collegeLogos = [];
+            let colleges = [];
+            try {
+                const info = getCollegeInfo(athlete);
+                if (info && info.colleges) colleges = info.colleges.slice(0, 3);
+            } catch (e) {}
+            const jobs = colleges.map(c => ({ college: c, url: collegeLogoFor(c) })).filter(j => j.url);
+            if (!jobs.length) return;
+            const loadOne = job => new Promise(resolve => {
+                if (job.url in prCardCollegeImgs) { resolve(prCardCollegeImgs[job.url]); return; }
+                const im = new Image();
+                im.crossOrigin = 'anonymous';   // required so the finished card can still be saved
+                im.onload = () => { prCardCollegeImgs[job.url] = (im.naturalWidth > 0 ? im : null); resolve(prCardCollegeImgs[job.url]); };
+                im.onerror = () => { prCardCollegeImgs[job.url] = null; resolve(null); };
+                im.src = job.url;
+            });
+            Promise.all(jobs.map(loadOne)).then(imgs => {
+                if (prCardState.name !== athlete.name) return;   // modal moved on to someone else
+                const ok = jobs.map((j, i) => ({ college: j.college, img: imgs[i] })).filter(x => x.img);
+                if (!ok.length) return;
+                ok.forEach(x => prCardTrimDone(x.img));
+                prCardState.collegeLogos = ok.map(x => x.img);
+                document.getElementById('prCardCollegeLabel').textContent =
+                    'Use college logo' + (ok.length > 1 ? 's' : '') + ' (' + ok.map(x => x.college).join(' & ') + ')';
+                row.style.display = '';
+            });
+        }
+        function prCardTrimDone(img) { if (!img._box) img._box = prCardTrimBox(img); }
 
         function prCardRenderPicker() {
             const box = document.getElementById('prCardEvents');
@@ -4055,10 +4097,21 @@
                 ctx.drawImage(st.logo, d.bx.sx, d.bx.sy, d.bx.sw, d.bx.sh, 36, (HB - d.h) / 2, d.w, d.h);
                 leftEnd = 36 + d.w;
             }
-            if (withLogo && st.panther && st.panther.naturalWidth) {
-                const d = placeImg(st.panther, 124, 220);
-                ctx.drawImage(st.panther, d.bx.sx, d.bx.sy, d.bx.sw, d.bx.sh, W - 36 - d.w, (HB - d.h) / 2, d.w, d.h);
-                rightStart = W - 36 - d.w;
+            // Right side: the panther, or (if chosen) the college logo(s) side by side
+            const rightImgs = (st.useCollege && st.collegeLogos && st.collegeLogos.length) ? st.collegeLogos : (st.panther ? [st.panther] : []);
+            if (withLogo && rightImgs.length) {
+                const n = rightImgs.length, gap = 18;
+                const maxW = n === 1 ? 220 : Math.floor((330 - gap * (n - 1)) / n);
+                const maxH = n === 1 ? 124 : 112;
+                const placed = rightImgs.filter(im => im.naturalWidth).map(im => ({ im, d: placeImg(im, maxH, maxW) }));
+                let x = W - 36;
+                for (let i = placed.length - 1; i >= 0; i--) {
+                    const { im, d } = placed[i];
+                    x -= d.w;
+                    ctx.drawImage(im, d.bx.sx, d.bx.sy, d.bx.sw, d.bx.sh, x, (HB - d.h) / 2, d.w, d.h);
+                    rightStart = x;
+                    x -= gap;
+                }
             }
             // Text is centered on the card, sized to fit the room left by the wider logo.
             const midX = W / 2, midW = 2 * (Math.min(W / 2 - leftEnd, rightStart - W / 2) - 24);
