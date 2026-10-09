@@ -4263,7 +4263,7 @@
             if (postHSOn) {
                 const bests = st.postHSBests;
                 const twoCol = bests.length > 4;
-                const colRows = !twoCol ? 0 : Math.min(9, Math.max(6, Math.ceil(bests.length / 2)));
+                const colRows = !twoCol ? 0 : Math.min(9, Math.ceil(bests.length / 2));   // even split: 7 -> 4 left + 3 right
                 const maxRows = twoCol ? colRows * 2 : 4;
                 const shown = bests.slice(0, maxRows);
                 const extra = bests.length - shown.length;
@@ -4290,8 +4290,10 @@
                     const gap = 40;
                     const colW = (W - 160 - gap) / 2;
                     const rowH = (listBottom - listTop) / colRows;
-                    const distSize = colRows <= 4 ? 26 : (colRows <= 6 ? 21 : (colRows <= 7 ? 18 : (colRows <= 8 ? 16 : 15)));
-                    const timeSize = colRows <= 4 ? 30 : (colRows <= 6 ? 24 : (colRows <= 7 ? 21 : (colRows <= 8 ? 19 : 17)));
+                    // Text scales with the row height, so fewer rows = bigger text
+                    // that fills the available area (clamped to stay readable).
+                    const distSize = Math.round(Math.max(15, Math.min(34, rowH * 0.5)));
+                    const timeSize = Math.round(Math.max(17, Math.min(40, rowH * 0.6)));
                     shown.forEach((b, i) => {
                         const col = i < colRows ? 0 : 1, row = i % colRows;
                         const x0 = 80 + col * (colW + gap);
