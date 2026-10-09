@@ -4238,17 +4238,18 @@
             // "AFTER PERRY" strip: the athlete's college/post-HS bests,
             // shown beneath the PR area when the option is checked. Up to 4
             // fit as a single column. More than that splits into two columns
-            // of up to 6 each (12 total) — and for a multi-event athlete
-            // (decathlon, etc.) with even more on file, stretches to 7 each
-            // (14 total) before finally falling back to "+N more".
+            // that grow to fit everyone (up to 9 rows each / 18 total — plenty
+            // for even a decathlete) before finally falling back to "+N more".
+            // Uses the full card down near its bottom edge rather than
+            // leaving a gap once there are enough rows to need it.
             if (postHSOn) {
                 const bests = st.postHSBests;
                 const twoCol = bests.length > 4;
-                const colRows = !twoCol ? 0 : (bests.length > 12 ? 7 : 6);
+                const colRows = !twoCol ? 0 : Math.min(9, Math.max(6, Math.ceil(bests.length / 2)));
                 const maxRows = twoCol ? colRows * 2 : 4;
                 const shown = bests.slice(0, maxRows);
                 const extra = bests.length - shown.length;
-                const stripTop = 760, stripBottom = 1000;
+                const stripTop = 760, stripBottom = 1040;
                 ctx.fillStyle = '#2a2a2a'; ctx.fillRect(80, stripTop, W - 160, 2);
                 ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
                 prCardFit(ctx, 'AFTER PERRY', 700, 26, W - 160);
@@ -4271,8 +4272,8 @@
                     const gap = 40;
                     const colW = (W - 160 - gap) / 2;
                     const rowH = (listBottom - listTop) / colRows;
-                    const distSize = colRows <= 4 ? 26 : (colRows <= 6 ? 21 : 18);
-                    const timeSize = colRows <= 4 ? 30 : (colRows <= 6 ? 24 : 21);
+                    const distSize = colRows <= 4 ? 26 : (colRows <= 6 ? 21 : (colRows <= 7 ? 18 : (colRows <= 8 ? 16 : 15)));
+                    const timeSize = colRows <= 4 ? 30 : (colRows <= 6 ? 24 : (colRows <= 7 ? 21 : (colRows <= 8 ? 19 : 17)));
                     shown.forEach((b, i) => {
                         const col = i < colRows ? 0 : 1, row = i % colRows;
                         const x0 = 80 + col * (colW + gap);
