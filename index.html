@@ -4139,7 +4139,7 @@
             if (withLogo && st.watermark && st.watermark._box) {
                 const bx = st.watermark._box, ww = 960, wh = ww * bx.sh / bx.sw;
                 ctx.save();
-                ctx.globalAlpha = 0.16;
+                ctx.globalAlpha = 0.26;
                 ctx.drawImage(st.watermark, bx.sx, bx.sy, bx.sw, bx.sh, (W - ww) / 2, HB + (H - HB - wh) / 2 + 10, ww, wh);
                 ctx.restore();
             }
@@ -4237,12 +4237,15 @@
 
             // "AFTER PERRY" strip: the athlete's college/post-HS bests,
             // shown beneath the PR area when the option is checked. Up to 4
-            // fit as a single column; more than that splits into two columns
-            // of up to 4 each (8 total) before falling back to "+N more".
+            // fit as a single column. More than that splits into two columns
+            // of up to 6 each (12 total) — and for a multi-event athlete
+            // (decathlon, etc.) with even more on file, stretches to 7 each
+            // (14 total) before finally falling back to "+N more".
             if (postHSOn) {
                 const bests = st.postHSBests;
                 const twoCol = bests.length > 4;
-                const maxRows = twoCol ? 8 : 4;
+                const colRows = !twoCol ? 0 : (bests.length > 12 ? 7 : 6);
+                const maxRows = twoCol ? colRows * 2 : 4;
                 const shown = bests.slice(0, maxRows);
                 const extra = bests.length - shown.length;
                 const stripTop = 760, stripBottom = 1000;
@@ -4263,19 +4266,22 @@
                         ctx.fillText(b.time, W - 80, cy);
                     });
                 } else {
-                    // Left column fills first (rows 1-4), then the right column.
-                    const colRows = 4, gap = 40;
+                    // Left column fills first, then the right column. Font
+                    // size steps down as more rows get packed into a column.
+                    const gap = 40;
                     const colW = (W - 160 - gap) / 2;
                     const rowH = (listBottom - listTop) / colRows;
+                    const distSize = colRows <= 4 ? 26 : (colRows <= 6 ? 21 : 18);
+                    const timeSize = colRows <= 4 ? 30 : (colRows <= 6 ? 24 : 21);
                     shown.forEach((b, i) => {
                         const col = i < colRows ? 0 : 1, row = i % colRows;
                         const x0 = 80 + col * (colW + gap);
                         const cy = listTop + rowH * row + rowH / 2;
                         ctx.textAlign = 'left'; ctx.fillStyle = YEL;
-                        prCardFit(ctx, b.distance.toUpperCase(), 800, 26, colW * 0.56);
+                        prCardFit(ctx, b.distance.toUpperCase(), 800, distSize, colW * 0.56);
                         ctx.fillText(b.distance.toUpperCase(), x0, cy);
                         ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
-                        prCardFit(ctx, b.time, 800, 30, colW * 0.42);
+                        prCardFit(ctx, b.time, 800, timeSize, colW * 0.42);
                         ctx.fillText(b.time, x0 + colW, cy);
                     });
                 }
