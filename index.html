@@ -2178,6 +2178,11 @@
         }
 
         // Events beyond the original four are fetched separately and merged into `athletes`.
+        // Resolves once the leaderboards AND the background event sheets (field events etc.)
+        // have been merged into `athletes`. The cached roster loaded at startup is missing both
+        // newly added athletes and anyone who only appears on those extra sheets.
+        let rosterFullyLoadedResolve;
+        const rosterFullyLoaded = new Promise(r => { rosterFullyLoadedResolve = r; });
         const extraEventRows = {};      // key -> { M: rows, F: rows }
         const extraEventPromises = {};  // key -> in-flight load
         function isEventLoaded(key) { return !!extraEventRows[key]; }
@@ -6548,10 +6553,11 @@
             // open instantly in practice; the prefetch just starts a
             // couple seconds later.
             const eventsReady = loadEventsSheet();   // builds the event dropdown; runs alongside the leaderboards
-            await fetchLiveGoogleSheets(false);
+            try { await fetchLiveGoogleSheets(false); } catch (e) { console.warn('Roster load failed', e); }
             getXCHistoryData();
             getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
-            eventsReady.then(backgroundLoadVisibleEvents);   // remaining events load quietly in the background
+            // remaining events load quietly in the background; rosterFullyLoaded resolves when they're in
+            eventsReady.then(backgroundLoadVisibleEvents).catch(() => {}).finally(() => rosterFullyLoadedResolve());
         });
 
 
@@ -7049,10 +7055,12 @@
         }
 
         function apBuildEvents(map) {
+            // Loose key so stray punctuation / double spaces / case don't break the match.
+            const loose = n => String(n || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
             const genderOf = {}, gradOf = {};
             Object.values(athletes || {}).forEach(a => {
                 if (!a || !a.name) return;
-                const k = a.name.toLowerCase().trim();
+                const k = loose(a.name);
                 if (!genderOf[k]) { genderOf[k] = a.gender; gradOf[k] = a.gradYear; }
             });
             const events = {};
@@ -7061,7 +7069,8 @@
                 const ek = canon.key;
                 if (!events[ek]) events[ek] = { key: ek, label: canon.label, type: canon.type, order: canon.order, byName: {} };
                 const mv = apMarkValue(canon.type, b.time);
-                const entry = { name: b.name || k, gender: genderOf[k] || '', grad: gradOf[k] || null, mark: b.time, val: mv.val, higher: mv.higherBetter };
+                const lk = loose(b.name || k);
+                const entry = { name: b.name || k, gender: genderOf[lk] || '', grad: gradOf[lk] || null, mark: b.time, val: mv.val, higher: mv.higherBetter };
                 // If the same athlete is listed twice for an event, keep the better mark.
                 const prev = events[ek].byName[k];
                 if (!prev) events[ek].byName[k] = entry;
@@ -7106,10 +7115,14 @@
             const ranked = all.filter(e => isFinite(e.val)).sort((a, b) => (a.higher ? b.val - a.val : a.val - b.val) || a.name.localeCompare(b.name));
             const unranked = all.filter(e => !isFinite(e.val));
             let html = `<div class="ap-title">${apEsc(ev.label)} · ${ranked.length} ranked</div>`;
+            if (g !== 'ALL') {
+                const lost = ev.entries.filter(e => !e.gender).length;
+                if (lost) html += `<div class="ap-empty" style="padding:6px 8px 10px;font-size:12px;">${lost} athlete${lost === 1 ? '' : 's'} in this event ${lost === 1 ? "isn't" : "aren't"} matched to the roster (name spelled differently?), so ${lost === 1 ? 'shows' : 'show'} only under All.</div>`;
+            }
             let rank = 0;
             ranked.forEach((e, i) => {
                 if (i === 0 || e.val !== ranked[i - 1].val) rank = i + 1;   // ties share a rank
-                const sub = [(g === 'ALL' && e.gender) ? (e.gender === 'F' ? 'Girls' : 'Boys') : '', e.grad ? `Class of ${e.grad}` : ''].filter(Boolean).join(' · ');
+                const sub = [g === 'ALL' ? (e.gender ? (e.gender === 'F' ? 'Girls' : 'Boys') : 'Not matched to roster') : '', e.grad ? `Class of ${e.grad}` : ''].filter(Boolean).join(' · ');
                 html += `<div class="ap-row"><span class="ap-rank${rank <= 3 ? ' top' : ''}">${rank}</span>
                     <span class="ap-name">${apEsc(e.name)}${sub ? `<small>${apEsc(sub)}</small>` : ''}</span>
                     <span class="ap-mark">${apEsc(e.mark)}</span></div>`;
@@ -7136,8 +7149,9 @@
             body.innerHTML = '<div class="ap-empty">Loading…</div>';
             try {
                 const map = await getPostHSBestsMap();
-                // Gender comes from the roster; on a first-ever visit give it a moment to load.
-                for (let i = 0; i < 16 && !Object.keys(athletes || {}).length; i++) await new Promise(r => setTimeout(r, 500));
+                // Gender comes from the roster. The roster cached at startup is incomplete (new athletes,
+                // field-event-only athletes), so wait for the real load - but never longer than 25s.
+                await Promise.race([rosterFullyLoaded, new Promise(r => setTimeout(r, 25000))]);
                 apEvents = apBuildEvents(map || {});
                 apDraw();
             } catch (e) {
