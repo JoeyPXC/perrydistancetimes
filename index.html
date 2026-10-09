@@ -587,6 +587,23 @@
         .ybyr-highlight { color: #166534; font-weight: 800; }
         .nav-tab { flex:1; padding:9px 8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; border:none; background:none; color:var(--text-muted); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.15s; }
         .nav-tab.active { color:var(--text); border-bottom-color:var(--accent); }
+
+        /* After Perry rankings (hidden page: #afterperry) */
+        .ap-controls { display:flex; flex-direction:column; align-items:center; gap:10px; padding:12px 12px 4px; max-width:600px; width:100%; margin:0 auto; box-sizing:border-box; }
+        .ap-toggle { display:inline-flex; background:var(--card-bg); border:2px solid var(--primary); border-radius:10px; overflow:hidden; }
+        .ap-toggle-btn { border:none; background:none; color:var(--text); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:8px 22px; cursor:pointer; }
+        .ap-toggle-btn + .ap-toggle-btn { border-left:2px solid var(--primary); }
+        .ap-toggle-btn.active { background:var(--primary); color:var(--accent); }
+        .ap-select { width:100%; font-size:14px; font-weight:700; padding:10px 12px; border-radius:10px; border:2px solid var(--border); background:var(--card-bg); color:var(--text); }
+        .ap-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--perry-gray); margin:6px 4px 8px; }
+        .ap-row { display:flex; align-items:center; gap:10px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:6px; }
+        .ap-rank { min-width:28px; height:28px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:var(--text-muted); flex-shrink:0; }
+        .ap-rank.top { background:var(--accent); color:#000; }
+        .ap-name { flex:1; min-width:0; font-weight:700; font-size:14px; color:var(--text); }
+        .ap-name small { display:block; font-size:11px; font-weight:600; color:var(--text-muted); }
+        .ap-mark { font-family:monospace; font-weight:800; font-size:15px; color:var(--primary); white-space:nowrap; }
+        body.dark-mode .ap-mark { color:var(--accent); }
+        .ap-empty { text-align:center; padding:30px 16px; color:var(--text-muted); font-weight:600; }
         .accomp-section { margin-bottom:18px; }
         .accomp-gender-divider { font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px; color:var(--text); padding:4px 2px 10px; margin-bottom:10px; border-bottom:3px solid var(--accent); }
         .accomp-gender-divider:not(:first-child) { margin-top:22px; }
@@ -1085,6 +1102,17 @@
             <button class="nav-tab" id="coachTabTrack" onclick="switchCoachTab('track')">Track</button>
         </div>
         <div class="nav-body" id="coachesBody"></div>
+    </div>
+
+    <!-- ── After Perry rankings (hidden page: only reachable at  yoursite/#afterperry ) ── -->
+    <div class="nav-overlay" id="afterPerryOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" onclick="closeAfterPerryOverlay()">← 🏃</div>
+            <span class="nav-header-title">👟 After Perry Rankings</span>
+            <button class="nav-close-btn" onclick="closeAfterPerryOverlay()">✕ Close</button>
+        </div>
+        <div id="afterPerryControls" class="ap-controls"></div>
+        <div class="nav-body" id="afterPerryBody"></div>
     </div>
 
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
@@ -4836,7 +4864,7 @@
                         if (!name || !distance || !time) continue;
                         const key = name.toLowerCase();
                         if (!map[key]) map[key] = [];
-                        map[key].push({ distance, time });
+                        map[key].push({ distance, time, name });
                     }
                     // Sort each athlete's bests into a sensible shortest-to-
                     // longest order rather than whatever order the sheet
@@ -6921,6 +6949,8 @@
             loadSchedule().catch(() => {});
             // Hidden Coaches page: only opens for the direct link  yoursite/#coaches
             if (location.hash === '#coaches') openCoachesOverlay(true);
+            // Hidden After Perry rankings: only opens for the direct link  yoursite/#afterperry
+            if (location.hash === '#afterperry') openAfterPerryOverlay();
         });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
@@ -6936,6 +6966,8 @@
                 closeRecordsOverlay();
             } else if (document.getElementById('stateQualifiersOverlay').classList.contains('open')) {
                 closeStateQualifiersOverlay();
+            } else if (document.getElementById('afterPerryOverlay').classList.contains('open')) {
+                closeAfterPerryOverlay();
             } else if (document.getElementById('coachesOverlay').classList.contains('open')) {
                 closeCoachesOverlay();
             } else if (document.getElementById('scheduleOverlay').classList.contains('open')) {
@@ -6947,6 +6979,153 @@
                 openHome();
             }
         });
+
+        // ── After Perry rankings (hidden; open it with  yoursite/#afterperry ) ──
+        // Ranks everyone's post-high-school bests (the same sheet that feeds the
+        // "After Perry" card section and PR card strip), one leaderboard per
+        // event. Running events rank fastest-first; field events are converted
+        // to inches (parseFieldMark) and rank farthest/highest-first. Gender
+        // comes from the roster, matched by name.
+        const AP_FIELD_RE = /jump|vault|put|shot|discus|javelin|hammer|throw|\b(lj|tj|hj|pv|sp|dt|jt)\b/i;
+        const AP_POINTS_RE = /decathlon|heptathlon|pentathlon/i;
+        let apState = { gender: (function () { try { const g = localStorage.getItem('perry_gender_filter'); return (g === 'M' || g === 'F') ? g : 'M'; } catch (e) { return 'M'; } })(), event: null };
+        let apEvents = null;   // { 'eventkey': { key, label, field, entries:[...] } }
+
+        function apEsc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+        // "29:45.3", "1:05:10", "15.2" -> seconds, or NaN
+        function apTimeToSeconds(str) {
+            const clean = String(str || '').split('(')[0].trim().replace(/[^\d:.]/g, '');
+            if (!clean) return NaN;
+            const parts = clean.split(':');
+            if (parts.length > 3) return NaN;
+            let secs = 0;
+            for (const part of parts) {
+                const n = parseFloat(part);
+                if (!isFinite(n)) return NaN;
+                secs = secs * 60 + n;
+            }
+            return secs > 0 ? secs : NaN;
+        }
+
+        // Returns { val, higherBetter } for any mark, based on the event label.
+        function apMarkValue(label, mark) {
+            if (AP_POINTS_RE.test(label)) {
+                const n = parseFloat(String(mark).replace(/[^\d.]/g, ''));
+                return { val: (isFinite(n) && n > 0) ? n : NaN, higherBetter: true };
+            }
+            if (AP_FIELD_RE.test(label)) {
+                const inches = parseFieldMark(mark);
+                return { val: (isFinite(inches) && inches > 0) ? inches : NaN, higherBetter: true };
+            }
+            return { val: apTimeToSeconds(mark), higherBetter: false };
+        }
+
+        function apBuildEvents(map) {
+            const genderOf = {}, gradOf = {};
+            Object.values(athletes || {}).forEach(a => {
+                if (!a || !a.name) return;
+                const k = a.name.toLowerCase().trim();
+                if (!genderOf[k]) { genderOf[k] = a.gender; gradOf[k] = a.gradYear; }
+            });
+            const events = {};
+            Object.keys(map).forEach(k => map[k].forEach(b => {
+                const ek = b.distance.toLowerCase().trim();
+                if (!events[ek]) {
+                    events[ek] = { key: ek, label: b.distance.trim(), field: AP_FIELD_RE.test(b.distance) || AP_POINTS_RE.test(b.distance), byName: {} };
+                }
+                const mv = apMarkValue(b.distance, b.time);
+                const entry = { name: b.name || k, gender: genderOf[k] || '', grad: gradOf[k] || null, mark: b.time, val: mv.val, higher: mv.higherBetter };
+                // If the same athlete is listed twice for an event, keep the better mark.
+                const prev = events[ek].byName[k];
+                if (!prev) events[ek].byName[k] = entry;
+                else if (isFinite(entry.val) && (!isFinite(prev.val) || (entry.higher ? entry.val > prev.val : entry.val < prev.val))) events[ek].byName[k] = entry;
+            }));
+            Object.values(events).forEach(ev => { ev.entries = Object.values(ev.byName); delete ev.byName; });
+            return events;
+        }
+
+        function apEntriesFor(ev, gender) {
+            return ev.entries.filter(e => gender === 'ALL' || e.gender === gender);
+        }
+
+        function apDraw() {
+            const controls = document.getElementById('afterPerryControls');
+            const body = document.getElementById('afterPerryBody');
+            if (!apEvents || !controls || !body) return;
+            const g = apState.gender;
+            const avail = Object.values(apEvents).filter(ev => apEntriesFor(ev, g).length);
+            if (!avail.length) {
+                controls.innerHTML = apToggleHtml();
+                body.innerHTML = '<div class="ap-empty">No After Perry marks found for this selection.</div>';
+                return;
+            }
+            if (!apState.event || !avail.some(ev => ev.key === apState.event)) {
+                apState.event = avail.slice().sort((a, b) => apEntriesFor(b, g).length - apEntriesFor(a, g).length)[0].key;
+            }
+            const opt = ev => `<option value="${apEsc(ev.key)}"${ev.key === apState.event ? ' selected' : ''}>${apEsc(ev.label)} (${apEntriesFor(ev, g).length})</option>`;
+            const running = avail.filter(ev => !ev.field).sort((a, b) => comparePostHSDistances(a.label, b.label));
+            const field = avail.filter(ev => ev.field).sort((a, b) => a.label.localeCompare(b.label));
+            controls.innerHTML = apToggleHtml() +
+                `<select class="ap-select" onchange="apSetEvent(this.value)">` +
+                (running.length ? `<optgroup label="Running">${running.map(opt).join('')}</optgroup>` : '') +
+                (field.length ? `<optgroup label="Field">${field.map(opt).join('')}</optgroup>` : '') +
+                `</select>`;
+
+            const ev = apEvents[apState.event];
+            const all = apEntriesFor(ev, g);
+            const ranked = all.filter(e => isFinite(e.val)).sort((a, b) => (a.higher ? b.val - a.val : a.val - b.val) || a.name.localeCompare(b.name));
+            const unranked = all.filter(e => !isFinite(e.val));
+            let html = `<div class="ap-title">${apEsc(ev.label)} · ${ranked.length} ranked</div>`;
+            let rank = 0;
+            ranked.forEach((e, i) => {
+                if (i === 0 || e.val !== ranked[i - 1].val) rank = i + 1;   // ties share a rank
+                const sub = [(g === 'ALL' && e.gender) ? (e.gender === 'F' ? 'Girls' : 'Boys') : '', e.grad ? `Class of ${e.grad}` : ''].filter(Boolean).join(' · ');
+                html += `<div class="ap-row"><span class="ap-rank${rank <= 3 ? ' top' : ''}">${rank}</span>
+                    <span class="ap-name">${apEsc(e.name)}${sub ? `<small>${apEsc(sub)}</small>` : ''}</span>
+                    <span class="ap-mark">${apEsc(e.mark)}</span></div>`;
+            });
+            if (unranked.length) {
+                html += `<div class="ap-title" style="margin-top:14px;">Not ranked (mark couldn't be read)</div>`;
+                unranked.forEach(e => {
+                    html += `<div class="ap-row"><span class="ap-rank">–</span><span class="ap-name">${apEsc(e.name)}</span><span class="ap-mark">${apEsc(e.mark)}</span></div>`;
+                });
+            }
+            body.innerHTML = html;
+        }
+
+        function apToggleHtml() {
+            const b = (g, label) => `<button class="ap-toggle-btn${apState.gender === g ? ' active' : ''}" onclick="apSetGender('${g}')">${label}</button>`;
+            return `<div class="ap-toggle">${b('M', 'Boys')}${b('F', 'Girls')}${b('ALL', 'All')}</div>`;
+        }
+        function apSetGender(g) { apState.gender = g; apDraw(); }
+        function apSetEvent(k) { apState.event = k; apDraw(); document.getElementById('afterPerryBody').scrollTop = 0; }
+
+        async function loadAfterPerry() {
+            const body = document.getElementById('afterPerryBody');
+            document.getElementById('afterPerryControls').innerHTML = '';
+            body.innerHTML = '<div class="ap-empty">Loading…</div>';
+            try {
+                const map = await getPostHSBestsMap();
+                // Gender comes from the roster; on a first-ever visit give it a moment to load.
+                for (let i = 0; i < 16 && !Object.keys(athletes || {}).length; i++) await new Promise(r => setTimeout(r, 500));
+                apEvents = apBuildEvents(map || {});
+                apDraw();
+            } catch (e) {
+                renderLoadError(body, 'After Perry rankings', e);
+            }
+        }
+
+        function openAfterPerryOverlay() {
+            if (document.getElementById('afterPerryOverlay').classList.contains('open')) return;
+            history.pushState({ overlay: 'afterperry' }, '');
+            document.getElementById('afterPerryOverlay').classList.add('open');
+            loadAfterPerry();
+        }
+        function closeAfterPerryOverlay() {
+            document.getElementById('afterPerryOverlay').classList.remove('open');
+        }
+        window.addEventListener('hashchange', () => { if (location.hash === '#afterperry') openAfterPerryOverlay(); });
 
         // ── Coaches page (hidden; open it with  yoursite/#coaches ) ──────
         // Reads the published coaches Sheet: Name, XC, Track, Position, Bio.
