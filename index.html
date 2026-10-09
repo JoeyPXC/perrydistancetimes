@@ -3830,6 +3830,23 @@
         const prCardCollegeImgs = {};   // logo URL -> loaded <img>, or null if it couldn't be loaded for the card
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
+        // Same XC-detection convention used elsewhere (usesHandTimeConversion):
+        // a running event counts as XC if its key/label says so, track otherwise.
+        function prCardIsXCEvent(ev) {
+            const def = eventDef(ev);
+            const text = (def ? (def.key + ' ' + def.label) : ev) || '';
+            return /^xc\b|cross\s*country/i.test(text);
+        }
+        // Header title: "PERRY TRACK" / "PERRY XC" when the selected events are
+        // all one kind, "PERRY TRACK / XC" when they're mixed (or none picked yet).
+        function prCardHeaderTitle(selected) {
+            if (!selected || !selected.length) return 'PERRY TRACK / XC';
+            const hasXC = selected.some(prCardIsXCEvent);
+            const hasTrack = selected.some(ev => !prCardIsXCEvent(ev));
+            if (hasXC && !hasTrack) return 'PERRY XC';
+            if (hasTrack && !hasXC) return 'PERRY TRACK';
+            return 'PERRY TRACK / XC';
+        }
         function prCardEventLabel(ev) {
             const d = (typeof eventDef === 'function') ? eventDef(ev) : null;
             return ((d && d.label) || ev).replace(/\s*Track$/i, '');
@@ -4182,8 +4199,9 @@
             // Text is centered on the card, sized to fit the room left by the wider logo.
             const midX = W / 2, midW = 2 * (Math.min(W / 2 - leftEnd, rightStart - W / 2) - 24);
             ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            prCardFit(ctx, 'PERRY TRACK / XC', 900, 54, midW);
-            ctx.fillText('PERRY TRACK / XC', midX, HB / 2 - 18);
+            const headerTitle = prCardHeaderTitle(st.selected);
+            prCardFit(ctx, headerTitle, 900, 54, midW);
+            ctx.fillText(headerTitle, midX, HB / 2 - 18);
             prCardFit(ctx, 'PERSONAL RECORDS', 700, 32, midW);
             ctx.fillText('PERSONAL RECORDS', midX, HB / 2 + 24);
 
