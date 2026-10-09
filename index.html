@@ -4236,10 +4236,13 @@
             }
 
             // "AFTER PERRY" strip: the athlete's college/post-HS bests,
-            // shown beneath the PR area when the option is checked.
+            // shown beneath the PR area when the option is checked. Up to 4
+            // fit as a single column; more than that splits into two columns
+            // of up to 4 each (8 total) before falling back to "+N more".
             if (postHSOn) {
                 const bests = st.postHSBests;
-                const maxRows = 4;
+                const twoCol = bests.length > 4;
+                const maxRows = twoCol ? 8 : 4;
                 const shown = bests.slice(0, maxRows);
                 const extra = bests.length - shown.length;
                 const stripTop = 760, stripBottom = 1000;
@@ -4248,16 +4251,34 @@
                 prCardFit(ctx, 'AFTER PERRY', 700, 26, W - 160);
                 ctx.fillText('AFTER PERRY', W / 2, stripTop + 32);
                 const listTop = stripTop + 56, listBottom = extra > 0 ? stripBottom - 30 : stripBottom;
-                const rowH = (listBottom - listTop) / Math.max(shown.length, 1);
-                shown.forEach((b, i) => {
-                    const cy = listTop + rowH * i + rowH / 2;
-                    ctx.textAlign = 'left'; ctx.fillStyle = YEL;
-                    prCardFit(ctx, b.distance.toUpperCase(), 800, 30, 420);
-                    ctx.fillText(b.distance.toUpperCase(), 80, cy);
-                    ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
-                    prCardFit(ctx, b.time, 800, 36, 480);
-                    ctx.fillText(b.time, W - 80, cy);
-                });
+                if (!twoCol) {
+                    const rowH = (listBottom - listTop) / Math.max(shown.length, 1);
+                    shown.forEach((b, i) => {
+                        const cy = listTop + rowH * i + rowH / 2;
+                        ctx.textAlign = 'left'; ctx.fillStyle = YEL;
+                        prCardFit(ctx, b.distance.toUpperCase(), 800, 30, 420);
+                        ctx.fillText(b.distance.toUpperCase(), 80, cy);
+                        ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+                        prCardFit(ctx, b.time, 800, 36, 480);
+                        ctx.fillText(b.time, W - 80, cy);
+                    });
+                } else {
+                    // Left column fills first (rows 1-4), then the right column.
+                    const colRows = 4, gap = 40;
+                    const colW = (W - 160 - gap) / 2;
+                    const rowH = (listBottom - listTop) / colRows;
+                    shown.forEach((b, i) => {
+                        const col = i < colRows ? 0 : 1, row = i % colRows;
+                        const x0 = 80 + col * (colW + gap);
+                        const cy = listTop + rowH * row + rowH / 2;
+                        ctx.textAlign = 'left'; ctx.fillStyle = YEL;
+                        prCardFit(ctx, b.distance.toUpperCase(), 800, 26, colW * 0.56);
+                        ctx.fillText(b.distance.toUpperCase(), x0, cy);
+                        ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+                        prCardFit(ctx, b.time, 800, 30, colW * 0.42);
+                        ctx.fillText(b.time, x0 + colW, cy);
+                    });
+                }
                 if (extra > 0) {
                     ctx.textAlign = 'center'; ctx.fillStyle = '#9ca3af';
                     prCardFit(ctx, `+${extra} more`, 600, 22, W - 160);
