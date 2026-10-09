@@ -805,6 +805,9 @@
         .home-body { width: 100%; max-width: 760px; margin: 0 auto; padding: 8px 16px 16px; box-sizing: border-box; }
         .home-section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 14px 0 6px; }
         #homeNextLabel { margin-top: 4px; }
+        .home-next-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:4px; }
+        .home-next-head .home-section-label { margin-top:0; }
+        .sched-controls .sched-sub-btn { margin-left:4px; }
         .home-card { background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 9px 14px; margin-bottom: 6px; cursor: pointer; }
         .home-card-top { font-size: 11px; font-weight: 800; color: var(--perry-gray); text-transform: uppercase; letter-spacing: 0.5px; }
         .home-card-title { font-size: 15px; font-weight: 800; color: var(--text); margin-top: 2px; }
@@ -931,7 +934,10 @@
                 <span class="ios-install-text">Install this app: tap <span class="ios-install-share">⬆️</span> <b>Share</b>, then <b>Add to Home Screen</b>.</span>
                 <button class="ios-install-close" onclick="dismissIosInstallBanner()" title="Dismiss" aria-label="Dismiss">&times;</button>
             </div>
-            <div class="home-section-label" id="homeNextLabel">Next Meet</div>
+            <div class="home-next-head">
+                <div class="home-section-label" id="homeNextLabel">Next Meet</div>
+                <button type="button" class="sched-sub-btn" id="homeSubBtn" style="display:none;" onclick="openCalendarSubscribe()">📅 Subscribe</button>
+            </div>
             <div id="homeNextMeet"></div>
             <div class="home-section-label">Latest News</div>
             <div id="homeNews"></div>
@@ -3668,7 +3674,7 @@
         // Tab columns: Name, HS Graduation, College, Gender (M or F).
         // Use "/" between colleges for athletes who ran at two schools.
         // Publish the tab as CSV and paste the link below (leave '' to turn off).
-        const OTHER_COLLEGE_TRACK_CSV_URL = '';
+        const OTHER_COLLEGE_TRACK_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fYMALp5HMTQHaoESqD_yiuQnlcV5Ru4puoJn8l7J22KclK2sE9MgMhvrPZvJrG92h2iUaW46BMJT/pub?gid=1932255566&single=true&output=csv';
         const OTHER_COLLEGE_TRACK = { M: {}, F: {} };
 
         function parseOtherCollegeTrackCSV(text) {
@@ -6907,7 +6913,7 @@
                         </div>
                         <div class="prcard-hint">Meets, race times and results links appear in your calendar and update automatically when the schedule changes.</div>
                         <label class="cal-field">Sport
-                            <select id="calSport"><option value="all">XC + Track</option><option value="xc">XC only</option><option value="track">Track only</option></select></label>
+                            <select id="calSport"><option value="all">Perry XC + Track</option><option value="xc">Perry XC</option><option value="track">Perry Track</option></select></label>
                         <label class="cal-field">Team
                             <select id="calTeam"><option value="both">Boys + Girls</option><option value="boys">Boys</option><option value="girls">Girls</option></select></label>
                         <div class="prcard-actions">
@@ -6944,6 +6950,8 @@
         function initCorrectionsLink() {
             const a = document.getElementById('hamCorrectionsLink');
             if (a && /^https?:\/\//.test(CORRECTIONS_FORM_URL)) { a.href = CORRECTIONS_FORM_URL; a.style.display = ''; }
+            const h = document.getElementById('homeSubBtn');
+            if (h && calendarFeedEnabled()) h.style.display = '';
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCorrectionsLink);
         else initCorrectionsLink();
@@ -6983,15 +6991,18 @@
                 ctl += `<select class="sched-year" onchange="setScheduleYear(this.value)" aria-label="Year">` +
                     years.map(y => `<option value="${y}" ${y === scheduleYear ? 'selected' : ''}>${schoolYearLabel(y)}</option>`).join('') + `</select>`;
             }
+            // Subscribe button lives in this fixed bar so it stays in view however far the list is scrolled
+            if (calendarFeedEnabled() && scheduleYear >= schoolYearOf(today)) {
+                ctl = ctl.replace('<select class="sched-year"', `<button type="button" class="sched-sub-btn" onclick="openCalendarSubscribe()">📅 Subscribe</button><select class="sched-year"`);
+                if (!ctl.includes('sched-sub-btn')) ctl += `<button type="button" class="sched-sub-btn" onclick="openCalendarSubscribe()">📅 Subscribe</button>`;
+            }
             controls.innerHTML = ctl;
             controls.style.display = ctl ? 'flex' : 'none';
 
             const nextIdx = meets.findIndex(m => m.dateVal >= today);
             // The "subject to change" note only makes sense for the current/upcoming school year.
             const isPastYear = scheduleYear < schoolYearOf(today);
-            const calBtn = (!isPastYear && calendarFeedEnabled())
-                ? `<button type="button" class="sched-sub-btn" onclick="openCalendarSubscribe()">📅 Subscribe to calendar</button>` : '';
-            let html = isPastYear ? '' : `<div class="sched-note-row"><p style="font-size:11px;color:var(--text-muted);font-weight:600;margin:0;font-style:italic;">Times subject to change.</p>${calBtn}</div>`;
+            let html = isPastYear ? '' : `<p style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:12px;font-style:italic;">Times subject to change.</p>`;
 
             if (!meets.length) html += '<div style="padding:20px 0;color:var(--text-muted);font-weight:700;">No meets listed.</div>';
 
