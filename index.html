@@ -4354,14 +4354,31 @@
                 ctx.fillText('ACCOMPLISHMENTS', W / 2, stripTop + 32);
                 const listTop = stripTop + 56, listBottom = extra > 0 ? stripBottom - 30 : stripBottom;
                 const rowH = Math.min(52, (listBottom - listTop) / Math.max(shown.length, 1));
+                // Long year lists get shortened ("2021, 2022, 2023, 2024" -> "2021-2024"),
+                // and the honor name only gets whatever width the years leave over.
+                const shortYears = str => {
+                    const parts = String(str).split(',').map(x => x.trim()).filter(Boolean);
+                    if (!parts.length || !parts.every(x => /^\d{4}$/.test(x))) return String(str);
+                    const nums = [...new Set(parts.map(Number))].sort((a, b) => a - b);
+                    const out = []; let i = 0;
+                    while (i < nums.length) {
+                        let j = i;
+                        while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++;
+                        out.push(j - i >= 2 ? `${nums[i]}\u2013${nums[j]}` : nums.slice(i, j + 1).join(', '));
+                        i = j + 1;
+                    }
+                    return out.join(', ');
+                };
                 shown.forEach((r, i) => {
                     const cy = listTop + rowH * i + rowH / 2;
-                    ctx.textAlign = 'left'; ctx.fillStyle = YEL;
-                    prCardFit(ctx, r.label.toUpperCase(), 800, 30, 620);
-                    ctx.fillText(r.label.toUpperCase(), 80, cy);
+                    const yrs = shortYears(r.years);
                     ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
-                    prCardFit(ctx, r.years, 800, 30, 300);
-                    ctx.fillText(r.years, W - 80, cy);
+                    prCardFit(ctx, yrs, 800, 30, 360);
+                    const yrsW = ctx.measureText(yrs).width;
+                    ctx.fillText(yrs, W - 80, cy);
+                    ctx.textAlign = 'left'; ctx.fillStyle = YEL;
+                    prCardFit(ctx, r.label.toUpperCase(), 800, 30, W - 160 - yrsW - 30);
+                    ctx.fillText(r.label.toUpperCase(), 80, cy);
                 });
                 if (extra > 0) {
                     ctx.textAlign = 'center'; ctx.fillStyle = '#9ca3af';
