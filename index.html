@@ -862,8 +862,40 @@
         // the last good copy is used so the app still loads. Any cache error
         // quietly falls back to a normal fetch.
         (function installSheetCache() {
+            // FAST_LOAD: set to false to go back to the old behavior (every sheet
+            // is treated as "live" and reused for only 2 minutes).
+            const FAST_LOAD = true;
             const FRESH_MS = 2 * 60 * 1000, TIMEOUT_MS = 8000, DB = 'sheet_cache_v1', STORE = 'csv';
+            // Sheets that rarely change (all-time history, past seasons, college,
+            // honors, records...) are reused for this long. Live sheets
+            // (leaderboards, events, schedule, current season) stay at FRESH_MS.
+            const SLOW_MS = 6 * 60 * 60 * 1000;
             const realFetch = window.fetch.bind(window);
+            const strip = u => String(u || '').replace(/([?&])cachebust=\d+&?/, '$1').replace(/[?&]$/, '');
+            let slowList = null;
+            function buildSlowList() {
+                try {
+                    const list = [];
+                    const add = u => { if (u) list.push(strip(u)); };
+                    [XC_ALL_TIME_HISTORY_URL, GIRLS_XC_ALL_TIME_HISTORY_URL, XC_AVERAGES_CSV_URL, GIRLS_XC_AVERAGES_CSV_URL,
+                     TRACK_HONORS_CSV_URL, YEAR_BY_YEAR_CSV_URL, GIRLS_YEAR_BY_YEAR_CSV_URL, HISTORY_DOC_URL,
+                     BOYS_TRACK_RECORDS_CSV_URL, GIRLS_TRACK_RECORDS_CSV_URL, BOYS_STATE_QUALIFIERS_CSV_URL,
+                     GIRLS_STATE_QUALIFIERS_CSV_URL, COLLEGE_BOYS_CSV_URL, COLLEGE_GIRLS_CSV_URL, COLLEGE_LOGOS_CSV_URL,
+                     OTHER_COLLEGE_TRACK_CSV_URL, COACHES_CSV_URL].forEach(add);
+                    // Past-season track tabs (the newest season in each set stays live)
+                    [TRACK_HISTORY_CSV_URLS, GIRLS_TRACK_HISTORY_CSV_URLS].forEach(m => {
+                        const newest = Math.max(...Object.keys(m).map(Number));
+                        Object.entries(m).forEach(([yr, u]) => { if (Number(yr) < newest) add(u); });
+                    });
+                    return list;
+                } catch (e) { return null; }   // constants not defined yet -- try again next time
+            }
+            function freshWindow(key) {
+                if (!FAST_LOAD) return FRESH_MS;
+                if (!slowList) slowList = buildSlowList();
+                if (!slowList) return FRESH_MS;
+                return slowList.some(u => key === u || key.startsWith(u + '&') || key.startsWith(u + '?')) ? SLOW_MS : FRESH_MS;
+            }
             let dbPromise = null;
             function db() {
                 if (!dbPromise) dbPromise = new Promise((res, rej) => {
@@ -890,13 +922,21 @@
                 try { (await db()).transaction(STORE, 'readwrite').objectStore(STORE).put(val, key); } catch (e) {}
             }
             const asResponse = text => new Response(text, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8' } });
+            // Wipes the saved sheet copies so the next load downloads everything.
+            // Used by the manual sync button and by opening the app with ?fresh
+            window.clearSheetCache = function () {
+                try { return db().then(d => { d.transaction(STORE, 'readwrite').objectStore(STORE).clear(); }).catch(() => {}); }
+                catch (e) { return Promise.resolve(); }
+            };
+            try { if (/[?&]fresh\b/.test(location.search)) window.__sheetCacheCleared = window.clearSheetCache(); } catch (e) {}
             window.fetch = async function (input, init) {
                 const url = typeof input === 'string' ? input : (input && input.url) || '';
                 const isSheet = /^https:\/\/docs\.google\.com\/spreadsheets\//.test(url) && (!init || !init.method || init.method === 'GET');
                 if (!isSheet || !window.indexedDB) return realFetch(input, init);
-                const key = url.replace(/([?&])cachebust=\d+&?/, '$1').replace(/[?&]$/, '');
+                const key = strip(url);
+                if (window.__sheetCacheCleared) await window.__sheetCacheCleared;
                 const cached = await getEntry(key);
-                if (cached && Date.now() - cached.t < FRESH_MS) return asResponse(cached.text);
+                if (cached && Date.now() - cached.t < freshWindow(key)) return asResponse(cached.text);
                 try {
                     const ctl = new AbortController();
                     const timer = setTimeout(() => ctl.abort(), cached ? TIMEOUT_MS : 30000);
@@ -6335,6 +6375,7 @@
             if (isManualClick) {
                 if(syncBtn) syncBtn.classList.add('spinning');
                 showMessage("Syncing real-time records from Google Sheets...");
+                if (window.clearSheetCache) { try { await window.clearSheetCache(); } catch (e) {} }
                 clearSecondaryDataCaches();
                 resetExtraEvents();
             }
