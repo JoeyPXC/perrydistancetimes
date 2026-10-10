@@ -3859,8 +3859,7 @@
         const PRCARD_LOGO_SRC = 'Mass. Perry Black P.png';             // header, top left
         const PRCARD_WATERMARK_SRC = 'Mass. Perry Black Outline.png';  // P with double wings, faint background
         const PRCARD_PANTHER_SRC = 'Perry_Panthers.png';
-        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false, collegeLogos: [], useCollege: false, postHSBests: [], usePostHS: false };
-        const prCardCollegeImgs = {};   // logo URL -> loaded <img>, or null if it couldn't be loaded for the card
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false };
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
         // Same XC-detection convention used elsewhere (usesHandTimeConversion):
@@ -3906,7 +3905,7 @@
                     <div class="prcard-hint">Pick up to ${PRCARD_MAX_EVENTS} events to feature.</div>
                     <div class="prcard-events" id="prCardEvents"></div>
                     <div class="prcard-events" id="prCardCollegeRow" style="display:none;">
-                        <label class="prcard-opt"><input type="checkbox" id="prCardCollege"><span id="prCardCollegeLabel">College logo</span></label>
+                        <label class="prcard-opt"><input type="checkbox" id="prCardCollege"><span id="prCardCollegeLabel">Show college</span></label>
                         <label class="prcard-opt" id="prCardPostHSOpt" style="display:none;"><input type="checkbox" id="prCardPostHS"><span id="prCardPostHSLabel">After Perry stats</span></label>
                     </div>
                     <canvas class="prcard-preview" id="prCardCanvas" width="1080" height="1080"></canvas>
@@ -3937,7 +3936,7 @@
             const events = prCardAvailableEvents(athlete);
             if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
 
-            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeLogos: [], useCollege: false, postHSBests: [], usePostHS: false };
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false };
             const ov = prCardEnsureModal();
             ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
             prCardRenderPicker();
@@ -3969,59 +3968,28 @@
             prCardDraw();
         }
 
-        // College logo option: offered when the athlete has a college AND at least one logo
-        // can be loaded in a way that still lets the card be saved as an image. An athlete
-        // who competed at two schools gets both logos side by side.
+        // College option: offered when the athlete has a college on file. The
+        // college name(s) are printed as text on the card (no logos, which
+        // can't always be saved into the exported image).
         function prCardSetupCollege(athlete) {
             const row = document.getElementById('prCardCollegeRow');
             const box = document.getElementById('prCardCollege');
+            const label = box.closest('label');
             row.style.display = 'none'; box.checked = false;
-            prCardState.collegeLogos = [];
+            label.style.display = 'none';
+            prCardState.collegeText = '';
             let colleges = [];
             try {
                 const info = getCollegeInfo(athlete);
                 if (info && info.colleges) colleges = info.colleges.slice(0, 3);
             } catch (e) {}
-            const jobs = colleges.map(c => ({ college: c, url: collegeLogoFor(c) })).filter(j => j.url);
-            if (!jobs.length) return;
-            // Try a CORS-safe ("anonymous") load first, since that's what lets the
-            // finished card be exported as a PNG. Some logo hosts (e.g. tfrrs.org)
-            // don't send the headers that mode requires, which makes the image fail
-            // to load at all rather than just losing export access — so if that
-            // happens, fall back to a plain load. A plain-loaded logo still shows in
-            // the picker and the on-screen preview; it's only dropped automatically
-            // at export time (see prCardExport) if the browser actually refuses to
-            // save a canvas containing it.
-            const loadOne = job => new Promise(resolve => {
-                if (job.url in prCardCollegeImgs) { resolve(prCardCollegeImgs[job.url]); return; }
-                const tryLoad = anon => {
-                    const im = new Image();
-                    if (anon) im.crossOrigin = 'anonymous';
-                    im.onload = () => {
-                        im._tainted = !anon;
-                        prCardCollegeImgs[job.url] = (im.naturalWidth > 0 ? im : null);
-                        resolve(prCardCollegeImgs[job.url]);
-                    };
-                    im.onerror = () => {
-                        if (anon) tryLoad(false);
-                        else { prCardCollegeImgs[job.url] = null; resolve(null); }
-                    };
-                    im.src = job.url;
-                };
-                tryLoad(true);
-            });
-            Promise.all(jobs.map(loadOne)).then(imgs => {
-                if (prCardState.name !== athlete.name) return;   // modal moved on to someone else
-                const ok = jobs.map((j, i) => ({ college: j.college, img: imgs[i] })).filter(x => x.img);
-                if (!ok.length) return;
-                ok.forEach(x => prCardTrimDone(x.img));
-                prCardState.collegeLogos = ok.map(x => x.img);
-                document.getElementById('prCardCollegeLabel').textContent =
-                    'Use college logo' + (ok.length > 1 ? 's' : '') + ' (' + ok.map(x => x.college).join(' & ') + ')';
-                row.style.display = '';
-            });
+            colleges = colleges.filter(Boolean);
+            if (!colleges.length) return;
+            prCardState.collegeText = colleges.join(' & ');
+            document.getElementById('prCardCollegeLabel').textContent = 'Show college (' + prCardState.collegeText + ')';
+            label.style.display = '';
+            row.style.display = '';
         }
-        function prCardTrimDone(img) { if (!img._box) img._box = prCardTrimBox(img); }
 
         // After-Perry stats option: offered when the athlete has post-HS
         // (college) bests on file. Reuses the same data the roster card's
@@ -4217,9 +4185,7 @@
                 leftEnd = 36 + d.w;
             }
             // Right side: the panther, or (if chosen) the college logo(s) side by side
-            let rightImgs = (st.useCollege && st.collegeLogos && st.collegeLogos.length) ? st.collegeLogos : (st.panther ? [st.panther] : []);
-            if (skipTaintedCollege) rightImgs = rightImgs.filter(im => !im._tainted);
-            if (!rightImgs.length && st.panther) rightImgs = [st.panther];
+            const rightImgs = st.panther ? [st.panther] : [];
             if (withLogo && rightImgs.length) {
                 const n = rightImgs.length, gap = 18;
                 const maxW = n === 1 ? 220 : Math.floor((330 - gap * (n - 1)) / n);
@@ -4249,10 +4215,12 @@
             prCardFit(ctx, a.name.toUpperCase(), 900, 104, W - 120);
             ctx.fillText(a.name.toUpperCase(), W / 2, 255);
             let y = 255;
-            if (a.gradYear) {
+            const collegeTxt = (st.useCollege && st.collegeText) ? st.collegeText.toUpperCase() : '';
+            const classLine = [a.gradYear ? `CLASS OF ${a.gradYear}` : '', collegeTxt].filter(Boolean).join('  •  ');
+            if (classLine) {
                 ctx.fillStyle = YEL;
-                prCardFit(ctx, `CLASS OF ${a.gradYear}`, 700, 40, W - 120);
-                ctx.fillText(`CLASS OF ${a.gradYear}`, W / 2, 325);
+                prCardFit(ctx, classLine, 700, 40, W - 120);
+                ctx.fillText(classLine, W / 2, 325);
                 y = 325;
             }
             ctx.fillStyle = YEL; ctx.fillRect(W / 2 - 60, y + 40, 120, 6);
@@ -4379,7 +4347,7 @@
             }
             // The on-screen preview should keep showing the logo even if the saved
             // file had to drop it, so put the normal (non-export-safe) draw back.
-            if (droppedLogo) { prCardDraw(true); if (prCardState.useCollege) showMessage('College logo couldn\'t be included in the saved image on this device.'); }
+            if (droppedLogo) { prCardDraw(true); }
             const fname = `${prCardState.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}-PR-card.png`;
             if (share && navigator.canShare && navigator.share) {
                 try {
