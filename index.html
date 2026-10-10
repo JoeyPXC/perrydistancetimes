@@ -3899,7 +3899,7 @@
         const PRCARD_LOGO_SRC = 'Mass. Perry Black P.png';             // header, top left
         const PRCARD_WATERMARK_SRC = 'Mass. Perry Black Outline.png';  // P with double wings, faint background
         const PRCARD_PANTHER_SRC = 'Perry_Panthers.png';
-        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false };
+        let prCardState = { name: null, events: [], selected: [], logo: null, logoTried: false, panther: null, pantherTried: false, watermark: null, watermarkTried: false, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false, honorRows: [], useHonors: false };
 
         function prCardCleanMark(v) { return String(v == null ? '' : v).split('(')[0].trim(); }
         // Same XC-detection convention used elsewhere (usesHandTimeConversion):
@@ -3947,6 +3947,7 @@
                     <div class="prcard-events" id="prCardCollegeRow" style="display:none;">
                         <label class="prcard-opt"><input type="checkbox" id="prCardCollege"><span id="prCardCollegeLabel">Show college</span></label>
                         <label class="prcard-opt" id="prCardPostHSOpt" style="display:none;"><input type="checkbox" id="prCardPostHS"><span id="prCardPostHSLabel">After Perry stats</span></label>
+                        <label class="prcard-opt" id="prCardHonorsOpt" style="display:none;"><input type="checkbox" id="prCardHonors"><span id="prCardHonorsLabel">Accomplishments</span></label>
                     </div>
                     <canvas class="prcard-preview" id="prCardCanvas" width="1080" height="1080"></canvas>
                     <div class="prcard-actions">
@@ -3958,7 +3959,17 @@
             ov.addEventListener('click', e => { if (e.target === ov) closePrCard(); });
             ov.querySelector('#prCardClose').addEventListener('click', closePrCard);
             ov.querySelector('#prCardCollege').addEventListener('change', e => { prCardState.useCollege = e.target.checked; prCardDraw(); });
-            ov.querySelector('#prCardPostHS').addEventListener('change', e => { prCardState.usePostHS = e.target.checked; prCardDraw(); });
+            // After Perry stats and Accomplishments share the bottom of the card, so only one can be on.
+            ov.querySelector('#prCardPostHS').addEventListener('change', e => {
+                prCardState.usePostHS = e.target.checked;
+                if (e.target.checked) { prCardState.useHonors = false; ov.querySelector('#prCardHonors').checked = false; }
+                prCardDraw();
+            });
+            ov.querySelector('#prCardHonors').addEventListener('change', e => {
+                prCardState.useHonors = e.target.checked;
+                if (e.target.checked) { prCardState.usePostHS = false; ov.querySelector('#prCardPostHS').checked = false; }
+                prCardDraw();
+            });
             ov.querySelector('#prCardShare').addEventListener('click', () => prCardExport(true));
             ov.querySelector('#prCardDownload').addEventListener('click', () => prCardExport(false));
             document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrCard(); });
@@ -3976,12 +3987,13 @@
             const events = prCardAvailableEvents(athlete);
             if (!events.length) { showMessage(`No PRs on file for ${name} yet.`, true); return; }
 
-            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false };
+            prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false, honorRows: [], useHonors: false };
             const ov = prCardEnsureModal();
             ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
             prCardRenderPicker();
             prCardSetupCollege(athlete);
             prCardSetupPostHS(athlete);
+            prCardSetupHonors(athlete);
             ov.classList.add('open');
 
             // Load the images once; redraw as each arrives.
@@ -4046,6 +4058,29 @@
                 if (!bests.length) return;
                 prCardState.postHSBests = bests;
                 document.getElementById('prCardPostHSLabel').textContent = `After Perry stats (${bests.length})`;
+                opt.style.display = '';
+                document.getElementById('prCardCollegeRow').style.display = '';
+            }).catch(() => {});
+        }
+
+        // Accomplishments option: offered when the athlete has XC/track honors on
+        // file (same data as the roster card's Honors section). Biggest honors first.
+        const PRCARD_HONOR_ORDER = ['Track State Champion', 'Track State Runner-Up', 'XC All-Ohio', 'Track All-Ohio',
+            'XC State Qualifier', 'Track State Qualifier', 'XC District Champion', 'Track Regional Champ', 'Track District Champ',
+            'XC Regional Qualifier', 'Track Regional Qual', '1st Team All-Federal', 'XC FL Champion', 'Track FL Champion',
+            '1st Team All-County', 'XC County Champion', 'Track County Champ'];
+        function prCardSetupHonors(athlete) {
+            const opt = document.getElementById('prCardHonorsOpt');
+            const box = document.getElementById('prCardHonors');
+            opt.style.display = 'none'; box.checked = false;
+            prCardState.honorRows = [];
+            Promise.all([getXCHonorsMap(), getTrackHonorsMap()]).then(([hm, tm]) => {
+                if (prCardState.name !== athlete.name) return;   // modal moved on to someone else
+                const rank = l => { const i = PRCARD_HONOR_ORDER.indexOf(l); return i < 0 ? 99 : i; };
+                const rows = psHonorRows(athlete.name, hm, tm).sort((a, b) => rank(a.label) - rank(b.label));
+                if (!rows.length) return;
+                prCardState.honorRows = rows;
+                document.getElementById('prCardHonorsLabel').textContent = `Accomplishments (${rows.length})`;
                 opt.style.display = '';
                 document.getElementById('prCardCollegeRow').style.display = '';
             }).catch(() => {});
@@ -4268,8 +4303,10 @@
             // PRs — when the After Perry (post-HS) strip is on, the PR area
             // is shortened to leave room for it at the bottom of the card.
             const postHSOn = !!(st.usePostHS && st.postHSBests && st.postHSBests.length);
+            const honorsOn = !!(st.useHonors && st.honorRows && st.honorRows.length);
+            const stripOn = postHSOn || honorsOn;   // either bottom strip shortens the PR area
             const sel = st.selected;
-            const top = 430, bottom = postHSOn ? 745 : 1000;
+            const top = 430, bottom = stripOn ? 745 : 1000;
             if (sel.length === 1) {
                 const ev = sel[0], mark = prCardCleanMark(a[ev].PR);
                 ctx.fillStyle = '#9ca3af';
@@ -4279,7 +4316,7 @@
                 prCardFit(ctx, prCardEventLabel(ev).toUpperCase(), 800, 78, W - 120);
                 ctx.fillText(prCardEventLabel(ev).toUpperCase(), W / 2, 630);
                 ctx.fillStyle = '#fff';
-                const markY = postHSOn ? 705 : 800, markMax = postHSOn ? 150 : 260;
+                const markY = stripOn ? 705 : 800, markMax = stripOn ? 150 : 260;
                 prCardFit(ctx, mark, 900, markMax, W - 120);
                 ctx.fillText(mark, W / 2, markY);
             } else if (sel.length > 1) {
@@ -4306,6 +4343,33 @@
             // for even a decathlete) before finally falling back to "+N more".
             // Uses the full card down near its bottom edge rather than
             // leaving a gap once there are enough rows to need it.
+            if (honorsOn) {
+                const rows = st.honorRows;
+                const maxRows = 4;
+                const shown = rows.slice(0, maxRows), extra = rows.length - shown.length;
+                const stripTop = 760, stripBottom = 1040;
+                ctx.fillStyle = '#2a2a2a'; ctx.fillRect(80, stripTop, W - 160, 2);
+                ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
+                prCardFit(ctx, 'ACCOMPLISHMENTS', 700, 26, W - 160);
+                ctx.fillText('ACCOMPLISHMENTS', W / 2, stripTop + 32);
+                const listTop = stripTop + 56, listBottom = extra > 0 ? stripBottom - 30 : stripBottom;
+                const rowH = Math.min(52, (listBottom - listTop) / Math.max(shown.length, 1));
+                shown.forEach((r, i) => {
+                    const cy = listTop + rowH * i + rowH / 2;
+                    ctx.textAlign = 'left'; ctx.fillStyle = YEL;
+                    prCardFit(ctx, r.label.toUpperCase(), 800, 30, 620);
+                    ctx.fillText(r.label.toUpperCase(), 80, cy);
+                    ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+                    prCardFit(ctx, r.years, 800, 30, 300);
+                    ctx.fillText(r.years, W - 80, cy);
+                });
+                if (extra > 0) {
+                    ctx.textAlign = 'center'; ctx.fillStyle = '#9ca3af';
+                    prCardFit(ctx, `+${extra} more`, 600, 22, W - 160);
+                    ctx.fillText(`+${extra} more`, W / 2, stripBottom - 10);
+                }
+                ctx.textAlign = 'center';
+            }
             if (postHSOn) {
                 const bests = st.postHSBests;
                 const twoCol = bests.length > 4;
