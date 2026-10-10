@@ -4177,6 +4177,11 @@
             const cv = document.getElementById('prCardCanvas');
             const st = prCardState;
             if (!cv || !st.athlete) return;
+            // Re-assigning the size resets the canvas's "tainted" flag. Without
+            // this, once a cross-origin logo has been drawn the canvas can never
+            // be exported again -- even after redrawing without that logo -- so
+            // the export fallbacks in prCardExport would all fail.
+            cv.width = 1080; cv.height = 1080;
             const ctx = cv.getContext('2d');
             const W = 1080, H = 1080, YEL = '#ffdd00';
             const fam = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
