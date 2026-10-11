@@ -3229,17 +3229,20 @@
         function buildTrackSeasonHtml(athleteName, year, meetEntries) {
             let meetElementsHtml = "";
 
-            // Season PR badges for whichever of 800/1600/3200 this athlete has data for
+            // Season-best badges for every track/field event this athlete has data for (XC excluded)
             let athleteObj = athletes[athleteName] || Object.values(athletes).find(a => a.name === athleteName);
             let prBadges = '';
-            ['800m','1600m','3200m'].forEach(ev => {
+            allEventKeys().forEach(ev => {
+                const evDef = eventDef(ev);
+                if (/^xc\b|cross\s*country/i.test(ev + ' ' + (evDef ? evDef.label : ''))) return;
+                const badgeLabel = /^\d+m$/i.test(ev) ? ev.replace(/m$/i, '') : ((evDef && evDef.label) || ev).replace(/\s*Track$/i, '');
                 if (athleteObj && athleteObj[ev]) {
                     let evData = athleteObj[ev];
                     ['9th','10th','11th','12th'].forEach(grade => {
                         if (evData[grade] && extractYearFromTimeValue(evData[grade]) === year) {
                             let t = evData[grade].split('(')[0].trim();
                             if (t && t !== '--') {
-                                prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${ev.replace('m','')}: ${t}</span>`;
+                                prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${badgeLabel}: ${t}</span>`;
                             }
                         }
                     });
@@ -3281,9 +3284,9 @@
             EVENT_DISPLAY_ORDER.push({ key: 'HJ', label: 'High Jump' });
 
 
-            let meetRowIdx = 0;
+            let meetRowIdx = 0, seasonPts = 0;
             for (let entry of (meetEntries || [])) {
-                let meetName = entry.meet + (entry._dateLabel ? ' \u00b7 ' + entry._dateLabel : '');
+                let meetName = (entry._dateLabel ? entry._dateLabel + ' ' : '') + entry.meet;   // date first, like the older tabs
                 // Build badge list for all events present in this entry
                 let eventParts = [];
                 if (entry._parts) eventParts = entry._parts;   // from the Results log
@@ -3292,6 +3295,7 @@
                     if (val && !/^(DNR|DNF|DNS|--?|0(\.0+)?)$/i.test(val)) eventParts.push({ label, time: val });
                 });
                 if (eventParts.length === 0) continue;
+                seasonPts += entry._pts || 0;
 
                 let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
                 meetRowIdx++;
@@ -3310,6 +3314,7 @@
 
             if (meetElementsHtml === "") return null;
 
+            if (seasonPts > 0) prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
 
             return `
                 <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
@@ -3339,6 +3344,19 @@
             })();
             return resultsLogPromise;
         }
+        // Puts new Results-log meets in date order among the older tab entries.
+        // Older entries have no real date, so we read a leading "5/21" from the
+        // meet name; an entry without one stays right after the one before it.
+        function mergeSeasonEntries(year, oldE, newE) {
+            let last = '0000-00-00';
+            const all = oldE.map(e => {
+                const m = /^\s*(\d{1,2})[\/.\-](\d{1,2})\b/.exec(e.meet || '');
+                if (m) last = `${year}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
+                return { e, k: last };
+            }).concat(newE.map(e => ({ e, k: e._sort || '9999-99-99' })));
+            return all.map((x, i) => Object.assign(x, { i }))
+                .sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i)).map(x => x.e);
+        }
         // -> { athleteKey: { '2026': [ {meet, _dateLabel, _sort, _parts:[{label,time}], _pts} ] } }
         function buildResultsLogMap(rows) {
             if (!rows || rows.length < 2) return {};
@@ -3367,7 +3385,7 @@
             const dlabel = (d, e) => {
                 const p = x => { const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(x || ''); return m ? { y: m[1].slice(2), m: +m[2], d: +m[3] } : null; };
                 const a = p(d), b = p(e); if (!a) return '';
-                return b && (b.m !== a.m || b.d !== a.d) ? `${a.m}/${a.d}\u2013${b.m}/${b.d}/${b.y}` : `${a.m}/${a.d}/${a.y}`;
+                return b && (b.m !== a.m || b.d !== a.d) ? `${a.m}/${a.d}\u2013${b.m}/${b.d}` : `${a.m}/${a.d}`;
             };
             // group: athlete -> year -> meet
             const groups = {};
@@ -3458,7 +3476,7 @@
                 const logMap = await getResultsLog();
                 lookupKeys.forEach(k => {
                     const m = logMap[k]; if (!m) return;
-                    Object.entries(m).forEach(([yr, entries]) => { trackSeasons[yr] = (trackSeasons[yr] || []).concat(entries); });
+                    Object.entries(m).forEach(([yr, entries]) => { trackSeasons[yr] = mergeSeasonEntries(yr, trackSeasons[yr] || [], entries); });
                 });
             } catch (e) { /* the log is optional */ }
 
