@@ -3349,14 +3349,35 @@
         // Puts new Results-log meets in date order among the older tab entries.
         // Older entries have no real date, so we read a leading "5/21" from the
         // meet name; an entry without one stays right after the one before it.
+        // When a meet is in both an old tab and the Results log:
+        //   'old'  = show what was typed in the old tab (keeps hand-entered splits)   <- current
+        //   'new'  = show the Results log version (places, rounds, relay legs)
+        //   'both' = show both
+        const DUPLICATE_MEETS = 'old';
         function mergeSeasonEntries(year, oldE, newE) {
-            let last = '0000-00-00';
-            const all = oldE.map(e => {
+            const LEVEL = /\b(district|regional|state|county|federal)\b/gi;
+            const levels = t => new Set((String(t).match(LEVEL) || []).map(x => x.toLowerCase()));
+            const day = d => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10));
+            // is this old entry the same meet as any new one? (old tabs have no real date, so go by the
+            // "5/27" at the start of its name, or, if it has none, by a shared level word like "Regional")
+            const sameMeet = (oe, key, hasDate) => newE.find(ne => {
+                if (!ne._sort) return false;
+                if (hasDate) return day(key) >= day(ne._sort) - 864e5 && day(key) <= day(ne._end || ne._sort) + 864e5;
+                const a = levels(oe.meet), b = levels(ne.meet);
+                return [...a].some(w => b.has(w));
+            });
+            let last = '0000-00-00', lastHas = false;
+            const kept = [], hiddenNew = new Set();
+            oldE.forEach(e => {
                 const m = /^\s*(\d{1,2})[\/.\-](\d{1,2})\b/.exec(e.meet || '');
-                if (m) last = `${year}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
-                return { e, k: last };
-            }).concat(newE.map(e => ({ e, k: e._sort || '9999-99-99' })));
-            return all.map((x, i) => Object.assign(x, { i }))
+                if (m) { last = `${year}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`; lastHas = true; }
+                const dup = DUPLICATE_MEETS === 'both' ? null : sameMeet(e, last, !!m);
+                if (dup && DUPLICATE_MEETS === 'old') hiddenNew.add(dup);
+                if (dup && DUPLICATE_MEETS === 'new') { if (!m) last = dup._end || dup._sort; return; }   // undated entries after it stay after it
+                kept.push({ e, k: last });
+            });
+            return kept.concat(newE.filter(e => !hiddenNew.has(e)).map(e => ({ e, k: e._sort || '9999-99-99' })))
+                .map((x, i) => Object.assign(x, { i }))
                 .sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i)).map(x => x.e);
         }
         // -> { athleteKey: { '2026': [ {meet, _dateLabel, _sort, _parts:[{label,time}], _pts} ] } }
@@ -3414,7 +3435,7 @@
                         return { label, time };
                     });
                     const f = list[0];
-                    ((out[k] = out[k] || {})[yr] = out[k][yr] || []).push({ meet: f.meet, _dateLabel: dlabel(f.date, f.end), _sort: f.date, _parts: parts, _pts: pts });
+                    ((out[k] = out[k] || {})[yr] = out[k][yr] || []).push({ meet: f.meet, _dateLabel: dlabel(f.date, f.end), _sort: f.date, _end: f.end || f.date, _parts: parts, _pts: pts });
                 });
                 out[k][yr].sort((a, b) => (a._sort || '').localeCompare(b._sort || ''));
             }));
