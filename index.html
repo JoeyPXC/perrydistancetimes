@@ -3281,7 +3281,7 @@
             EVENT_DISPLAY_ORDER.push({ key: 'HJ', label: 'High Jump' });
 
 
-            let meetRowIdx = 0, seasonPts = 0;
+            let meetRowIdx = 0;
             for (let entry of (meetEntries || [])) {
                 let meetName = entry.meet + (entry._dateLabel ? ' \u00b7 ' + entry._dateLabel : '');
                 // Build badge list for all events present in this entry
@@ -3292,7 +3292,6 @@
                     if (val && !/^(DNR|DNF|DNS|--?|0(\.0+)?)$/i.test(val)) eventParts.push({ label, time: val });
                 });
                 if (eventParts.length === 0) continue;
-                seasonPts += entry._pts || 0;
 
                 let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
                 meetRowIdx++;
@@ -3311,7 +3310,6 @@
 
             if (meetElementsHtml === "") return null;
 
-            if (seasonPts > 0) prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
 
             return `
                 <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
