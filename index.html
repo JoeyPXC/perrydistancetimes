@@ -567,6 +567,7 @@
         .news-body-list li { font-size:14px; line-height:1.6; color:var(--text); margin-bottom:4px; }
         .news-article-body p { font-size:14px; line-height:1.7; color:var(--text); margin:0 0 14px; }
         .news-article-body a { color:var(--perry-gray); text-decoration:underline; }
+        .news-article-body a.news-athlete { text-decoration:none; font-weight:700; border-bottom:1px dotted currentColor; cursor:pointer; }
         body.dark-mode .news-article-body a { color:var(--accent); }
         .news-archived-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:18px; padding-top:12px; border-top:1px solid var(--border); }
 
@@ -7885,6 +7886,70 @@
             renderNextNewsBatch();
         }
 
+        // ── Clickable athlete names in news posts ───────────────────────────
+        // Names that match a single athlete in the app become links that open that
+        // athlete's profile. Done on the page after the post is drawn (not in
+        // news-render.js), so the post composer preview isn't affected.
+        // Names shared by two different athletes are left as plain text.
+        const NEWS_LINK_ATHLETES = true;
+        let newsNameCache = { size: -1, map: null, re: null };
+        function getNewsNameLookup() {
+            const all = Object.values(athletes || {});
+            if (newsNameCache.size === all.length && newsNameCache.re) return newsNameCache;
+            const owners = new Map();   // lowercase name -> Set of athlete names
+            all.forEach(a => {
+                [a.name].concat(a.aliases || []).forEach(n => {
+                    const k = String(n || '').trim().toLowerCase();
+                    if (k.length < 5 || !k.includes(' ')) return;
+                    if (!owners.has(k)) owners.set(k, new Set());
+                    owners.get(k).add(a.name);
+                });
+            });
+            const map = new Map();
+            owners.forEach((set, k) => { if (set.size === 1) map.set(k, [...set][0]); });
+            const keys = [...map.keys()].sort((a, b) => b.length - a.length)
+                .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            let re = null;
+            try { if (keys.length) re = new RegExp('\\b(?:' + keys.join('|') + ')\\b', 'gi'); } catch (e) { re = null; }
+            newsNameCache = { size: all.length, map, re };
+            return newsNameCache;
+        }
+        function linkNewsAthletes(root) {
+            if (!NEWS_LINK_ATHLETES || !root || typeof athletes === 'undefined') return;
+            const { map, re } = getNewsNameLookup();
+            if (!re) return;
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: n => (n.parentElement && n.parentElement.closest('a')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+            });
+            const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+            nodes.forEach(node => {
+                const text = node.nodeValue;
+                re.lastIndex = 0; if (!re.test(text)) return;
+                re.lastIndex = 0;
+                const frag = document.createDocumentFragment();
+                let last = 0, m;
+                while ((m = re.exec(text))) {
+                    const canon = map.get(m[0].toLowerCase()); if (!canon) continue;
+                    frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+                    const a = document.createElement('a');
+                    a.className = 'news-athlete'; a.dataset.athlete = canon; a.textContent = m[0];
+                    try { a.href = getAthleteShareUrl(canon); } catch (e) { a.href = '#'; }
+                    frag.appendChild(a);
+                    last = m.index + m[0].length;
+                }
+                frag.appendChild(document.createTextNode(text.slice(last)));
+                node.parentNode.replaceChild(frag, node);
+            });
+            root.addEventListener('click', e => {
+                const a = e.target.closest && e.target.closest('a.news-athlete');
+                if (!a) return;
+                e.preventDefault();
+                closeNewsOverlay();
+                pendingShareAthleteName = a.dataset.athlete;
+                tryOpenAthleteFromUrl();
+            });
+        }
+
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
@@ -7913,6 +7978,7 @@
                 ${archivedNote}
             `;
             container.scrollTop = 0;
+            try { linkNewsAthletes(container.querySelector('.news-article-body')); } catch (e) { console.error('news name links:', e); }
         }
 
         // ── YEAR BY YEAR ─────────────────────────────────────────────────
