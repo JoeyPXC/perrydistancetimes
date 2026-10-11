@@ -3347,7 +3347,7 @@
             const H = rows[0].map(h => String(h).toLowerCase().replace(/[^a-z]/g, ''));
             const c = n => H.indexOf(n);
             const ix = { date: c('date'), end: c('enddate'), meet: c('meet'), event: c('event'), round: c('round'), place: c('place'),
-                ath: c('athlete'), leg: c('leg'), mark: c('mark'), pts: c('points'), split: c('split'), season: c('season') };
+                ath: c('athlete'), leg: c('leg'), mark: c('mark'), pts: c('points'), split: c('split'), teampts: c('teampoints'), season: c('season') };
             if (ix.ath < 0 || ix.event < 0 || ix.mark < 0 || ix.meet < 0) return {};
             const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
             const recs = [], teamSize = {};
@@ -3355,7 +3355,7 @@
                 const r = rows[i];
                 const rec = { date: get(r, ix.date), end: get(r, ix.end), meet: get(r, ix.meet), event: get(r, ix.event), round: get(r, ix.round) || 'Finals',
                     place: get(r, ix.place), athlete: get(r, ix.ath), leg: get(r, ix.leg), mark: get(r, ix.mark), split: get(r, ix.split),
-                    pts: parseFloat(get(r, ix.pts)), season: get(r, ix.season) };
+                    pts: parseFloat(get(r, ix.pts)), teamPts: get(r, ix.teampts), season: get(r, ix.season) };
                 if (!rec.athlete || !rec.meet || !rec.event || !rec.mark || rec.athlete === '(relay)') continue;
                 rec.relay = /relay/i.test(rec.event);
                 rec.year = (/^20\d\d/.test(rec.date) ? rec.date.slice(0, 4) : '') || (/^20\d\d$/.test(rec.season) ? rec.season : '');
@@ -3391,7 +3391,8 @@
                         let time = r.mark;
                         if (r.relay && r.split) time += ` \u00b7 split ${r.split}`;
                         if (r.round === 'Finals' && /^\d+$/.test(r.place)) time += ` \u00b7 ${ord(r.place)}`;
-                        if (!isNaN(r.pts)) pts += r.relay ? r.pts / (teamSize[r.team] || 1) : r.pts;
+                        // rows from the newer importer already hold the runner's share (TeamPoints filled in); older relay rows hold the full team score
+                        if (!isNaN(r.pts)) pts += (r.relay && !r.teamPts) ? r.pts / (teamSize[r.team] || 1) : r.pts;
                         return { label, time };
                     });
                     const f = list[0];
