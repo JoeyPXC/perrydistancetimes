@@ -3314,7 +3314,7 @@
 
             if (meetElementsHtml === "") return null;
 
-            if (seasonPts > 0) prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
+            if (SHOW_SEASON_POINTS && seasonPts > 0) prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
 
             return `
                 <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
@@ -3331,6 +3331,8 @@
         // One row per performance, pasted in from the Results Importer after
         // each meet. Read by column NAME, so extra/missing columns are fine.
         // New seasons come from here; older seasons still use the year tabs.
+        // Season points badge on profiles. Off for now; set to true to turn it on (e.g. next track season).
+        const SHOW_SEASON_POINTS = false;
         const RESULTS_LOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsmKDHPBTxeLcwUapWr6_U9AQdNp0SuhLmadutLCuaw9IeHPFUvM8I28TnI39nK6Ab1zvzhIS9aKzl/pub?gid=0&single=true&output=csv';
         let resultsLogPromise = null;
         function getResultsLog() {
