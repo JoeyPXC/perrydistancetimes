@@ -7945,6 +7945,12 @@
                 if (!a) return;
                 e.preventDefault();
                 closeNewsOverlay();
+                // The home page sits above the profile drawer, so leave it the same way the Rankings
+                // button does (this also lets Back return to the home page afterwards).
+                try {
+                    if (!(history.state && history.state.overlay === 'rankings')) history.pushState({ overlay: 'rankings' }, '');
+                    closeHome();
+                } catch (err) { /* not fatal */ }
                 pendingShareAthleteName = a.dataset.athlete;
                 tryOpenAthleteFromUrl();
             });
