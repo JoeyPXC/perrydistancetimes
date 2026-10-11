@@ -7901,19 +7901,27 @@
         function getNewsNameLookup() {
             const all = Object.values(athletes || {});
             if (newsNameCache.size === all.length && newsNameCache.re) return newsNameCache;
-            const owners = new Map();   // lowercase name -> Set of athlete names
+            const owners = new Map();   // lowercase, dot-free name -> Set of athlete names
+            const initialsFirst = new Set();   // names that start with initials, like "JD Horton" or "TJ Owens"
             all.forEach(a => {
                 [a.name].concat(a.aliases || []).forEach(n => {
-                    const k = String(n || '').trim().toLowerCase();
+                    const raw = String(n || '').trim();
+                    const k = raw.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
                     if (k.length < 5 || !k.includes(' ')) return;
+                    if (/^[A-Z]{2,3}(\s|$)/.test(raw.replace(/\./g, ''))) initialsFirst.add(k);
                     if (!owners.has(k)) owners.set(k, new Set());
                     owners.get(k).add(a.name);
                 });
             });
             const map = new Map();
             owners.forEach((set, k) => { if (set.size === 1) map.set(k, [...set][0]); });
-            const keys = [...map.keys()].sort((a, b) => b.length - a.length)
-                .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // "JD Horton" also matches "J.D. Horton" (dots after initials are optional)
+            const keys = [...map.keys()].sort((a, b) => b.length - a.length).map(k => {
+                const parts = k.split(' ');
+                const first = initialsFirst.has(k) ? parts[0].split('').map(esc).join('\\.?') + '\\.?' : esc(parts[0]);
+                return [first].concat(parts.slice(1).map(esc)).join('\\s+');
+            });
             let re = null;
             try { if (keys.length) re = new RegExp('\\b(?:' + keys.join('|') + ')\\b', 'gi'); } catch (e) { re = null; }
             newsNameCache = { size: all.length, map, re };
@@ -7934,7 +7942,7 @@
                 const frag = document.createDocumentFragment();
                 let last = 0, m;
                 while ((m = re.exec(text))) {
-                    const canon = map.get(m[0].toLowerCase()); if (!canon) continue;
+                    const canon = map.get(m[0].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ')); if (!canon) continue;
                     frag.appendChild(document.createTextNode(text.slice(last, m.index)));
                     const a = document.createElement('a');
                     a.className = 'news-athlete'; a.dataset.athlete = canon; a.textContent = m[0];
