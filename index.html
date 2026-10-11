@@ -3281,16 +3281,18 @@
             EVENT_DISPLAY_ORDER.push({ key: 'HJ', label: 'High Jump' });
 
 
-            let meetRowIdx = 0;
+            let meetRowIdx = 0, seasonPts = 0;
             for (let entry of (meetEntries || [])) {
-                let meetName = entry.meet;
+                let meetName = entry.meet + (entry._dateLabel ? ' \u00b7 ' + entry._dateLabel : '');
                 // Build badge list for all events present in this entry
                 let eventParts = [];
-                EVENT_DISPLAY_ORDER.forEach(({ key, label }) => {
+                if (entry._parts) eventParts = entry._parts;   // from the Results log
+                else EVENT_DISPLAY_ORDER.forEach(({ key, label }) => {
                     let val = entry[key];
                     if (val && !/^(DNR|DNF|DNS|--?|0(\.0+)?)$/i.test(val)) eventParts.push({ label, time: val });
                 });
                 if (eventParts.length === 0) continue;
+                seasonPts += entry._pts || 0;
 
                 let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
                 meetRowIdx++;
@@ -3309,6 +3311,8 @@
 
             if (meetElementsHtml === "") return null;
 
+            if (seasonPts > 0) prBadges += `<span style="background:var(--accent);color:var(--primary);padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
+
             return `
                 <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
                     <div style="background:var(--primary);color:var(--accent);padding:5px 10px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
@@ -3318,6 +3322,84 @@
                     <div>${meetElementsHtml}</div>
                 </div>
             `;
+        }
+
+        // ── Results log: new meet-by-meet source ─────────────────────────
+        // One row per performance, pasted in from the Results Importer after
+        // each meet. Read by column NAME, so extra/missing columns are fine.
+        // New seasons come from here; older seasons still use the year tabs.
+        const RESULTS_LOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsmKDHPBTxeLcwUapWr6_U9AQdNp0SuhLmadutLCuaw9IeHPFUvM8I28TnI39nK6Ab1zvzhIS9aKzl/pub?gid=0&single=true&output=csv';
+        let resultsLogPromise = null;
+        function getResultsLog() {
+            if (resultsLogPromise) return resultsLogPromise;
+            resultsLogPromise = (async () => {
+                try {
+                    const res = await fetch(cacheBustUrl(RESULTS_LOG_CSV_URL));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return buildResultsLogMap(parseCSVText(await res.text()));
+                } catch (e) { console.error('Results log fetch error:', e); resultsLogPromise = null; return {}; }
+            })();
+            return resultsLogPromise;
+        }
+        // -> { athleteKey: { '2026': [ {meet, _dateLabel, _sort, _parts:[{label,time}], _pts} ] } }
+        function buildResultsLogMap(rows) {
+            if (!rows || rows.length < 2) return {};
+            const H = rows[0].map(h => String(h).toLowerCase().replace(/[^a-z]/g, ''));
+            const c = n => H.indexOf(n);
+            const ix = { date: c('date'), end: c('enddate'), meet: c('meet'), event: c('event'), round: c('round'), place: c('place'),
+                ath: c('athlete'), leg: c('leg'), mark: c('mark'), pts: c('points'), split: c('split'), season: c('season') };
+            if (ix.ath < 0 || ix.event < 0 || ix.mark < 0 || ix.meet < 0) return {};
+            const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
+            const recs = [], teamSize = {};
+            for (let i = 1; i < rows.length; i++) {
+                const r = rows[i];
+                const rec = { date: get(r, ix.date), end: get(r, ix.end), meet: get(r, ix.meet), event: get(r, ix.event), round: get(r, ix.round) || 'Finals',
+                    place: get(r, ix.place), athlete: get(r, ix.ath), leg: get(r, ix.leg), mark: get(r, ix.mark), split: get(r, ix.split),
+                    pts: parseFloat(get(r, ix.pts)), season: get(r, ix.season) };
+                if (!rec.athlete || !rec.meet || !rec.event || !rec.mark || rec.athlete === '(relay)') continue;
+                rec.relay = /relay/i.test(rec.event);
+                rec.year = (/^20\d\d/.test(rec.date) ? rec.date.slice(0, 4) : '') || (/^20\d\d$/.test(rec.season) ? rec.season : '');
+                if (!rec.year) continue;
+                rec.team = [rec.meet, rec.event, rec.round, rec.place, rec.mark].join('|');
+                if (rec.relay) teamSize[rec.team] = (teamSize[rec.team] || 0) + 1;
+                recs.push(rec);
+            }
+            const short = e => e.replace(/^(\d+) Meter (?:Dash|Run)$/i, '$1').replace(/^(\d+) Meter Hurdles$/i, '$1H').replace(/^(4x\d+) Relay$/i, '$1');
+            const ord = n => { n = +n; const sfx = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]); };
+            const dlabel = (d, e) => {
+                const p = x => { const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(x || ''); return m ? { y: m[1].slice(2), m: +m[2], d: +m[3] } : null; };
+                const a = p(d), b = p(e); if (!a) return '';
+                return b && (b.m !== a.m || b.d !== a.d) ? `${a.m}/${a.d}\u2013${b.m}/${b.d}/${b.y}` : `${a.m}/${a.d}/${a.y}`;
+            };
+            // group: athlete -> year -> meet
+            const groups = {};
+            recs.forEach(r => {
+                const k = r.athlete.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const g = ((groups[k] = groups[k] || {})[r.year] = groups[k][r.year] || {});
+                (g[r.meet + '|' + r.date] = g[r.meet + '|' + r.date] || []).push(r);
+            });
+            const out = {};
+            Object.entries(groups).forEach(([k, years]) => Object.entries(years).forEach(([yr, meets]) => {
+                Object.values(meets).forEach(list => {
+                    const roundsPer = {};
+                    list.forEach(r => { (roundsPer[r.event] = roundsPer[r.event] || new Set()).add(r.round); });
+                    let pts = 0;
+                    const parts = list.map(r => {
+                        let label = short(r.event);
+                        if (r.round !== 'Finals' || roundsPer[r.event].size > 1) label += ` (${r.round === 'Prelims' ? 'Prelim' : r.round === 'Finals' ? 'Final' : r.round.replace(/s$/, '')})`;
+                        if (r.relay && r.leg) label += ` leg ${r.leg}`;
+                        let time = r.mark;
+                        if (r.relay && r.split) time += ` \u00b7 split ${r.split}`;
+                        if (r.round === 'Finals' && /^\d+$/.test(r.place)) time += ` \u00b7 ${ord(r.place)}`;
+                        if (!isNaN(r.pts)) pts += r.relay ? r.pts / (teamSize[r.team] || 1) : r.pts;
+                        return { label, time };
+                    });
+                    const f = list[0];
+                    ((out[k] = out[k] || {})[yr] = out[k][yr] || []).push({ meet: f.meet, _dateLabel: dlabel(f.date, f.end), _sort: f.date, _parts: parts, _pts: pts });
+                });
+                out[k][yr].sort((a, b) => (a._sort || '').localeCompare(b._sort || ''));
+            }));
+            return out;
         }
 
         async function loadAthleteMeetHistory(athleteName, targetGridId) {
@@ -3370,6 +3452,16 @@
 
             let xcSeasons = findMatch(xcHistory) || {};
             let trackSeasons = findMatch(trackHistory) || {};
+
+            // Add meets from the new Results log (copy first so the shared history cache isn't changed)
+            trackSeasons = Object.assign({}, trackSeasons);
+            try {
+                const logMap = await getResultsLog();
+                lookupKeys.forEach(k => {
+                    const m = logMap[k]; if (!m) return;
+                    Object.entries(m).forEach(([yr, entries]) => { trackSeasons[yr] = (trackSeasons[yr] || []).concat(entries); });
+                });
+            } catch (e) { /* the log is optional */ }
 
             // Build the set of years to walk, descending. For each XC year Y, both Y
             // and Y+1 (the following spring's track season) need to be considered.
@@ -6435,6 +6527,7 @@
             xcHonorsCache = null;            xcHonorsFetchPromise = null;
             trackHonorsCache = null;         trackHonorsFetchPromise = null;
             postHSBestsCache = null;         postHSBestsFetchPromise = null;
+            resultsLogPromise = null;
             xcAveragesCache = null;          xcAveragesFetchPromise = null;
             historyStatsCache = null;
             trackRecordsCache = { M: null, F: null };
@@ -6655,6 +6748,7 @@
             try { await fetchLiveGoogleSheets(false); } catch (e) { console.warn('Roster load failed', e); }
             getXCHistoryData();
             getTrackHistoryData(); // prefetch all 24 tabs (boys+girls) so cards open instantly
+            getResultsLog();
             // remaining events load quietly in the background; rosterFullyLoaded resolves when they're in
             eventsReady.then(backgroundLoadVisibleEvents).catch(() => {}).finally(() => rosterFullyLoadedResolve());
         });
