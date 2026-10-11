@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+          {
+        id: "2026-10-11-legends-meet-boys-3rd-girls-14th",
+        sport: "xc",
+        date: "2026-10-11",
+        title: "Legends Meet: Boys 3rd, Girls 14th",
+        body: "The teams traveled to the Trumbull County Fairgrounds on Saturday for the Legends Meet. This year's legends were Olivia Howell, Drew Hunter, and Joel Marchand. There was a lot of D1 and D2 competition in the Large School race the teams ran in. The boys finished 3rd overall and the girls finished 14th. The boys were led by Parker Simonson - 9th, Noah Dostal - 15th, and Ryan Sexton - 23rd with their award winning races. Michael Norris and Connor McCann rounded out the scoring for the boys. Parker, Noah, Ryan, and Michael all set new personal bests. Others who set personal best for the boys were: Broderick Gore, Andrew Ramos, Leo Miller, Jack Overcasher, Tyler James, Danny Patron, Lincoln Harper, Ben Kahl, Aidan Oberlin, Mason Porrini, Damien Rivers, Gavin Keim, Blake Griffith, and Tanner Croston.\n\nThe girls scorers were Annamae Rogers, Kiley Szakacs, Lillian Stewart, Julia Thompson, and Paige Schwab. Annamae and Lillian each set new personal bests.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/272641/info)\n[Gopher A Run Results](https://gopherarun.com/results/2026-legends-xc-meet-results.html)\n\nThe teams will race at Jackson next in the Federal League Meet.",
+        images: []
+    },
       {
         id: "2026-10-05-stark-county-boys-5th-girls-9th",
         sport: "xc",
