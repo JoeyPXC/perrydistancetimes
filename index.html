@@ -567,6 +567,8 @@
         .news-body-list li { font-size:14px; line-height:1.6; color:var(--text); margin-bottom:4px; }
         .news-article-body p { font-size:14px; line-height:1.7; color:var(--text); margin:0 0 14px; }
         .news-article-body a { color:var(--perry-gray); text-decoration:underline; }
+        .drawer-overlay.over-nav { z-index: 700; }
+        .drawer-overlay.over-nav .drawer-content { z-index: 701; }
         .news-article-body a.news-athlete { text-decoration:none; font-weight:700; border-bottom:1px dotted currentColor; cursor:pointer; }
         body.dark-mode .news-article-body a { color:var(--accent); }
         .news-archived-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:18px; padding-top:12px; border-top:1px solid var(--border); }
@@ -1899,6 +1901,7 @@
                 setTimeout(() => input.focus(), 150);
             } else {
                 overlay.classList.remove('active');
+                overlay.classList.remove('over-nav');
                 expandedAthleteName = null;
                 updateUrlForAthlete(null);
             }
@@ -7197,6 +7200,8 @@
         // Each overlay open pushes a history entry. Swiping back pops it,
         // which fires popstate and closes whichever overlay is open.
         window.addEventListener('popstate', () => {
+            const dOv = document.getElementById('drawerOverlay');
+            if (dOv.classList.contains('over-nav') && dOv.classList.contains('active')) { toggleDrawer(false); return; }   // profile opened from a news post
             if (document.getElementById('newsOverlay').classList.contains('open')) {
                 if (newsInDetailView) { renderNewsList(); }
                 else { closeNewsOverlay(); }
@@ -7944,13 +7949,9 @@
                 const a = e.target.closest && e.target.closest('a.news-athlete');
                 if (!a) return;
                 e.preventDefault();
-                closeNewsOverlay();
-                // The home page sits above the profile drawer, so leave it the same way the Rankings
-                // button does (this also lets Back return to the home page afterwards).
-                try {
-                    if (!(history.state && history.state.overlay === 'rankings')) history.pushState({ overlay: 'rankings' }, '');
-                    closeHome();
-                } catch (err) { /* not fatal */ }
+                // Open the profile ON TOP of the article (the drawer is raised above the news page), so
+                // closing it returns to the same article and the next name can be tapped.
+                document.getElementById('drawerOverlay').classList.add('over-nav');
                 pendingShareAthleteName = a.dataset.athlete;
                 tryOpenAthleteFromUrl();
             });
