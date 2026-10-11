@@ -7931,27 +7931,41 @@
             if (!NEWS_LINK_ATHLETES || !root || typeof athletes === 'undefined') return;
             const { map, re } = getNewsNameLookup();
             if (!re) return;
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-                acceptNode: n => (n.parentElement && n.parentElement.closest('a')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-            });
-            const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
-            nodes.forEach(node => {
-                const text = node.nodeValue;
-                re.lastIndex = 0; if (!re.test(text)) return;
+            // Work paragraph by paragraph. A line break (or bold/italic) in the middle of a name, like
+            // "David<br>Adams" in the old posts, would otherwise hide it, so we read each paragraph as one
+            // string (a line break counts as a space) and link every piece of a matching name.
+            root.querySelectorAll('p, li').forEach(block => {
+                const segs = []; let full = '';
+                (function walk(node) {
+                    node.childNodes.forEach(ch => {
+                        if (ch.nodeType === 3) { segs.push({ node: ch, start: full.length }); full += ch.nodeValue; }
+                        else if (ch.nodeName === 'BR') full += ' ';
+                        else if (ch.nodeName === 'A') full += '\u0001'.repeat((ch.textContent || '').length);   // never link inside a link
+                        else walk(ch);
+                    });
+                })(block);
+                if (!segs.length) return;
+                const hits = []; let m;
                 re.lastIndex = 0;
-                const frag = document.createDocumentFragment();
-                let last = 0, m;
-                while ((m = re.exec(text))) {
-                    const canon = map.get(m[0].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ')); if (!canon) continue;
-                    frag.appendChild(document.createTextNode(text.slice(last, m.index)));
-                    const a = document.createElement('a');
-                    a.className = 'news-athlete'; a.dataset.athlete = canon; a.textContent = m[0];
-                    try { a.href = getAthleteShareUrl(canon); } catch (e) { a.href = '#'; }
-                    frag.appendChild(a);
-                    last = m.index + m[0].length;
+                while ((m = re.exec(full))) {
+                    const canon = map.get(m[0].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' '));
+                    if (canon) hits.push({ s: m.index, e: m.index + m[0].length, canon });
                 }
-                frag.appendChild(document.createTextNode(text.slice(last)));
-                node.parentNode.replaceChild(frag, node);
+                // last match first, and last piece first, so earlier positions stay valid while splitting text
+                hits.reverse().forEach(h => {
+                    segs.filter(g => g.start < h.e && g.start + g.node.nodeValue.length > h.s).reverse().forEach(g => {
+                        const ls = Math.max(h.s - g.start, 0), le = Math.min(h.e - g.start, g.node.nodeValue.length);
+                        let node = g.node;
+                        if (!node.nodeValue.slice(ls, le).trim()) return;
+                        if (ls > 0) node = node.splitText(ls);
+                        if (le - ls < node.nodeValue.length) node.splitText(le - ls);
+                        const a = document.createElement('a');
+                        a.className = 'news-athlete'; a.dataset.athlete = h.canon;
+                        try { a.href = getAthleteShareUrl(h.canon); } catch (err) { a.href = '#'; }
+                        node.parentNode.replaceChild(a, node);
+                        a.appendChild(node);
+                    });
+                });
             });
             root.addEventListener('click', e => {
                 const a = e.target.closest && e.target.closest('a.news-athlete');
