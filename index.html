@@ -4067,8 +4067,8 @@
         // file (same data as the roster card's Honors section). Biggest honors first.
         const PRCARD_HONOR_ORDER = ['Track State Champion', 'Track State Runner-Up', 'XC All-Ohio', 'Track All-Ohio',
             'XC State Qualifier', 'Track State Qualifier', 'XC District Champion', 'Track Regional Champ', 'Track District Champ',
-            'XC Regional Qualifier', 'Track Regional Qual', '1st Team All-Federal', 'XC FL Champion', 'Track FL Champion',
-            '1st Team All-County', 'XC County Champion', 'Track County Champ'];
+            'XC Regional Qualifier', 'Track Regional Qual', 'XC 1st Team All-Federal', 'XC FL Champion', 'Track FL Champion',
+            'XC 1st Team All-County', 'XC County Champion', 'Track County Champ'];
         function prCardSetupHonors(athlete) {
             const opt = document.getElementById('prCardHonorsOpt');
             const box = document.getElementById('prCardHonors');
@@ -4500,7 +4500,7 @@
             const xc = [
                 ['XC All-Ohio', h.allOhio], ['XC State Qualifier', h.stateQual], ['XC District Champion', h.distChamp],
                 ['XC FL Champion', h.fedChamp], ['XC County Champion', h.countyChamp], ['XC Regional Qualifier', h.regQual],
-                ['1st Team All-Federal', h.allFed], ['1st Team All-County', h.allCounty],
+                ['XC 1st Team All-Federal', h.allFed], ['XC 1st Team All-County', h.allCounty],
             ].filter(r => r[1] && r[1].length).map(r => ({ label: r[0], count: r[1].length, years: r[1].slice().sort((a, b) => a - b).join(', ') }));
             const tr = [
                 ['Track State Champion', t.tStateChamp], ['Track State Runner-Up', t.tStateRunnerUp], ['Track All-Ohio', t.tAllOhio],
@@ -4740,8 +4740,8 @@
             if (h.fedChamp && h.fedChamp.length)    badges += `<span class="card-honor-badge badge-fed-champ">XC FL Champ${xN(h.fedChamp)}</span>`;
             if (h.countyChamp && h.countyChamp.length) badges += `<span class="card-honor-badge badge-county-champ">XC County Champ${xN(h.countyChamp)}</span>`;
             if (h.regQual && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">XC Regional${xN(h.regQual)}</span>`;
-            if (h.allFed && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">All-Federal${xN(h.allFed)}</span>`;
-            if (h.allCounty && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">All-County${xN(h.allCounty)}</span>`;
+            if (h.allFed && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">XC All-Federal${xN(h.allFed)}</span>`;
+            if (h.allCounty && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">XC All-County${xN(h.allCounty)}</span>`;
             // Track honors
             if (t.tStateChamp && t.tStateChamp.length)  badges += `<span class="card-honor-badge badge-t-state-champ">Track State Champ${xN(t.tStateChamp)}</span>`;
             if (t.tStateRunnerUp && t.tStateRunnerUp.length) badges += `<span class="card-honor-badge badge-t-runner-up">Track Runner-Up${xN(t.tStateRunnerUp)}</span>`;
@@ -4769,8 +4769,8 @@
                 { label: 'XC FL Champion',        years: h.fedChamp,    cls: 'badge-fed-champ' },
                 { label: 'XC County Champion',    years: h.countyChamp, cls: 'badge-county-champ' },
                 { label: 'XC Regional Qualifier', years: h.regQual,     cls: 'badge-regional' },
-                { label: '1st Team All-Federal',  years: h.allFed,      cls: 'badge-all-federal' },
-                { label: '1st Team All-County',   years: h.allCounty,   cls: 'badge-all-county' },
+                { label: 'XC 1st Team All-Federal',  years: h.allFed,      cls: 'badge-all-federal' },
+                { label: 'XC 1st Team All-County',   years: h.allCounty,   cls: 'badge-all-county' },
             ].filter(r => r.years && r.years.length);
 
             const trackRows = [
@@ -6176,8 +6176,8 @@
                             { label:'XC FL Champ',        cls:'badge-fed-champ',      years: h.fedChamp },
                             { label:'XC County Champ',    cls:'badge-county-champ',   years: h.countyChamp },
                             { label:'XC Regional',        cls:'badge-regional',       years: h.regQual },
-                            { label:'All-Federal',        cls:'badge-all-federal',    years: h.allFed },
-                            { label:'All-County',         cls:'badge-all-county',     years: h.allCounty },
+                            { label:'XC All-Federal',     cls:'badge-all-federal',    years: h.allFed },
+                            { label:'XC All-County',      cls:'badge-all-county',     years: h.allCounty },
                             { label:'Track State Champ',  cls:'badge-t-state-champ',  years: t.tStateChamp },
                             { label:'Track Runner-Up',    cls:'badge-t-runner-up',    years: t.tStateRunnerUp },
                             { label:'Track All-Ohio',     cls:'badge-t-all-ohio',     years: t.tAllOhio },
