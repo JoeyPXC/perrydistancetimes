@@ -358,11 +358,11 @@
         .athlete-meta-box { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
         .athlete-name { font-size: 15px; font-weight: 800; color: var(--primary); }
         .athlete-grad-text { font-size: 12px; font-weight: 600; color: var(--perry-gray); }
-        .athlete-college-row { display: flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 10px; flex-shrink: 0; }
+        .athlete-college-row { display: flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 10px; flex-shrink: 0; align-self: flex-start; }
         .athlete-college-name { font-size: 10px; font-weight: 700; color: var(--text-muted); text-align: right; max-width: 90px; line-height: 1.2; }
         .college-logo-mini { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; background: white; flex-shrink: 0; padding: 2px; }
         
-        .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; }
+        .card-chevron { width: 20px; height: 20px; fill: var(--perry-gray); transition: transform 0.2s ease; align-self: flex-start; margin-top: 1px; }
         .athlete-card.expanded .card-chevron { transform: rotate(180deg); }
         .card-expand-body { display: none; padding: 0 14px 14px 14px; background: #ffffff; border-top: 1px solid #f1f5f9; }
         .athlete-card.expanded .card-expand-body { display: block; }
@@ -2244,7 +2244,24 @@
         //   'name as it appears wrongly': 'name to keep'
         const NAME_MERGE_OVERRIDES = {
             // 'Mikey Smith': 'Michael Smith',
+            'JoJo Tayse': 'Joe Tayse',
+            'Ty Griffin': 'Tyler Griffin',
         };
+        // Extra spellings for when only ONE spelling is in the sheets, so there is nothing to merge
+        // (e.g. the results say "Joe Tayse" but the news posts say "JoJo Tayse"). They are used for
+        // linking names in news posts and for finding the athlete's meet history.
+        //   'name as it appears in the sheets': ['other spelling', ...]
+        const EXTRA_ALIASES = {
+            'Joe Tayse': ['JoJo Tayse'],
+            'Tyler Griffin': ['Ty Griffin'],
+        };
+        function applyExtraAliases(store) {
+            Object.keys(EXTRA_ALIASES).forEach(main => {
+                const a = Object.values(store).find(x => x.name.toLowerCase() === main.toLowerCase());
+                if (!a) return;
+                a.aliases = [...new Set([...(a.aliases || []), ...EXTRA_ALIASES[main]])].filter(n => n !== a.name);
+            });
+        }
         const NICKNAME_GROUPS = [
             ['mike', 'michael', 'mikey'], ['matt', 'matthew'], ['nick', 'nicholas', 'nicolas'], ['chris', 'christopher', 'christian', 'christine', 'christina'],
             ['ben', 'benjamin', 'benji'], ['alex', 'alexander', 'alexandra', 'alexis', 'alexa'], ['abby', 'abigail', 'abbie', 'abbey'],
@@ -2391,6 +2408,7 @@
                     }
                 }
             });
+            applyExtraAliases(store);
             if (merged.length) {
                 window.__athleteMerges = (window.__athleteMerges || []).concat(merged);
                 console.info('Merged duplicate athletes:\n' + merged.join('\n'));
