@@ -886,6 +886,7 @@
                      GIRLS_STATE_QUALIFIERS_CSV_URL, COLLEGE_BOYS_CSV_URL, COLLEGE_GIRLS_CSV_URL, COLLEGE_LOGOS_CSV_URL,
                      OTHER_COLLEGE_TRACK_CSV_URL, COACHES_CSV_URL].forEach(add);
                     // Past-season track tabs (the newest season in each set stays live)
+                    HISTORICAL_EVENTS.forEach(h => { add(h.boysUrl); add(h.girlsUrl); });
                     [TRACK_HISTORY_CSV_URLS, GIRLS_TRACK_HISTORY_CSV_URLS].forEach(m => {
                         const newest = Math.max(...Object.keys(m).map(Number));
                         Object.entries(m).forEach(([yr, u]) => { if (Number(yr) < newest) add(u); });
@@ -2089,6 +2090,16 @@
         // "Preview" events only show on a device that has opened  yoursite/#preview
         // (turn it off again with  yoursite/#preview-off ).
         const EVENTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThMsYeM-yci13eeXM6gGKE7dPwiOx8FcrgRe8naxKtmL7qmU_B_YazIPVZiLzNUl6kc3USHJdxWiea/pub?gid=1750503631&single=true&output=csv";
+        // Historical rankings (older distance marks from before the 5K era, plus 2 mile courses that were run
+        // more recently). Each is a ready-ranked sheet shown on its own at the bottom of the event list.
+        // They are NOT merged into athlete profiles, so old names can't mix with current athletes.
+        // To add one: add a line here (girlsUrl is optional).
+        const HISTORICAL_EVENTS = [
+            { key: 'HIST:XC 2 Mile', label: '2 Mile XC (Historical)', girlsUrl: '',
+              boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVBD9q429Ms19S1sta0_OaSeJmd6vxdJ-9PXA-iww4OzIMR9YSvRJOzCQdq3ZSHP6M1supmT_55Trx/pub?gid=1993866337&single=true&output=csv' },
+            { key: 'HIST:XC 2.5 Mile', label: '2.5 Mile XC (Historical)', girlsUrl: '',
+              boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuMqNnV0lkkUxgKR2QvcRnYjZ0AKZWX3LIdwNqrezDBAl4PcFtVYHB69wz7fNJUcxwOyuYc29M_qiA/pub?gid=1993866337&single=true&output=csv' },
+        ];
         const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
         const FIELD_EVENT_KEYS = new Set();
         const FIELD_WORDS = /shot|discus|javelin|club|throw|jump|vault/i;
@@ -2200,8 +2211,10 @@
             const prev = sel.value;
             const opt = d => `<option value="${homeEsc(d.key)}">${homeEsc(d.label)}${d.visible === 'preview' ? ' (preview)' : ''}</option>`;
             const standard = sortedEventDefs(shown.filter(d => !d.seated)), seated = sortedEventDefs(shown.filter(d => d.seated));
-            sel.innerHTML = standard.map(opt).join('') + (seated.length ? `<optgroup label="Seated">${seated.map(opt).join('')}</optgroup>` : '');
-            if (shown.some(d => d.key === prev)) sel.value = prev;
+            const histOpts = HISTORICAL_EVENTS.map(d => `<option value="${homeEsc(d.key)}">${homeEsc(d.label)}</option>`).join('');
+            sel.innerHTML = standard.map(opt).join('') + (seated.length ? `<optgroup label="Seated">${seated.map(opt).join('')}</optgroup>` : '')
+                + (histOpts ? `<optgroup label="Historical">${histOpts}</optgroup>` : '');
+            if (shown.some(d => d.key === prev) || HISTORICAL_EVENTS.some(d => d.key === prev)) sel.value = prev;
             else renderLeaderboard();
         }
 
@@ -5815,11 +5828,75 @@
             window.open(url, '_blank');
         }
 
+        // ── Historical rankings (standalone lists) ──────────────────────────
+        const historicalCache = {};   // url -> Promise of parsed rows
+        function loadHistoricalRows(url) {
+            if (!historicalCache[url]) {
+                historicalCache[url] = fetch(cacheBustUrl(url))
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+                    .then(t => parseCSVText(t))
+                    .catch(e => { delete historicalCache[url]; throw e; });
+            }
+            return historicalCache[url];
+        }
+        // Historical lists have no grade/season filters or record banner, so hide those while one is showing.
+        function setHistoricalMode(on) {
+            const rankRow = document.getElementById('leaderboardRankType').closest('.filter-row');
+            if (rankRow) rankRow.style.display = on ? 'none' : '';
+            ['seasonYearRow', 'courseRow'].forEach(id => {
+                const el = document.getElementById(id); if (!el) return;
+                if (on) { if (el.dataset.histPrev === undefined) el.dataset.histPrev = el.style.display; el.style.display = 'none'; }
+                else if (el.dataset.histPrev !== undefined) { el.style.display = el.dataset.histPrev; delete el.dataset.histPrev; }
+            });
+            if (on) { const b = document.getElementById('recordBanner'); if (b) b.style.display = 'none'; }
+        }
+        function renderHistoricalRankings(def) {
+            const tbody = document.getElementById('leaderboardBody');
+            ['seasonStatBlock', 'seasonBestStrip'].forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+            document.getElementById('careerProgressiveView').innerHTML = '';
+            document.querySelector('#standardRankTable thead tr').innerHTML = `
+                <th class="col-rank">#</th>
+                <th class="col-grad" style="text-align:center;">Year</th>
+                <th class="col-athlete">Athlete</th>
+                <th id="rankHeaderTime" class="col-time" style="text-align:center;">Best Time</th>`;
+            const girls = genderFilter === 'F';
+            const url = girls ? def.girlsUrl : def.boysUrl;
+            const msg = t => { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;font-weight:600;">${t}</td></tr>`; };
+            if (!url) { msg(girls ? 'No historical girls\' marks on file for this event yet.' : 'No historical marks on file for this event yet.'); return; }
+            msg('Loading ' + homeEsc(def.label) + '…');
+            loadHistoricalRows(url).then(rows => {
+                if (document.getElementById('leaderboardEvent').value !== def.key) return;   // they picked something else meanwhile
+                const h = rows.findIndex(r => (r[1] || '').trim().toLowerCase() === 'name');
+                const items = rows.slice(h + 1).filter(r => (r[1] || '').trim() && /\d/.test(r[4] || ''));
+                if (!items.length) { msg('No marks found.'); return; }
+                const CLASS = { '12': 'Sr', '11': 'Jr', '10': 'So', '9': 'Fr' };
+                tbody.innerHTML = '';
+                items.forEach((r, i) => {
+                    const rank = /^\d+$/.test((r[0] || '').trim()) ? +r[0] : i + 1;
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+                    const cls = CLASS[(r[2] || '').trim()];
+                    const pill = cls ? `<span class="lbd-class-pill" style="font-size:10px;font-weight:800;background:var(--primary);color:var(--accent);padding:1px 4px;border-radius:3px;margin-right:4px;">${cls}</span>` : '';
+                    const where = [r[5], r[6]].map(x => (x || '').trim()).filter(Boolean).join(' · ');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
+                        <td class="col-grad" style="text-align:center;"><span style="font-size:11px;font-weight:700;color:var(--perry-gray);">${homeEsc((r[3] || '').trim())}</span></td>
+                        <td class="col-athlete"><div class="lbd-name" style="font-weight:700;">${pill}${homeEsc(r[1].trim())}</div>${where ? `<div style="font-size:10px;color:var(--text-muted);font-weight:600;">${homeEsc(where)}</div>` : ''}</td>
+                        <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${homeEsc(r[4].trim())}</span></td>`;
+                    tbody.appendChild(tr);
+                });
+            }).catch(() => msg('Could not load these rankings. Try again in a moment.'));
+        }
+
         function renderLeaderboard() {
             const eventType = document.getElementById('leaderboardEvent').value;
             const rankType = document.getElementById('leaderboardRankType').value;
             const tbody = document.getElementById('leaderboardBody');
             const careerContainer = document.getElementById('careerProgressiveView');
+
+            const histDef = HISTORICAL_EVENTS.find(h => h.key === eventType);
+            setHistoricalMode(!!histDef);
+            if (histDef) { renderHistoricalRankings(histDef); return; }
             
             if (rankType === 'VIRTUAL_MEET') {
                 let leftoverStrip = document.getElementById('seasonBestStrip');
