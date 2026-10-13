@@ -886,7 +886,7 @@
                      GIRLS_STATE_QUALIFIERS_CSV_URL, COLLEGE_BOYS_CSV_URL, COLLEGE_GIRLS_CSV_URL, COLLEGE_LOGOS_CSV_URL,
                      OTHER_COLLEGE_TRACK_CSV_URL, COACHES_CSV_URL].forEach(add);
                     // Past-season track tabs (the newest season in each set stays live)
-                    HISTORICAL_EVENTS.forEach(h => { add(h.boysUrl); add(h.girlsUrl); });
+                    HISTORICAL_EVENTS.forEach(h => { add(h.boysUrl); add(h.girlsUrl); });   // 2 mile / 2.5 mile: changes about once a year
                     [TRACK_HISTORY_CSV_URLS, GIRLS_TRACK_HISTORY_CSV_URLS].forEach(m => {
                         const newest = Math.max(...Object.keys(m).map(Number));
                         Object.entries(m).forEach(([yr, u]) => { if (Number(yr) < newest) add(u); });
@@ -2090,14 +2090,13 @@
         // "Preview" events only show on a device that has opened  yoursite/#preview
         // (turn it off again with  yoursite/#preview-off ).
         const EVENTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThMsYeM-yci13eeXM6gGKE7dPwiOx8FcrgRe8naxKtmL7qmU_B_YazIPVZiLzNUl6kc3USHJdxWiea/pub?gid=1750503631&single=true&output=csv";
-        // Historical rankings (older distance marks from before the 5K era, plus 2 mile courses that were run
+        // "Other XC Distances": 2 mile and 2.5 mile cross country (older seasons, plus 2 mile courses run
         // more recently). Each is a ready-ranked sheet shown on its own at the bottom of the event list.
-        // They are NOT merged into athlete profiles, so old names can't mix with current athletes.
         // To add one: add a line here (girlsUrl is optional).
         const HISTORICAL_EVENTS = [
-            { key: 'HIST:XC 2 Mile', dataKey: 'XC 2 Mile', gridLabel: '2 Mile XC', label: '2 Mile XC (Historical)', girlsUrl: '',
+            { key: 'HIST:XC 2 Mile', dataKey: 'XC 2 Mile', gridLabel: '2 Mile XC', label: '2 Mile XC', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbagLjTCZyELrmrWYO514S4sbojG6kaFj32RaovF92YnfBLWBt0f7Ry1K8HTm2pkhycBazEG-EQpYh/pub?gid=1993866337&single=true&output=csv',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVBD9q429Ms19S1sta0_OaSeJmd6vxdJ-9PXA-iww4OzIMR9YSvRJOzCQdq3ZSHP6M1supmT_55Trx/pub?gid=1993866337&single=true&output=csv' },
-            { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: '2.5 Mile XC', label: '2.5 Mile XC (Historical)', girlsUrl: '',
+            { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: '2.5 Mile XC', label: '2.5 Mile XC', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToU_reyGVCNjIhTjne0gkzKTh7b9OP_3Nke9g53JFkKGwjkZ2Uh21RgaINse_eFnlwV06W2CklrcoV/pub?gid=1993866337&single=true&output=csv',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuMqNnV0lkkUxgKR2QvcRnYjZ0AKZWX3LIdwNqrezDBAl4PcFtVYHB69wz7fNJUcxwOyuYc29M_qiA/pub?gid=1993866337&single=true&output=csv' },
         ];
         const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
@@ -2213,7 +2212,7 @@
             const standard = sortedEventDefs(shown.filter(d => !d.seated)), seated = sortedEventDefs(shown.filter(d => d.seated));
             const histOpts = HISTORICAL_EVENTS.map(d => `<option value="${homeEsc(d.key)}">${homeEsc(d.label)}</option>`).join('');
             sel.innerHTML = standard.map(opt).join('') + (seated.length ? `<optgroup label="Seated">${seated.map(opt).join('')}</optgroup>` : '')
-                + (histOpts ? `<optgroup label="Historical">${histOpts}</optgroup>` : '');
+                + (histOpts ? `<optgroup label="Other XC Distances">${histOpts}</optgroup>` : '');
             if (shown.some(d => d.key === prev) || HISTORICAL_EVENTS.some(d => d.key === prev)) sel.value = prev;
             else renderLeaderboard();
         }
@@ -2548,8 +2547,8 @@
             return extraEventPromises[def.key];
         }
 
-        // Historical (2 mile / 2.5 mile) marks are added to profiles too, from the same sheets as the
-        // Historical rankings. They use the XC 5K sheet layout.
+        // 2 mile / 2.5 mile marks are added to profiles too, from the same sheets as the
+        // Other XC Distances rankings. They use the XC 5K sheet layout.
         function loadHistoricalEvent(h) {
             const dk = h.dataKey;
             if (extraEventRows[dk]) return Promise.resolve();
@@ -4136,7 +4135,7 @@
                     `;
                 }
             });
-            // Historical 2 mile / 2.5 mile marks go at the bottom (no rank badges; they're listed under Historical in the rankings)
+            // 2 mile / 2.5 mile marks go at the bottom (no rank badges; the ranked lists are under Other XC Distances)
             HISTORICAL_EVENTS.forEach(h => {
                 const evData = athlete[h.dataKey];
                 if (!evData) return;
@@ -5925,7 +5924,7 @@
             window.open(url, '_blank');
         }
 
-        // ── Historical rankings (standalone lists) ──────────────────────────
+        // ── Other XC Distances rankings (standalone lists) ──────────────────
         const historicalCache = {};   // url -> Promise of parsed rows
         function loadHistoricalRows(url) {
             if (!historicalCache[url]) {
@@ -5936,7 +5935,7 @@
             }
             return historicalCache[url];
         }
-        // Historical lists have no grade/season filters or record banner, so hide those while one is showing.
+        // These lists have no grade/season filters or record banner, so hide those while one is showing.
         function setHistoricalMode(on) {
             const rankRow = document.getElementById('leaderboardRankType').closest('.filter-row');
             if (rankRow) rankRow.style.display = on ? 'none' : '';
@@ -5959,7 +5958,7 @@
             const girls = genderFilter === 'F';
             const url = girls ? def.girlsUrl : def.boysUrl;
             const msg = t => { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;font-weight:600;">${t}</td></tr>`; };
-            if (!url) { msg(girls ? 'No historical girls\' marks on file for this event yet.' : 'No historical marks on file for this event yet.'); return; }
+            if (!url) { msg(girls ? 'No girls\' marks on file for this event yet.' : 'No marks on file for this event yet.'); return; }
             msg('Loading ' + homeEsc(def.label) + '…');
             loadHistoricalRows(url).then(rows => {
                 if (document.getElementById('leaderboardEvent').value !== def.key) return;   // they picked something else meanwhile
