@@ -2095,9 +2095,9 @@
         // They are NOT merged into athlete profiles, so old names can't mix with current athletes.
         // To add one: add a line here (girlsUrl is optional).
         const HISTORICAL_EVENTS = [
-            { key: 'HIST:XC 2 Mile', label: '2 Mile XC (Historical)', girlsUrl: '',
+            { key: 'HIST:XC 2 Mile', dataKey: 'XC 2 Mile', gridLabel: '2 Mile XC', label: '2 Mile XC (Historical)', girlsUrl: '',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVBD9q429Ms19S1sta0_OaSeJmd6vxdJ-9PXA-iww4OzIMR9YSvRJOzCQdq3ZSHP6M1supmT_55Trx/pub?gid=1993866337&single=true&output=csv' },
-            { key: 'HIST:XC 2.5 Mile', label: '2.5 Mile XC (Historical)', girlsUrl: '',
+            { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: '2.5 Mile XC', label: '2.5 Mile XC (Historical)', girlsUrl: '',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuMqNnV0lkkUxgKR2QvcRnYjZ0AKZWX3LIdwNqrezDBAl4PcFtVYHB69wz7fNJUcxwOyuYc29M_qiA/pub?gid=1993866337&single=true&output=csv' },
         ];
         const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
@@ -2242,6 +2242,7 @@
         const rosterFullyLoaded = new Promise(r => { rosterFullyLoadedResolve = r; });
         const extraEventRows = {};      // key -> { M: rows, F: rows }
         const extraEventPromises = {};  // key -> in-flight load
+        const extraLayouts = {};        // key -> 'xc' for sheets laid out like the XC 5K sheet (default is the track layout)
         function isEventLoaded(key) { return !!extraEventRows[key]; }
 
         // Same column layout as the 800m/1600m/3200m sheets (PR in column 5; Sr/Jr/So/Fr
@@ -2429,7 +2430,60 @@
             return merged.length;
         }
 
-        function ingestEventRows(store, eventName, rows, gender) {
+        // ── Same name, different people (e.g. a father and son) ────────────
+        // Athletes are keyed by name, so two people with the same name used to be merged into one
+        // profile. Before the rows are loaded, we work out each name's class year(s). If one name has
+        // class years more than SAME_NAME_YEAR_GAP apart, they are different people: the newest keeps
+        // the plain name and the other gets the class year added, like "Sam Sopp ('77)".
+        const SAME_NAME_YEAR_GAP = 8;
+        const SUFFIXED_NAME = /\s\('\d\d\)$/;
+        const nameClusters = new Map();   // 'M|Sam Sopp' -> [{ year, key }]
+        // Class year from one sheet row, the same way the loaders work it out (XC sheets: senior season + 1).
+        function rowClassYear(row, layout) {
+            const n = i => { const v = parseInt(row.length > i ? String(row[i] || '').trim() : '', 10); return isNaN(v) ? null : v; };
+            const yrs = layout === 'xc' ? [n(9), n(14), n(19), n(24)] : [n(7), n(11), n(15), n(19)];   // Sr, Jr, So, Fr
+            const add = layout === 'xc' ? 1 : 0;
+            for (let k = 0; k < 4; k++) if (yrs[k] != null) return yrs[k] + k + add;
+            return null;
+        }
+        function registerNameYears(k, name, years) {
+            let list = nameClusters.get(k);
+            const fresh = !list;
+            if (fresh) { list = []; nameClusters.set(k, list); }
+            const created = [];
+            [...new Set(years)].sort((a, b) => a - b).forEach(y => {
+                if (!list.some(c => Math.abs(c.year - y) <= SAME_NAME_YEAR_GAP)) { const c = { year: y, key: null }; list.push(c); created.push(c); }
+            });
+            const label = c => `${name} ('${String(c.year).slice(-2)})`;
+            if (fresh) created.forEach((c, i) => { c.key = (i === created.length - 1) ? name : label(c); });   // newest = plain name
+            else created.forEach(c => { c.key = label(c); });
+        }
+        // sheets: [{ rows, gender, layout }]. Renames row[1] in place, before the rows are loaded.
+        function disambiguateSameNames(sheets) {
+            const skip = n => !n || SUFFIXED_NAME.test(n) || ['name', 'athlete', 'team total'].includes(n.toLowerCase());
+            const seen = new Map();
+            sheets.forEach(({ rows, gender, layout }) => (rows || []).forEach(row => {
+                if (!row || row.length < 5) return;
+                const name = (row[1] || '').trim(); if (skip(name)) return;
+                const y = rowClassYear(row, layout); if (y == null) return;
+                const k = gender + '|' + name;
+                if (!seen.has(k)) seen.set(k, { name, years: [] });
+                seen.get(k).years.push(y);
+            }));
+            seen.forEach((v, k) => registerNameYears(k, v.name, v.years));
+            sheets.forEach(({ rows, gender, layout }) => (rows || []).forEach(row => {
+                if (!row || row.length < 5) return;
+                const name = (row[1] || '').trim(); if (skip(name)) return;
+                const list = nameClusters.get(gender + '|' + name);
+                if (!list || list.length < 2) return;
+                const y = rowClassYear(row, layout);
+                const c = (y == null) ? (list.find(c => c.key === name) || list[list.length - 1])
+                    : list.reduce((best, c) => (Math.abs(c.year - y) < Math.abs(best.year - y) ? c : best), list[0]);
+                row[1] = c.key;
+            }));
+        }
+
+        function ingestEventRows(store, eventName, rows, gender, layout) {
             for (let i = 1; i < (rows || []).length; i++) {
                 const row = rows[i];
                 if (!row || row.length < 5) continue;
@@ -2438,7 +2492,10 @@
                 if (!store[name]) store[name] = { name: name, gradYear: null, gender: gender };
                 const g = idx => (row.length > idx && row[idx] ? row[idx].trim() : '');
                 const pr = formatOver60(g(4), eventName);
-                const blocks = { '12th': [g(7), g(8)], '11th': [g(11), g(12)], '10th': [g(15), g(16)], '9th': [g(19), g(20)] };
+                const blocks = layout === 'xc'
+                    ? { '12th': [g(9), g(10)], '11th': [g(14), g(15)], '10th': [g(19), g(20)], '9th': [g(24), g(25)] }
+                    : { '12th': [g(7), g(8)], '11th': [g(11), g(12)], '10th': [g(15), g(16)], '9th': [g(19), g(20)] };
+                const xcAdd = layout === 'xc' ? 1 : 0;   // XC sheets: class year = senior season + 1
                 const shown = {};
                 Object.keys(blocks).forEach(k => {
                     const yr = blocks[k][0], t = blocks[k][1];
@@ -2450,10 +2507,10 @@
                 };
                 if (!store[name].gradYear) {
                     const num = k => parseInt(blocks[k][0], 10);
-                    if (!isNaN(num('12th'))) store[name].gradYear = num('12th');
-                    else if (!isNaN(num('11th'))) store[name].gradYear = num('11th') + 1;
-                    else if (!isNaN(num('10th'))) store[name].gradYear = num('10th') + 2;
-                    else if (!isNaN(num('9th'))) store[name].gradYear = num('9th') + 3;
+                    if (!isNaN(num('12th'))) store[name].gradYear = num('12th') + xcAdd;
+                    else if (!isNaN(num('11th'))) store[name].gradYear = num('11th') + 1 + xcAdd;
+                    else if (!isNaN(num('10th'))) store[name].gradYear = num('10th') + 2 + xcAdd;
+                    else if (!isNaN(num('9th'))) store[name].gradYear = num('9th') + 3 + xcAdd;
                 }
             }
         }
@@ -2461,8 +2518,8 @@
         function ingestExtraEvent(key) {
             const r = extraEventRows[key];
             if (!r) return;
-            ingestEventRows(athletes, key, r.M, 'M');
-            ingestEventRows(athletes, key, r.F, 'F');
+            ingestEventRows(athletes, key, r.M, 'M', extraLayouts[key]);
+            ingestEventRows(athletes, key, r.F, 'F', extraLayouts[key]);
             mergeDuplicateAthletes(athletes);
         }
         function applyExtraEvents() { Object.keys(extraEventRows).forEach(ingestExtraEvent); }
@@ -2483,6 +2540,7 @@
                 }
             };
             extraEventPromises[def.key] = Promise.all([grab(def.boysUrl), grab(def.girlsUrl)]).then(([M, F]) => {
+                disambiguateSameNames([{ rows: M, gender: 'M', layout: 'track' }, { rows: F, gender: 'F', layout: 'track' }]);
                 extraEventRows[def.key] = { M, F };
                 ingestExtraEvent(def.key);
                 recalculateAllRankings();
@@ -2490,10 +2548,34 @@
             return extraEventPromises[def.key];
         }
 
+        // Historical (2 mile / 2.5 mile) marks are added to profiles too, from the same sheets as the
+        // Historical rankings. They use the XC 5K sheet layout.
+        function loadHistoricalEvent(h) {
+            const dk = h.dataKey;
+            if (extraEventRows[dk]) return Promise.resolve();
+            if (extraEventPromises[dk]) return extraEventPromises[dk];
+            extraLayouts[dk] = 'xc';
+            const grab = async url => {
+                if (!url) return [];
+                try {
+                    const res = await fetch(cacheBustUrl(url));
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return parseCSVText(await res.text());
+                } catch (e) { console.warn('Historical sheet unavailable (' + dk + ')', e); return []; }
+            };
+            extraEventPromises[dk] = Promise.all([grab(h.boysUrl), grab(h.girlsUrl)]).then(([M, F]) => {
+                disambiguateSameNames([{ rows: M, gender: 'M', layout: 'xc' }, { rows: F, gender: 'F', layout: 'xc' }]);
+                extraEventRows[dk] = { M, F };
+                ingestExtraEvent(dk);
+            }).finally(() => { delete extraEventPromises[dk]; });
+            return extraEventPromises[dk];
+        }
+
         async function backgroundLoadVisibleEvents() {
             const todo = EVENT_DEFS.filter(d => !d.builtin && eventIsShown(d) && (d.boysUrl || d.girlsUrl) && !isEventLoaded(d.key));
-            if (!todo.length) return;
-            await Promise.all(todo.map(loadExtraEvent));
+            const hist = HISTORICAL_EVENTS.filter(h => !isEventLoaded(h.dataKey));
+            if (!todo.length && !hist.length) return;
+            await Promise.all([...todo.map(loadExtraEvent), ...hist.map(loadHistoricalEvent)]);
             recalculateAllRankings();
             renderLeaderboard();
             await renderRoster();
@@ -4025,7 +4107,7 @@
 
         function athleteHasEventData(athlete) {
             if (!athlete) return false;
-            return allEventKeys().some(ev => athlete[ev]);
+            return allEventKeys().some(ev => athlete[ev]) || HISTORICAL_EVENTS.some(h => athlete[h.dataKey]);
         }
 
         // Builds the PR + 9th/10th/11th/12th progression grid markup for one
@@ -4053,6 +4135,21 @@
                         </div>
                     `;
                 }
+            });
+            // Historical 2 mile / 2.5 mile marks go at the bottom (no rank badges; they're listed under Historical in the rankings)
+            HISTORICAL_EVENTS.forEach(h => {
+                const evData = athlete[h.dataKey];
+                if (!evData) return;
+                eventsHtml += `
+                        <div class="event-row">
+                            <div class="event-header">
+                                <span class="event-title">${h.gridLabel}</span>
+                                <span class="event-pr">PR: ${evData.PR || '--'}</span>
+                            </div>
+                            <div class="progression-row">
+                                ${['9th', '10th', '11th', '12th'].map(g => `<div class="prog-step"><div class="prog-label">${g}</div><div class="prog-val">${evData[g] || '--'}</div></div>`).join('')}
+                            </div>
+                        </div>`;
             });
             return eventsHtml;
         }
@@ -6802,6 +6899,11 @@
                 const [boysSheets, girlsSheets] = await Promise.all([
                     fetchGenderSheets(GOOGLE_SHEET_CSV_URLS),
                     fetchGenderSheets(GIRLS_GOOGLE_SHEET_CSV_URLS)
+                ]);
+                // Same-named people (father/son etc.) are told apart before anything is merged by name.
+                disambiguateSameNames([
+                    ...boysSheets.map(x => ({ rows: x.rows, gender: 'M', layout: x.eventName === 'XC 5K' ? 'xc' : 'track' })),
+                    ...girlsSheets.map(x => ({ rows: x.rows, gender: 'F', layout: x.eventName === 'XC 5K' ? 'xc' : 'track' }))
                 ]);
                 // ...but are processed in a fixed order (M then F).
                 processGenderSheets(boysSheets, 'M');
