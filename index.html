@@ -2429,6 +2429,12 @@
             return merged.length;
         }
 
+        // Strip the " ('77)" disambiguation suffix for display. The suffix stays in the
+        // athlete's stored/key name (so same-named people remain distinct records, URLs,
+        // etc.), but we never need to show it: the class year is always displayed right
+        // next to the name anyway (rankings' grad-year column, profile cards' grad year).
+        function displayName(n) { return (n || '').replace(/\s\('\d\d\)$/, ''); }
+
         // ── Same name, different people (e.g. a father and son) ────────────
         // Athletes are keyed by name, so two people with the same name used to be merged into one
         // profile. Before the rows are loaded, we work out each name's class year(s). If one name has
@@ -2801,7 +2807,7 @@
                     <div class="progression-item ${isCurrent ? 'current' : ''}">
                         <div class="progression-year">${entry.year}</div>
                         <div class="progression-info">
-                            <div class="progression-name">${entry.name}</div>
+                            <div class="progression-name">${displayName(entry.name)}</div>
                             <div class="progression-tag">${tag}</div>
                         </div>
                         <div class="progression-time">${entry.display}</div>
@@ -3164,7 +3170,7 @@
                     onclick="highlightedAthlete='${safeName}'; renderCourseRankings(); openDrawerToAthlete('${safeName}');">
                     <td class="col-rank" style="text-align:center;font-family:monospace;${rankStyle}">${r.rank}</td>
                     <td class="col-grad" style="text-align:center;color:var(--text-muted);font-size:12px;">${r.year}</td>
-                    <td class="col-athlete">${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${r.name}</span></td>
+                    <td class="col-athlete">${gBadge}<span style="font-weight:${r.rank<=5?'600':'400'};">${displayName(r.name)}</span></td>
                     <td class="col-time" style="text-align:center;${timeStyle}">${r.time}</td>
                 </tr>`;
             }).join('');
@@ -4266,7 +4272,7 @@
 
             prCardState = { name: athlete.name, athlete, events, selected: events.slice(0, 2), logo: prCardState.logo, logoTried: prCardState.logoTried, panther: prCardState.panther, pantherTried: prCardState.pantherTried, watermark: prCardState.watermark, watermarkTried: prCardState.watermarkTried, collegeText: '', useCollege: false, postHSBests: [], usePostHS: false, honorRows: [], useHonors: false };
             const ov = prCardEnsureModal();
-            ov.querySelector('#prCardTitle').textContent = `${athlete.name} — PR Card`;
+            ov.querySelector('#prCardTitle').textContent = `${displayName(athlete.name)} — PR Card`;
             prCardRenderPicker();
             prCardSetupCollege(athlete);
             prCardSetupPostHS(athlete);
@@ -4564,8 +4570,8 @@
             // Name + class
             const a = st.athlete;
             ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-            prCardFit(ctx, a.name.toUpperCase(), 900, 104, W - 120);
-            ctx.fillText(a.name.toUpperCase(), W / 2, 255);
+            prCardFit(ctx, displayName(a.name).toUpperCase(), 900, 104, W - 120);
+            ctx.fillText(displayName(a.name).toUpperCase(), W / 2, 255);
             let y = 255;
             const collegeTxt = (st.useCollege && st.collegeText) ? st.collegeText.toUpperCase() : '';
             const classLine = [a.gradYear ? `CLASS OF ${a.gradYear}` : '', collegeTxt].filter(Boolean).join('  •  ');
@@ -4752,7 +4758,7 @@
                 try {
                     const file = new File([blob], fname, { type: 'image/png' });
                     if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: `${prCardState.name} — PRs` });
+                        await navigator.share({ files: [file], title: `${displayName(prCardState.name)} — PRs` });
                         return;
                     }
                 } catch (e) {
@@ -4808,7 +4814,7 @@
             const athlete = athletes[name] || Object.values(athletes).find(a => a.name === name);
             if (!athlete) { showMessage('Could not find that athlete.', true); return; }
             const d = await psLoadProfileData(athlete);
-            const lines = [athlete.name + (athlete.gradYear ? ` — Class of ${athlete.gradYear}` : '')];
+            const lines = [displayName(athlete.name) + (athlete.gradYear ? ` — Class of ${athlete.gradYear}` : '')];
             const prs = d.events.filter(ev => { const m = prCardCleanMark(athlete[ev].PR); return m && m !== '--'; });
             if (prs.length) {
                 lines.push('', 'PRs:');
@@ -5418,7 +5424,7 @@
                 <div class="card-toggle-header" data-runner-name="${athlete.name.replace(/"/g, '&quot;')}">
                 <span class="compare-check">✓</span>
                     <div class="athlete-meta-box">
-                        <span class="athlete-name">${athlete.name}</span>
+                        <span class="athlete-name">${displayName(athlete.name)}</span>
                         <span class="athlete-grad-text">${gradDisplay}</span>
                         ${honorBadgesHtml}
                     </div>
@@ -5772,7 +5778,7 @@
                     let badge = isExhibition ? '--' : (isDisplacer ? '✕' : '✓');
                     rosterRowsHtml += `
                         <div class="breakdown-row-item ${rowClass}">
-                            <div><strong>#${runner.rosterRank}</strong> ${runner.name} <span style="font-size:10px;color:var(--text-muted);">[Ovr: ${runner.globalPlace}]</span></div>
+                            <div><strong>#${runner.rosterRank}</strong> ${displayName(runner.name)} <span style="font-size:10px;color:var(--text-muted);">[Ovr: ${runner.globalPlace}]</span></div>
                             <div style="text-align:right;">${runner.displayTime} <span style="font-size:10px; font-weight:700; margin-left:4px;">${badge}</span></div>
                         </div>
                     `;
@@ -5820,7 +5826,7 @@
                     </td>
                     <td class="col-grad" style="text-align:center;"><span style="font-size:11px;font-weight:700;color:var(--perry-gray);">${runner.team.replace(' PXC Team','')}</span></td>
                     <td class="col-athlete">
-                        <div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${vmClassLabel}${runner.name}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span></div>
+                        <div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${vmClassLabel}${displayName(runner.name)}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span></div>
                         <span class="squad-subname">${isNonScoring ? runner.team + (isJVMode ? ' (JV Exhibition)' : ' (Exhibition)') : (runner.rosterRank === 6 || runner.rosterRank === 7 ? runner.team + (isJVMode ? ' (JV Pusher)' : ' (Pusher)') : runner.team)}</span>
                     </td>
                     <td class="col-time" style="text-align:center;">
@@ -6090,7 +6096,7 @@
                         <div class="career-main-line">
                             <div class="career-left-meta">
                                 <span class="career-num">${careerRank === 1 ? '🥇' : careerRank === 2 ? '🥈' : careerRank === 3 ? '🥉' : careerRank}</span>
-                                <span class="career-name">${athlete.name} <span class="career-grad">${yrDisp}</span></span>
+                                <span class="career-name">${displayName(athlete.name)} <span class="career-grad">${yrDisp}</span></span>
                             </div>
                             <span class="career-pr-pill">PR: ${evData['PR']}</span>
                         </div>
@@ -6251,7 +6257,7 @@
                     });
                     if (allTimeBest) {
                         document.getElementById('recordBannerLabel').textContent = '🏆 All-Time Program Record';
-                        document.getElementById('recordName').textContent = allTimeBest.name + (allTimeBest.gradYear ? ` · '${String(allTimeBest.gradYear).slice(-2)}` : '');
+                        document.getElementById('recordName').textContent = displayName(allTimeBest.name) + (allTimeBest.gradYear ? ` · '${String(allTimeBest.gradYear).slice(-2)}` : '');
                         document.getElementById('recordTime').textContent = allTimeBest[eventType]['PR'].split('(')[0].trim();
                     }
                     // Show season best as a second strip above the table
@@ -6267,7 +6273,7 @@
                     seasonStrip.innerHTML = `
                         <div>
                             <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:2px;">⚡ ${targetYear} Season Best</div>
-                            <div style="font-size:14px;font-weight:800;color:var(--text);">${seasonLeader.name}<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:6px;">${gradeText}</span></div>
+                            <div style="font-size:14px;font-weight:800;color:var(--text);">${displayName(seasonLeader.name)}<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:6px;">${gradeText}</span></div>
                         </div>
                         <div style="font-size:22px;font-weight:900;color:var(--accent);background:var(--primary);padding:3px 10px;border-radius:8px;white-space:nowrap;">${seasonLeader.calculatedDisplayTime.split('(')[0].trim()}</div>
                     `;
@@ -6278,7 +6284,7 @@
                     let oldSeasonBest = document.getElementById('seasonBestStrip');
                     if (oldSeasonBest) oldSeasonBest.remove();
                     document.getElementById('recordBannerLabel').textContent = '🏆 All-Time Program Record';
-                    document.getElementById('recordName').textContent = list[0].name + (list[0].gradYear ? ` · '${String(list[0].gradYear).slice(-2)}` : '');
+                    document.getElementById('recordName').textContent = displayName(list[0].name) + (list[0].gradYear ? ` · '${String(list[0].gradYear).slice(-2)}` : '');
                     document.getElementById('recordTime').textContent = list[0].calculatedDisplayTime.split('(')[0].trim();
                 }
             }
@@ -6353,7 +6359,7 @@
                 row.innerHTML = `
                     <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
                     ${gradCell}
-                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;""><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${namePrefix}${athlete.name}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span><span class="mobile-grade-inline" style="font-size:10px;font-weight:700;color:var(--perry-gray);flex-shrink:0;">${rankType==='SEASON_YEAR' && classLabel ? '·&nbsp;'+(['Fr','So','Jr','Sr'].find(g=>classLabel.includes(g))||'') : markYear ? '·&nbsp;'+markYear : ''}</span></div></td>
+                    <td class="col-athlete"><div class="lbd-name" style="font-weight:700;display:flex;align-items:baseline;gap:4px;min-width:0;""><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${namePrefix}${displayName(athlete.name)}</span> <span class="lbd-yr" style="font-size:11px;font-weight:600;flex-shrink:0;">${yrDisp}</span><span class="mobile-grade-inline" style="font-size:10px;font-weight:700;color:var(--perry-gray);flex-shrink:0;">${rankType==='SEASON_YEAR' && classLabel ? '·&nbsp;'+(['Fr','So','Jr','Sr'].find(g=>classLabel.includes(g))||'') : markYear ? '·&nbsp;'+markYear : ''}</span></div></td>
                     <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${timeHtml}</span></td>
                 `;
                 tbody.appendChild(row);
@@ -8401,7 +8407,7 @@
                     <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border);">
                         ${data.indState.map((r,i) => `
                             <div class="accomp-runner-row" style="background:${i%2===0?'var(--card-bg)':'var(--bg)'};color:var(--text);">
-                                <span style="font-weight:800;">${r.name}</span>
+                                <span style="font-weight:800;">${displayName(r.name)}</span>
                                 <span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
                                     ${r.years.map(y => `<span class="accomp-year-chip accomp-ind-chip">${y}${r.starred && r.starred.includes(y) ? ' ✦' : ''}</span>`).join('')}
                                 </span>
@@ -8533,7 +8539,7 @@
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" data-runner-name="${rosterAthlete.name.replace(/"/g, '&quot;')}">
                                 <div class="athlete-meta-box">
-                                    <span class="athlete-name">${e.name}</span>
+                                    <span class="athlete-name">${displayName(e.name)}</span>
                                     <span class="athlete-grad-text">Class of ${e.hsGradYear}</span>
                                     ${honorBadgesHtml}
                                 </div>
@@ -8563,7 +8569,7 @@
                         <div class="athlete-card" data-name="${e.name.toLowerCase()}" data-college="${e.colleges.join(' ').toLowerCase()}" data-year="${e.hsGradYear}">
                             <div class="card-toggle-header" ${hasExpandable ? `data-runner-name="${e.name.replace(/"/g, '&quot;')}"` : 'style="cursor:default;"'}>
                                 <div class="athlete-meta-box">
-                                    <span class="athlete-name">${e.name}</span>
+                                    <span class="athlete-name">${displayName(e.name)}</span>
                                     <span class="athlete-grad-text">Class of ${e.hsGradYear}</span>
                                     ${honorBadgesHtml}
                                 </div>
