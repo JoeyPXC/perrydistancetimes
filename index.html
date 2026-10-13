@@ -2094,9 +2094,9 @@
         // more recently). Each is a ready-ranked sheet shown on its own at the bottom of the event list.
         // To add one: add a line here (girlsUrl is optional).
         const HISTORICAL_EVENTS = [
-            { key: 'HIST:XC 2 Mile', dataKey: 'XC 2 Mile', gridLabel: '2 Mile XC', label: '2 Mile XC', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbagLjTCZyELrmrWYO514S4sbojG6kaFj32RaovF92YnfBLWBt0f7Ry1K8HTm2pkhycBazEG-EQpYh/pub?gid=1993866337&single=true&output=csv',
+            { key: 'HIST:XC 2 Mile', dataKey: 'XC 2 Mile', gridLabel: 'XC 2 Mile', meters: 3219, label: 'XC 2 Mile', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbagLjTCZyELrmrWYO514S4sbojG6kaFj32RaovF92YnfBLWBt0f7Ry1K8HTm2pkhycBazEG-EQpYh/pub?gid=1993866337&single=true&output=csv',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVBD9q429Ms19S1sta0_OaSeJmd6vxdJ-9PXA-iww4OzIMR9YSvRJOzCQdq3ZSHP6M1supmT_55Trx/pub?gid=1993866337&single=true&output=csv' },
-            { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: '2.5 Mile XC', label: '2.5 Mile XC', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToU_reyGVCNjIhTjne0gkzKTh7b9OP_3Nke9g53JFkKGwjkZ2Uh21RgaINse_eFnlwV06W2CklrcoV/pub?gid=1993866337&single=true&output=csv',
+            { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: 'XC 2.5 Mile', meters: 4023, label: 'XC 2.5 Mile', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToU_reyGVCNjIhTjne0gkzKTh7b9OP_3Nke9g53JFkKGwjkZ2Uh21RgaINse_eFnlwV06W2CklrcoV/pub?gid=1993866337&single=true&output=csv',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuMqNnV0lkkUxgKR2QvcRnYjZ0AKZWX3LIdwNqrezDBAl4PcFtVYHB69wz7fNJUcxwOyuYc29M_qiA/pub?gid=1993866337&single=true&output=csv' },
         ];
         const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
@@ -4113,13 +4113,13 @@
         // athlete. Shared by the roster cards and the Collegiate Runners
         // cards so both use identical card internals.
         function buildEventsGridHtml(athlete) {
-            let eventsHtml = '';
+            const rows = [];
             allEventKeys().forEach(ev => {
                 if (athlete[ev]) {
                     let evData = athlete[ev];
                     let prBadge = getRankBadgeHtml(ev, 'PR', athlete.name, true);
 
-                    eventsHtml += `
+                    rows.push({ ev, html: `
                         <div class="event-row">
                             <div class="event-header">
                                 <span class="event-title">${ev}</span>
@@ -4132,14 +4132,16 @@
                                 <div class="prog-step"><div class="prog-label">12th</div><div class="prog-val">${evData['12th'] || '--'}</div>${getRankBadgeHtml(ev, '12th', athlete.name)}</div>
                             </div>
                         </div>
-                    `;
+                    ` });
                 }
             });
-            // 2 mile / 2.5 mile marks go at the bottom (no rank badges; the ranked lists are under Other XC Distances)
-            HISTORICAL_EVENTS.forEach(h => {
-                const evData = athlete[h.dataKey];
-                if (!evData) return;
-                eventsHtml += `
+            // XC 2.5 Mile / XC 2 Mile marks sit right under the other cross country rows (longest first),
+            // above the track events. No rank badges here; the ranked lists are under Other XC Distances.
+            const histRows = HISTORICAL_EVENTS.slice().sort((x, y) => y.meters - x.meters)
+                .filter(h => athlete[h.dataKey])
+                .map(h => {
+                    const evData = athlete[h.dataKey];
+                    return `
                         <div class="event-row">
                             <div class="event-header">
                                 <span class="event-title">${h.gridLabel}</span>
@@ -4149,8 +4151,12 @@
                                 ${['9th', '10th', '11th', '12th'].map(g => `<div class="prog-step"><div class="prog-label">${g}</div><div class="prog-val">${evData[g] || '--'}</div></div>`).join('')}
                             </div>
                         </div>`;
-            });
-            return eventsHtml;
+                });
+            let lastXC = -1;
+            rows.forEach((r, i) => { if (prCardIsXCEvent(r.ev)) lastXC = i; });
+            const out = rows.map(r => r.html);
+            out.splice(lastXC + 1, 0, ...histRows);
+            return out.join('');
         }
 
         // ── Shareable PR Card ────────────────────────────────────────────
