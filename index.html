@@ -1278,9 +1278,9 @@
             <div class="filter-row" id="eventSelectorRow">
                 <select id="leaderboardEvent" class="leaderboard-select" onchange="renderLeaderboard()">
                     <option value="XC 5K">Cross Country 5K</option>
-                    <option value="800m">800m Track</option>
-                    <option value="1600m">1600m Track</option>
-                    <option value="3200m">3200m Track</option>
+                    <option value="800m">800m Run</option>
+                    <option value="1600m">1600m Run</option>
+                    <option value="3200m">3200m Run</option>
                 </select>
             </div>
             <div class="filter-row">
@@ -2099,7 +2099,7 @@
             { key: 'HIST:XC 2.5 Mile', dataKey: 'XC 2.5 Mile', gridLabel: 'XC 2.5 Mile', meters: 4023, label: 'XC 2.5 Mile', girlsUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vToU_reyGVCNjIhTjne0gkzKTh7b9OP_3Nke9g53JFkKGwjkZ2Uh21RgaINse_eFnlwV06W2CklrcoV/pub?gid=1993866337&single=true&output=csv',
               boysUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuMqNnV0lkkUxgKR2QvcRnYjZ0AKZWX3LIdwNqrezDBAl4PcFtVYHB69wz7fNJUcxwOyuYc29M_qiA/pub?gid=1993866337&single=true&output=csv' },
         ];
-        const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Track', '1600m': '1600m Track', '3200m': '3200m Track' };
+        const BUILTIN_EVENT_LABELS = { 'XC 5K': 'Cross Country 5K', '800m': '800m Run', '1600m': '1600m Run', '3200m': '3200m Run' };
         const FIELD_EVENT_KEYS = new Set();
         const FIELD_WORDS = /shot|discus|javelin|club|throw|jump|vault/i;
         let EVENT_DEFS = Object.keys(BUILTIN_EVENT_LABELS).map(k => ({
@@ -2438,11 +2438,19 @@
         const SUFFIXED_NAME = /\s\('\d\d\)$/;
         const nameClusters = new Map();   // 'M|Sam Sopp' -> [{ year, key }]
         // Class year from one sheet row, the same way the loaders work it out (XC sheets: senior season + 1).
-        function rowClassYear(row, layout) {
+        function rowClassYear(row, layout, guess) {
             const n = i => { const v = parseInt(row.length > i ? String(row[i] || '').trim() : '', 10); return isNaN(v) ? null : v; };
             const yrs = layout === 'xc' ? [n(9), n(14), n(19), n(24)] : [n(7), n(11), n(15), n(19)];   // Sr, Jr, So, Fr
             const add = layout === 'xc' ? 1 : 0;
             for (let k = 0; k < 4; k++) if (yrs[k] != null) return yrs[k] + k + add;
+            // No Sr/Jr/So/Fr columns filled in: use the row's own Grade + Year columns instead.
+            const yr = parseInt(String(row[3] || '').trim(), 10), gr = parseInt(String(row[2] || '').trim(), 10);
+            if (!isNaN(yr) && yr >= 1950 && yr <= 2100) {
+                if (gr >= 9 && gr <= 12) return yr + (12 - gr) + add;
+                // Grade blank: the class is unknown, so this is only a rough "which era" hint. It is used just to
+                // pick between same-named people (never to create or label one), where being a few years off is harmless.
+                if (guess) return yr + add;
+            }
             return null;
         }
         function registerNameYears(k, name, years) {
@@ -2475,7 +2483,7 @@
                 const name = (row[1] || '').trim(); if (skip(name)) return;
                 const list = nameClusters.get(gender + '|' + name);
                 if (!list || list.length < 2) return;
-                const y = rowClassYear(row, layout);
+                const y = rowClassYear(row, layout, true);
                 const c = (y == null) ? (list.find(c => c.key === name) || list[list.length - 1])
                     : list.reduce((best, c) => (Math.abs(c.year - y) < Math.abs(best.year - y) ? c : best), list[0]);
                 row[1] = c.key;
@@ -5960,7 +5968,7 @@
             const cands = Object.values(athletes).filter(a => (a.gender || 'M') === gender
                 && (a.name === name || (a.name.startsWith(name + " ('") && SUFFIXED_NAME.test(a.name))));
             if (cands.length <= 1) return cands[0] || null;
-            const y = rowClassYear(r, 'xc');
+            const y = rowClassYear(r, 'xc', true);
             if (y == null) return cands.find(a => a.name === name) || cands[0];
             return cands.reduce((best, a) => (Math.abs((a.gradYear || 0) - y) < Math.abs((best.gradYear || 0) - y) ? a : best), cands[0]);
         }
