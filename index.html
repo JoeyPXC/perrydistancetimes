@@ -5946,6 +5946,18 @@
             });
             if (on) { const b = document.getElementById('recordBanner'); if (b) b.style.display = 'none'; }
         }
+        // The profile that goes with one row of these sheets (matching by name, gender and class year,
+        // so a father and son with the same name each open their own profile).
+        function findProfileForSheetRow(r, girls) {
+            const name = (r[1] || '').trim(); if (!name) return null;
+            const gender = girls ? 'F' : 'M';
+            const cands = Object.values(athletes).filter(a => (a.gender || 'M') === gender
+                && (a.name === name || (a.name.startsWith(name + " ('") && SUFFIXED_NAME.test(a.name))));
+            if (cands.length <= 1) return cands[0] || null;
+            const y = rowClassYear(r, 'xc');
+            if (y == null) return cands.find(a => a.name === name) || cands[0];
+            return cands.reduce((best, a) => (Math.abs((a.gradYear || 0) - y) < Math.abs((best.gradYear || 0) - y) ? a : best), cands[0]);
+        }
         function renderHistoricalRankings(def) {
             const tbody = document.getElementById('leaderboardBody');
             ['seasonStatBlock', 'seasonBestStrip'].forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
@@ -5972,13 +5984,14 @@
                     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
                     const cls = CLASS[(r[2] || '').trim()];
                     const pill = cls ? `<span class="lbd-class-pill" style="font-size:10px;font-weight:800;background:var(--primary);color:var(--accent);padding:1px 4px;border-radius:3px;margin-right:4px;">${cls}</span>` : '';
-                    const where = [r[5], r[6]].map(x => (x || '').trim()).filter(Boolean).join(' · ');
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="col-rank">${typeof medal === 'string' ? `<span class="rank-medal">${medal}</span>` : `<span style="color:var(--perry-gray);font-weight:700;">${medal}</span>`}</td>
                         <td class="col-grad" style="text-align:center;"><span style="font-size:11px;font-weight:700;color:var(--perry-gray);">${homeEsc((r[3] || '').trim())}</span></td>
-                        <td class="col-athlete"><div class="lbd-name" style="font-weight:700;">${pill}${homeEsc(r[1].trim())}</div>${where ? `<div style="font-size:10px;color:var(--text-muted);font-weight:600;">${homeEsc(where)}</div>` : ''}</td>
+                        <td class="col-athlete"><div class="lbd-name" style="font-weight:700;">${pill}${homeEsc(r[1].trim())}</div></td>
                         <td class="col-time" style="text-align:center;"><span class="lbd-time" style="font-weight:700;">${homeEsc(r[4].trim())}</span></td>`;
+                    const prof = findProfileForSheetRow(r, girls);
+                    if (prof) tr.addEventListener('click', () => openDrawerToAthlete(prof.name));
                     tbody.appendChild(tr);
                 });
             }).catch(() => msg('Could not load these rankings. Try again in a moment.'));
