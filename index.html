@@ -1877,13 +1877,13 @@
 
         function getLastName(fullName) {
             if (!fullName) return '';
-            let parts = fullName.trim().split(/\s+/);
+            let parts = displayName(fullName).trim().split(/\s+/);
             return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : fullName.toLowerCase();
         }
 
         function formatNameLastFirst(fullName) {
             if (!fullName) return '';
-            let parts = fullName.trim().split(/\s+/);
+            let parts = displayName(fullName).trim().split(/\s+/);
             if (parts.length > 1) {
                 let last = parts.pop();
                 return `${last}, ${parts.join(' ')}`;
