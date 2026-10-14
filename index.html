@@ -1560,7 +1560,7 @@
         // All of these are normalized (space/dash stripped from "DMR ...",
         // trailing "m" dropped, trailing h -> H, 5k/5K -> 5000, suffix
         // lowercased) before use as a lookup key.
-        const TRACK_EVENT_TIME_RE = /(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x200|4x800|4x1600|4x400|DMR[\s-]?1600|DMR[\s-]?1200|DMR[\s-]?800|DMR[\s-]?400)(?:m)?([pf]?)\s*[-:;]\s*(\d{1,2}[:;]\d{2}(?:\.\d{1,2})?|\d{1,3}(?:\.\d{1,2})?)\??/gi;
+        const TRACK_EVENT_TIME_RE = /(800|1600|3200|1500|5000|5[kK]|400|300[hH]|200|110[hH]|100[hH]|100|4x200|4x800|4x1600|4x400|DMR[\s-]?1600|DMR[\s-]?1200|DMR[\s-]?800|DMR[\s-]?400)(?:m)?([pf]?)\s*[-:;]\s*(\d{1,2}[:;]\d{2}(?:\.(?:\d{1,2}|[xX]))?|\d{1,3}(?:\.(?:\d{1,2}|[xX]))?)\??/gi;
 
         // Field events, which record a mark (height/distance) instead of a
         // time. Currently just High Jump: "HJ - 6'0\"", "HJ - 5-10", "HJ - 6'0",
@@ -2622,10 +2622,19 @@
         // is returned unchanged, and trailing text like " (2019)" is kept.
         // The number of decimal places is preserved, so hand-time markers
         // and ranking math are unaffected.
+        // A trailing ".x" means a hand time where the tenth is unknown, so it is
+        // treated as a whole-second hand time and shown that way
+        // ("2:22.x" -> "2:22", "2:22.x (2019)" -> "2:22 (2019)"). Whole-second
+        // marks already get the hand-time ranking conversion and the "h" flag.
+        function stripUnknownTenth(mark) {
+            if (mark == null) return mark;
+            return String(mark).replace(/(\d)\.[xX](?![A-Za-z0-9])/g, '$1');
+        }
+
         function formatOver60(mark, eventKey) {
             if (mark == null) return mark;
-            const str = String(mark);
-            if (eventKey && FIELD_EVENT_KEYS.has(eventKey)) return str;
+            if (eventKey && FIELD_EVENT_KEYS.has(eventKey)) return String(mark);
+            const str = stripUnknownTenth(mark);
             const m = str.match(/^(\s*)(\d{2,3})(?:\.(\d{1,3}))?(?![\d:.'"\-])(.*)$/s);
             if (!m) return str;
             const whole = parseInt(m[2], 10);
@@ -6906,6 +6915,9 @@
                             if (row.length > 16) { soYear = row[15].trim(); soTime = row[16].trim(); }
                             if (row.length > 20) { frYear = row[19].trim(); frTime = row[20].trim(); }
                         }
+
+                        pr = stripUnknownTenth(pr); frTime = stripUnknownTenth(frTime); soTime = stripUnknownTenth(soTime);
+                        jrTime = stripUnknownTenth(jrTime); srTime = stripUnknownTenth(srTime);
 
                         let m9 = (frTime && frTime !== '--' && frTime !== '0.0' && frTime !== '0') ? (frTime + (frYear ? ` (${frYear})` : '')) : '--';
                         let m10 = (soTime && soTime !== '--' && soTime !== '0.0' && soTime !== '0') ? (soTime + (soYear ? ` (${soYear})` : '')) : '--';
