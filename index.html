@@ -7684,35 +7684,6 @@
             return years.map(y => ({ year: y, athletes: byYear[y] }));
         }
 
-        // Every 4-digit season year embedded in an XC 5K record's grade
-        // fields, e.g. "18:32 (2007)" -> 2007. Used only for the "coached
-        // since" tally below, not for the roster list itself.
-        function rosterXcSeasonYears(a) {
-            const ev = a && a['XC 5K'];
-            if (!ev) return [];
-            const years = [];
-            ['9th', '10th', '11th', '12th'].forEach(k => {
-                const m = /\((\d{4})\)/.exec(ev[k] || '');
-                if (m) years.push(parseInt(m[1], 10));
-            });
-            return years;
-        }
-
-        // Unique XC athletes coached from the 2006 season on (both
-        // genders), plus the 2004-05 girls seasons that predate that.
-        function rosterCoachedSinceStat() {
-            let count = 0;
-            Object.values(athletes || {}).forEach(a => {
-                if (!a || !a.name || !a['XC 5K']) return;
-                const years = rosterXcSeasonYears(a);
-                const qualifies = a.gender === 'F'
-                    ? years.some(y => y >= 2004)
-                    : years.some(y => y >= 2006);
-                if (qualifies) count++;
-            });
-            return count;
-        }
-
         function rosterToggleHtml() {
             const b = (s, label) => `<button class="ap-toggle-btn${rosterState.sport === s ? ' active' : ''}" onclick="rosterSetSport('${s}')">${label}</button>`;
             const g = (gd, label) => `<button class="ap-toggle-btn${rosterState.gender === gd ? ' active' : ''}" onclick="rosterSetGender('${gd}')">${label}</button>`;
@@ -7731,9 +7702,6 @@
             const groups = rosterBuildGroups(rosterState.sport, rosterState.gender);
             const total = groups.reduce((n, g) => n + g.athletes.length, 0);
             let html = '';
-            if (rosterState.sport === 'xc') {
-                html += `<div class="ap-empty" style="padding:10px 8px 14px;text-align:left;font-size:12px;">Coached since 2006 (XC, both genders), plus 2004-05 girls: <strong>${rosterCoachedSinceStat()}</strong> unique athletes.</div>`;
-            }
             if (!total) {
                 body.innerHTML = html + '<div class="ap-empty">No roster data found yet.</div>';
                 return;
