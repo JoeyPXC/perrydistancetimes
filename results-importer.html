@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Perry Meet Results Importer</title>
+<title>Perry Results Importer</title>
 <style>
 body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:16px;background:#111;color:#eee}
 h1{font-size:20px;margin:0 0 4px;color:#fd0}.sub{color:#999;font-size:13px;margin-bottom:14px}
@@ -71,4 +71,149 @@ function parseDateText(txt, defYear) {
   // Convert & or "and" or commas separating two dates into a hyphen format
   str = str.replace(/\s*(?:&|\band\b|,)\s*/gi, '-');
 
-  const m = str.replace(/[\u2013\u2014]|\bto\b
+  const m = str.replace(/[\u2013\u2014]|\bto\b/gi, '-').match(/^\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?:\s*-\s*(?:(\d{1,2})\/)?(\d{1,2})(?:\/(\d{2,4}))?)?\s*$/);
+  if (!m) return { err: 'Type the date like 5/27/26, a range like 5/21-5/23/26, or split days like 5/27 & 5/29/26.' };
+
+  if (m[4] && !m[6] && (+m[4] > 12 || +m[5] > 31)) { m[6] = m[5]; m[5] = m[4]; m[4] = undefined; }
+
+  let y = m[3] || m[6] || defYear; if (!y) return { err: 'Add the year to the date (like 5/27/26).' };
+  y = +y; if (y < 100) y += 2000;
+
+  const mk = (yy, mo, d) => { const dt = new Date(Date.UTC(yy, mo - 1, d)); return (yy >= 2000 && yy <= 2100 && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d) ? dt.toISOString().slice(0, 10) : null; };
+  const start = mk(y, +m[1], +m[2]);
+  const end = m[5] ? mk(y, m[4] ? +m[4] : +m[1], +m[5]) : '';
+
+  if (!start || end === null) return { err: 'That date doesn\'t look right. Please check it.' };
+  if (end && end < start) return { err: 'The second day is before the first day. Please check the dates.' };
+
+  return { start, end: end && end !== start ? end : '' };
+}
+
+function flip(n) { const i = n.indexOf(','); return i < 0 ? n.trim() : (n.slice(i + 1).trim() + ' ' + n.slice(0, i).trim()); }
+
+function parseHytek(text, opt) {
+  const lines = text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').split(/\r?\n/);
+  const meet = (lines.find(l => l.trim()) || '').trim();
+  const season = opt.season || (meet.match(/(20\d\d)/) || [])[1] || '';
+  const key = (opt.school || '').toLowerCase();
+  const gr = y => { const u = String(y).toUpperCase(); return GRADE[u] || (/^\d{1,2}$/.test(u) ? +u : ''); };
+  const out = []; let ev = null, heat = '', team = null;
+  for (let i = 0; i < lines.length; i++) {
+    const L = lines[i], t = L.trim();
+    const h = t.match(/^(Girls|Boys|Women|Men)\s+(.+)$/);
+    if (h && /^=+$/.test((lines[i + 1] || '').trim())) {
+      const rd = h[2].match(/\s+(Prelims?|Semis?|Semifinals?|Quarterfinals?)$/i);
+      ev = { gender: /^(Girls|Women)$/.test(h[1]) ? 'Girls' : 'Boys', event: normEvent(h[2].replace(/\s+(Prelims?\vert{}Semis?\vert{}Semifinals?\vert{}Quarterfinals?)$/i, '')),
+        round: rd ? (/^semi/i.test(rd[1]) ? 'Semis' : /^quarter/i.test(rd[1]) ? 'Quarters' : 'Prelims') : 'Finals' };
+      ev.field = FIELD.test(h[2]); ev.relay = /relay/i.test(ev.event); ev.skip = /^-/.test(ev.event) || /team/i.test(ev.event); heat = ''; team = null; continue;
+    }
+    if (!ev || ev.skip) continue;
+    const ht = t.match(/^--\s*Heat\s+(\d+)/i); if (ht) { heat = ht[1]; continue; }
+    if (/^\d\)\s/.test(t)) {
+      if (team) t.split(/\s+(?=\d\)\s)/).forEach(c => {
+        const m = c.match(/^(\d)\)\s*(.+?)\s+(FR|SO|JR|SR|\d{1,2})\s*$/i);
+        if (m) team.legs.push({ leg: +m[1], name: flip(m[2]), grade: gr(m[3]) });
+      });
+      continue;
+    }
+    const tail = '\\s{2,}(\\S+)(?:\\s+\\(([^)]*)\\))?(?:\\s+(\\S+))?\\s*$';
+    const m = ev.relay ? L.match(new RegExp('^\\s*(\\S+)\\s+()()(.+?)' + tail))
+                       : L.match(new RegExp('^\\s*(\\S+)\\s+(.+?)\\s+(FR|SO|JR|SR|\\d{1,2})\\s+(.+?)' + tail, 'i'));
+    team = null;
+    if (!m || !/^(\d+|--)$/.test(m[1])) continue;
+    const school = m[4].trim(); if (!school.toLowerCase().includes(key)) continue;
+    const cleanM = cleanMark(m[5]);
+    const base = { Season: season, Meet: meet, Date: opt.date || '', EndDate: opt.endDate && opt.endDate !== opt.date ? opt.endDate : '', Gender: ev.gender, Event: ev.event, Round: ev.round, Heat: heat,
+      Place: m[1] === '--' ? '' : m[1], School: school, Mark: cleanM, Wind: m[6] || '', Points: m[7] ? String(+(parseFloat(m[7]) * (opt.pointsFactor || 1)).toFixed(2)) : '',
+      _v: markValue(cleanM, ev.field), _field: ev.field, _relay: ev.relay };
+    if (ev.relay) { team = { base, legs: [] }; out.push(team); }
+    else { const g = gr(m[3]); out.push(Object.assign(base, { Athlete: flip(m[2]), Grade: g, GradYear: g && season ? +season + 12 - g : '', Leg: '' })); }
+  }
+  const rows = [];
+  out.forEach(r => {
+    if (!r.legs) { rows.push(r); return; }
+    const legs = r.legs.length ? r.legs : [{ leg: '', name: '(relay)', grade: '' }];
+    const names = legs.map(l => l.name).join(' / ');
+    const tp = parseFloat(r.base.Points), share = isNaN(tp) ? '' : String(+(tp / legs.length).toFixed(4));
+    legs.forEach(l => rows.push(Object.assign({}, r.base, { Points: share, TeamPoints: isNaN(tp) ? '' : r.base.Points, Athlete: l.name, Grade: l.grade, GradYear: l.grade && season ? +season + 12 - l.grade : '', Leg: l.leg, _team: names })));
+  });
+  return rows;
+}
+
+function bests(rows) {
+  const best = new Map();
+  rows.filter(r => !r._relay && r._v != null).forEach(r => {
+    const k = [r.Gender, r.Event, r.Athlete].join('|'), b = best.get(k);
+    if (!b || (r._field ? r._v > b._v : r._v < b._v)) best.set(k, r);
+  });
+  const teams = new Map();
+  rows.filter(r => r._relay && r._v != null).forEach(r => {
+    const k = [r.Meet, r.Gender, r.Event, r.Round, r.Place, r.Mark].join('|');
+    if (!teams.has(k)) teams.set(k, r);
+  });
+  const order = []; rows.forEach(r => { const k = r.Gender + '|' + r.Event; if (!order.includes(k)) order.push(k); });
+  const res = [];
+  order.forEach(k => {
+    const list = [...best.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._field ? b._v - a._v : a._v - b._v);
+    list.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r.Athlete, Grade: r.Grade, Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r.EndDate }));
+    const tl = [...teams.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._v - b._v).slice(0, 5);
+    tl.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r._team || '(relay)', Grade: '', Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r.EndDate }));
+  });
+  return res;
+}
+// PARSE_END
+
+const COLS = ['Season','Meet','Date','EndDate','Gender','Event','Round','Heat','Place','Athlete','Leg','Grade','GradYear','School','Mark','Wind','Points','Split','TeamPoints'];
+let ALL = [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+// Formats CSV values cleanly and forces Excel/Sheets to treat Marks/Splits as literal text formulas
+const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => {
+  const val = String(r[c] ?? '').replace(/"/g, '""');
+  return ['Mark', 'Split', 'Wind'].includes(c) && val ? `="` + val + `"` : `"` + val + `"`;
+}).join(','))).join('\r\n');
+
+function save(name, text) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; a.click(); }
+function render() {
+  $('count').textContent = ALL.length + ' Perry rows';$('tbl').innerHTML = '<tr>' + COLS.map(c => '<th>' + c + '</th>').join('') + '</tr>' + ALL.slice(0, 400).map(r => '<tr>' + COLS.map(c => '<td>' + esc(r[c]) + '</td>').join('') + '</tr>').join('');
+}
+async function add() {
+  const base = { school: $('school').value.trim(), pointsFactor: +$('pcredit').value, season:$('season').value.trim() };
+  const dtxt = $('datetxt').value.trim();
+  if (!dtxt) { $('msg').textContent = 'Type the meet date first (like 5/27/26), so the site can put meets in order.'; return; }
+  const texts = []; for (const f of $('files').files) texts.push([f.name, await f.text()]);
+  if ($('paste').value.trim()) texts.push(['pasted text',$('paste').value]);
+  if (!texts.length) { $('msg').textContent = 'Choose a file or paste results first.'; return; }
+  const notes = []; let bad = false;
+  texts.forEach(([n, t]) => {
+    if (bad) return;
+    const title = ((t.replace(/<[^>]+>/g, '').split(/\r?\n/).find(l => l.trim()) || '').match(/(20\d\d)/) || [])[1];
+    const d = parseDateText(dtxt, base.season || title);
+    if (d.err) { notes.push(d.err); bad = true; return; }
+    const r = parseHytek(t, Object.assign({}, base, { date: d.start, endDate: d.end }));
+    if (!r.length) { notes.push(n + ': no "' + base.school + '" rows found'); return; }
+    const dup = ALL.length && ALL.some(x => x.Meet === r[0].Meet && x.Date === r[0].Date);
+    if (dup) { notes.push(n + ': this meet is already loaded, skipped'); return; }
+    ALL = ALL.concat(r); notes.push(n + ': ' + r.length + ' rows (' + d.start + (d.end ? ' to ' + d.end : '') + ')');
+  });
+  $('msg').textContent = notes.join(' | ');
+  if (bad) return;
+  $('files').value = '';$('paste').value = ''; $('datetxt').value = '';$('pcredit').value = '1'; render();
+}
+function printable() {
+  const b = bests(ALL); let h = '<h1>Perry Track &amp; Field - Season Bests</h1>', cur = '';
+  b.forEach(r => {
+    const k = r.Gender + ' ' + r.Event;
+    if (k !== cur) { if (cur) h += '</table>'; cur = k; h += '<h2>' + esc(k) + '</h2><table><tr><th>#</th><th>Athlete</th><th>Gr</th><th>Mark</th><th>Meet</th></tr>'; }
+    h += '<tr><td>' + r.Rank + '</td><td>' + esc(r.Athlete) + '</td><td>' + r.Grade + '</td><td>' + esc(r.Mark) + '</td><td>' + esc(r.Meet) + '</td></tr>';
+  });
+  $('print').innerHTML = h + (cur ? '</table>' : '');
+}
+$('add').onclick = add;
+$('clear').onclick = () => { ALL = []; render();$('msg').textContent = ''; };
+$('dl1').onclick = () => ALL.length ? save('perry-results-log.csv', csv(ALL, COLS)) : ($('msg').textContent = 'Nothing loaded yet.');
+$('dl2').onclick = () => ALL.length ? save('perry-bests.csv', csv(bests(ALL), ['Gender','Event','Rank','Athlete','Grade','Mark','Meet','Date','EndDate'])) : ($('msg').textContent = 'Nothing loaded yet.');
+$('pr').onclick = () => { if (!ALL.length) {$('msg').textContent = 'Nothing loaded yet.'; return; } printable(); window.print(); };
+render();
+</script></body></html>
