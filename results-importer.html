@@ -46,11 +46,13 @@ function markValue(m, field) {
   return p.length === 2 ? p[0] * 60 + p[1] : p[0];
 }
 
-// Pulls in exact field marks untouched; removes leading "0:" from track times only
+// Strips unwanted .00 from field event marks while leaving running times & exact decimals intact
 function cleanMark(m, isField) {
   if (!m) return '';
   let s = String(m).trim();
-  if (isField || s.includes('-')) return s; // Leave field event distances exactly as pasted
+  if (isField || s.includes('-')) {
+    return s.replace(/\.00(?=\s*($|[a-zA-Z]))/, '');
+  }
   return s.replace(/^0+:0*/, '');
 }
 
@@ -168,7 +170,6 @@ let ALL = [];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
-// Formats CSV values cleanly and forces Excel/Sheets to treat Marks/Splits as literal text formulas
 const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => {
   const val = String(r[c] ?? '').replace(/"/g, '""');
   return ['Mark', 'Split', 'Wind'].includes(c) && val ? `="` + val + `"` : `"` + val + `"`;
