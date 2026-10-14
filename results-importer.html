@@ -38,12 +38,21 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 // PARSE_START
 const GRADE = { FR: 9, SO: 10, JR: 11, SR: 12 };
 const FIELD = /jump|vault|put|discus|javelin|hammer/i;
+
 function markValue(m, field) {
   if (!/\d/.test(m)) return null;
   if (field && m.includes('-') && !m.includes(':')) { const [f, i] = m.split('-'); return parseFloat(f) * 12 + (parseFloat(i) || 0); }
   const p = m.replace(/[^\d:.]/g, '').split(':').map(Number);
   return p.length === 2 ? p[0] * 60 + p[1] : p[0];
 }
+
+// Strips leading '0:' minutes and trims whitespace
+function cleanMark(m) {
+  if (!m) return '';
+  let s = String(m).trim();
+  return s.replace(/^0+:0*/, '');
+}
+
 // Tidies event names: "Shot Put - 12lb" -> "Shot Put", "100 Meter - Wheelchair" -> "Seated 100m"
 function normEvent(e) {
   e = e.trim();
@@ -53,11 +62,11 @@ function normEvent(e) {
   }
   return e.replace(/^(Shot Put|Discus|Javelin|Hammer)\s*-\s*[\d.]+\s*(?:lbs?|kg)\s*$/i, '$1');
 }
+
 // Reads a typed date or date range: "5/27", "5/27/26", "5/21-5/23", "5/21-23/26", "6/7-6/8/26"
 function parseDateText(txt, defYear) {
   const m = String(txt || '').replace(/[\u2013\u2014]|\bto\b/gi, '-').match(/^\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?:\s*-\s*(?:(\d{1,2})\/)?(\d{1,2})(?:\/(\d{2,4}))?)?\s*$/);
   if (!m) return { err: 'Type the date like 5/27/26, or a range like 5/21-5/23/26.' };
-  // "5/21-23/26": the 23 is a day and 26 a year, not month/day
   if (m[4] && !m[6] && (+m[4] > 12 || +m[5] > 31)) { m[6] = m[5]; m[5] = m[4]; m[4] = undefined; }
   let y = m[3] || m[6] || defYear; if (!y) return { err: 'Add the year to the date (like 5/27/26).' };
   y = +y; if (y < 100) y += 2000;
@@ -69,7 +78,9 @@ function parseDateText(txt, defYear) {
   if (end && (new Date(end) - new Date(start)) / 864e5 > 7) return { err: 'Those dates are more than a week apart. Please check them.' };
   return { start, end: end && end !== start ? end : '' };
 }
+
 function flip(n) { const i = n.indexOf(','); return i < 0 ? n.trim() : (n.slice(i + 1).trim() + ' ' + n.slice(0, i).trim()); }
+
 function parseHytek(text, opt) {
   const lines = text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').split(/\r?\n/);
   const meet = (lines.find(l => l.trim()) || '').trim();
@@ -82,13 +93,12 @@ function parseHytek(text, opt) {
     const h = t.match(/^(Girls|Boys|Women|Men)\s+(.+)$/);
     if (h && /^=+$/.test((lines[i + 1] || '').trim())) {
       const rd = h[2].match(/\s+(Prelims?|Semis?|Semifinals?|Quarterfinals?)$/i);
-      ev = { gender: /^(Girls|Women)$/.test(h[1]) ? 'Girls' : 'Boys', event: normEvent(h[2].replace(/\s+(Prelims?|Semis?|Semifinals?|Quarterfinals?)$/i, '')),
+      ev = { gender: /^(Girls|Women)$/.test(h[1]) ? 'Girls' : 'Boys', event: normEvent(h[2].replace(/\s+(Prelims?\vert{}Semis?\vert{}Semifinals?\vert{}Quarterfinals?)$/i, '')),
         round: rd ? (/^semi/i.test(rd[1]) ? 'Semis' : /^quarter/i.test(rd[1]) ? 'Quarters' : 'Prelims') : 'Finals' };
       ev.field = FIELD.test(h[2]); ev.relay = /relay/i.test(ev.event); ev.skip = /^-/.test(ev.event) || /team/i.test(ev.event); heat = ''; team = null; continue;
     }
     if (!ev || ev.skip) continue;
     const ht = t.match(/^--\s*Heat\s+(\d+)/i); if (ht) { heat = ht[1]; continue; }
-    // relay members listed under a team: "1) Last, First 12   2) Last, First 11"
     if (/^\d\)\s/.test(t)) {
       if (team) t.split(/\s+(?=\d\)\s)/).forEach(c => {
         const m = c.match(/^(\d)\)\s*(.+?)\s+(FR|SO|JR|SR|\d{1,2})\s*$/i);
@@ -102,24 +112,24 @@ function parseHytek(text, opt) {
     team = null;
     if (!m || !/^(\d+|--)$/.test(m[1])) continue;
     const school = m[4].trim(); if (!school.toLowerCase().includes(key)) continue;
+    const cleanM = cleanMark(m[5]);
     const base = { Season: season, Meet: meet, Date: opt.date || '', EndDate: opt.endDate && opt.endDate !== opt.date ? opt.endDate : '', Gender: ev.gender, Event: ev.event, Round: ev.round, Heat: heat,
-      Place: m[1] === '--' ? '' : m[1], School: school, Mark: m[5], Wind: m[6] || '', Points: m[7] ? String(+(parseFloat(m[7]) * (opt.pointsFactor || 1)).toFixed(2)) : '',
-      _v: markValue(m[5], ev.field), _field: ev.field, _relay: ev.relay };
+      Place: m[1] === '--' ? '' : m[1], School: school, Mark: cleanM, Wind: m[6] || '', Points: m[7] ? String(+(parseFloat(m[7]) * (opt.pointsFactor || 1)).toFixed(2)) : '',
+      _v: markValue(cleanM, ev.field), _field: ev.field, _relay: ev.relay };
     if (ev.relay) { team = { base, legs: [] }; out.push(team); }
     else { const g = gr(m[3]); out.push(Object.assign(base, { Athlete: flip(m[2]), Grade: g, GradYear: g && season ? +season + 12 - g : '', Leg: '' })); }
   }
-  // expand relay teams into one row per leg (or one "(relay)" row if names weren't listed)
   const rows = [];
   out.forEach(r => {
     if (!r.legs) { rows.push(r); return; }
     const legs = r.legs.length ? r.legs : [{ leg: '', name: '(relay)', grade: '' }];
     const names = legs.map(l => l.name).join(' / ');
-    // each runner gets an equal share of the team's points; the full team score is kept in TeamPoints
     const tp = parseFloat(r.base.Points), share = isNaN(tp) ? '' : String(+(tp / legs.length).toFixed(4));
     legs.forEach(l => rows.push(Object.assign({}, r.base, { Points: share, TeamPoints: isNaN(tp) ? '' : r.base.Points, Athlete: l.name, Grade: l.grade, GradYear: l.grade && season ? +season + 12 - l.grade : '', Leg: l.leg, _team: names })));
   });
   return rows;
 }
+
 function bests(rows) {
   const best = new Map();
   rows.filter(r => !r._relay && r._v != null).forEach(r => {
@@ -137,57 +147,4 @@ function bests(rows) {
     const list = [...best.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._field ? b._v - a._v : a._v - b._v);
     list.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r.Athlete, Grade: r.Grade, Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r.EndDate }));
     const tl = [...teams.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._v - b._v).slice(0, 5);
-    tl.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r._team || '(relay)', Grade: '', Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r.EndDate }));
-  });
-  return res;
-}
-// PARSE_END
-const COLS = ['Season','Meet','Date','EndDate','Gender','Event','Round','Heat','Place','Athlete','Leg','Grade','GradYear','School','Mark','Wind','Points','Split','TeamPoints'];
-let ALL = [];
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-const csv = (rows, cols) => [cols.join(',')].concat(rows.map(r => cols.map(c => '"' + String(r[c] ?? '').replace(/"/g, '""') + '"').join(','))).join('\r\n');
-function save(name, text) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; a.click(); }
-function render() {
-  $('count').textContent = ALL.length + ' Perry rows';
-  $('tbl').innerHTML = '<tr>' + COLS.map(c => '<th>' + c + '</th>').join('') + '</tr>' + ALL.slice(0, 400).map(r => '<tr>' + COLS.map(c => '<td>' + esc(r[c]) + '</td>').join('') + '</tr>').join('');
-}
-async function add() {
-  const base = { school: $('school').value.trim(), pointsFactor: +$('pcredit').value, season: $('season').value.trim() };
-  const dtxt = $('datetxt').value.trim();
-  if (!dtxt) { $('msg').textContent = 'Type the meet date first (like 5/27/26), so the site can put meets in order.'; return; }
-  const texts = []; for (const f of $('files').files) texts.push([f.name, await f.text()]);
-  if ($('paste').value.trim()) texts.push(['pasted text', $('paste').value]);
-  if (!texts.length) { $('msg').textContent = 'Choose a file or paste results first.'; return; }
-  const notes = []; let bad = false;
-  texts.forEach(([n, t]) => {
-    if (bad) return;
-    const title = ((t.replace(/<[^>]+>/g, '').split(/\r?\n/).find(l => l.trim()) || '').match(/(20\d\d)/) || [])[1];
-    const d = parseDateText(dtxt, base.season || title);
-    if (d.err) { notes.push(d.err); bad = true; return; }
-    const r = parseHytek(t, Object.assign({}, base, { date: d.start, endDate: d.end }));
-    if (!r.length) { notes.push(n + ': no "' + base.school + '" rows found'); return; }
-    const dup = ALL.length && ALL.some(x => x.Meet === r[0].Meet && x.Date === r[0].Date);
-    if (dup) { notes.push(n + ': this meet is already loaded, skipped'); return; }
-    ALL = ALL.concat(r); notes.push(n + ': ' + r.length + ' rows (' + d.start + (d.end ? ' to ' + d.end : '') + ')');
-  });
-  $('msg').textContent = notes.join(' | ');
-  if (bad) return;
-  $('files').value = ''; $('paste').value = ''; $('datetxt').value = ''; $('pcredit').value = '1'; render();
-}
-function printable() {
-  const b = bests(ALL); let h = '<h1>Perry Track &amp; Field - Season Bests</h1>', cur = '';
-  b.forEach(r => {
-    const k = r.Gender + ' ' + r.Event;
-    if (k !== cur) { if (cur) h += '</table>'; cur = k; h += '<h2>' + esc(k) + '</h2><table><tr><th>#</th><th>Athlete</th><th>Gr</th><th>Mark</th><th>Meet</th></tr>'; }
-    h += '<tr><td>' + r.Rank + '</td><td>' + esc(r.Athlete) + '</td><td>' + r.Grade + '</td><td>' + esc(r.Mark) + '</td><td>' + esc(r.Meet) + '</td></tr>';
-  });
-  $('print').innerHTML = h + (cur ? '</table>' : '');
-}
-$('add').onclick = add;
-$('clear').onclick = () => { ALL = []; render(); $('msg').textContent = ''; };
-$('dl1').onclick = () => ALL.length ? save('perry-results-log.csv', csv(ALL, COLS)) : ($('msg').textContent = 'Nothing loaded yet.');
-$('dl2').onclick = () => ALL.length ? save('perry-bests.csv', csv(bests(ALL), ['Gender','Event','Rank','Athlete','Grade','Mark','Meet','Date','EndDate'])) : ($('msg').textContent = 'Nothing loaded yet.');
-$('pr').onclick = () => { if (!ALL.length) { $('msg').textContent = 'Nothing loaded yet.'; return; } printable(); window.print(); };
-render();
-</script></body></html>
+    tl.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r._team || '(relay)', Grade: '', Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r
