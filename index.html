@@ -2628,7 +2628,7 @@
         // marks already get the hand-time ranking conversion and the "h" flag.
         function stripUnknownTenth(mark) {
             if (mark == null) return mark;
-            return String(mark).replace(/(\d)\.[xX](?![A-Za-z0-9])/g, '$1');
+            return String(mark).replace(/(\d)\.[xX](?=i?(?![A-Za-z0-9]))/g, '$1');
         }
 
         function formatOver60(mark, eventKey) {
