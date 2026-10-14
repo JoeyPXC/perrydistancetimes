@@ -7684,6 +7684,32 @@
             return years.map(y => ({ year: y, athletes: byYear[y] }));
         }
 
+        // Every 4-digit season year embedded in an athlete's grade-level
+        // marks for the given sport, e.g. "18:32 (2007)" -> 2007. 'XC 5K'
+        // for cross country; every other event key for track (an athlete
+        // can run several track events in the same season, so years come
+        // from all of them combined).
+        function rosterSeasonYears(a, sport) {
+            const keys = sport === 'xc' ? ['XC 5K'] : Object.keys(a).filter(k => !ROSTER_META_KEYS.includes(k) && k !== 'XC 5K');
+            const years = new Set();
+            keys.forEach(k => {
+                const ev = a[k];
+                if (!ev) return;
+                ['9th', '10th', '11th', '12th'].forEach(grade => {
+                    const m = /\((\d{4})\)/.exec(ev[grade] || '');
+                    if (m) years.add(parseInt(m[1], 10));
+                });
+            });
+            return Array.from(years).sort((x, y) => x - y);
+        }
+
+        function rosterYearsLabel(a, sport) {
+            const years = rosterSeasonYears(a, sport);
+            if (!years.length) return '';
+            const first = years[0], last = years[years.length - 1];
+            return first === last ? String(first) : `${first}-${last}`;
+        }
+
         function rosterToggleHtml() {
             const b = (s, label) => `<button class="ap-toggle-btn${rosterState.sport === s ? ' active' : ''}" onclick="rosterSetSport('${s}')">${label}</button>`;
             const g = (gd, label) => `<button class="ap-toggle-btn${rosterState.gender === gd ? ' active' : ''}" onclick="rosterSetGender('${gd}')">${label}</button>`;
@@ -7711,7 +7737,8 @@
                 const label = g.year === 'Unknown' ? 'Class year unknown' : `Class of ${g.year}`;
                 html += `<div class="ap-title" style="margin-top:14px;">${apEsc(label)} · ${g.athletes.length}</div>`;
                 g.athletes.forEach(a => {
-                    html += `<div class="ap-row"><span class="ap-name">${apEsc(displayName(a.name))}</span></div>`;
+                    const yrs = rosterYearsLabel(a, rosterState.sport);
+                    html += `<div class="ap-row"><span class="ap-name">${apEsc(displayName(a.name))}${yrs ? `<small>${apEsc(yrs)}</small>` : ''}</span></div>`;
                 });
             });
             body.innerHTML = html;
