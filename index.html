@@ -7655,14 +7655,17 @@
 
         // ── All-Time Roster (hidden; open it with  yoursite/#roster ) ────
         // Every kid who has at least one event record in the athlete DB, one
-        // sport at a time (XC = has an 'XC 5K' record, Track = has any other
-        // event record), grouped by graduating class, newest class first.
+        // sport at a time (XC = has an 'XC 5K', 'XC 2 Mile' or 'XC 2.5 Mile'
+        // record -- the older seasons ran shorter courses under their own
+        // keys; Track = has any other event record), grouped by graduating
+        // class, newest class first.
         let rosterState = { sport: 'xc', gender: 'M' };
         const ROSTER_META_KEYS = ['name', 'gradYear', 'gender'];
+        const ROSTER_XC_KEYS = ['XC 5K', 'XC 2 Mile', 'XC 2.5 Mile'];
 
         function rosterAthleteSports(a) {
             const keys = Object.keys(a).filter(k => !ROSTER_META_KEYS.includes(k));
-            return { xc: keys.includes('XC 5K'), track: keys.some(k => k !== 'XC 5K') };
+            return { xc: keys.some(k => ROSTER_XC_KEYS.includes(k)), track: keys.some(k => !ROSTER_XC_KEYS.includes(k)) };
         }
 
         function rosterBuildGroups(sport, gender) {
@@ -7690,7 +7693,7 @@
         // can run several track events in the same season, so years come
         // from all of them combined).
         function rosterSeasonYears(a, sport) {
-            const keys = sport === 'xc' ? ['XC 5K'] : Object.keys(a).filter(k => !ROSTER_META_KEYS.includes(k) && k !== 'XC 5K');
+            const keys = sport === 'xc' ? ROSTER_XC_KEYS : Object.keys(a).filter(k => !ROSTER_META_KEYS.includes(k) && !ROSTER_XC_KEYS.includes(k));
             const years = new Set();
             keys.forEach(k => {
                 const ev = a[k];
