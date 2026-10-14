@@ -23,7 +23,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
  <label>Results files (pick several to add a whole season)</label><input type="file" id="files" multiple accept=".htm,.html,.txt">
  <label>...or paste results text</label><textarea id="paste" rows="3"></textarea>
  <div class="row"><div><label>School to keep</label><input type="text" id="school" value="Perry"></div>
- <div><label>Meet date(s) - e.g. 5/27/26 or 5/21-5/23/26</label><input type="text" id="datetxt" placeholder="5/27/26  or  6/7-6/8/26"></div>
+ <div><label>Meet date(s) - e.g. 5/27/26 or 5/27 & 5/29/26</label><input type="text" id="datetxt" placeholder="5/27/26, 5/21-5/23/26, or 5/27 & 5/29/26"></div>
  <div><label>Points credit</label><select id="pcredit" style="background:#000;color:#fff;border:1px solid #444;border-radius:6px;padding:7px;font-size:14px;width:100%"><option value="1">Full points</option><option value="0.5">Half points (9th/10th invitational)</option></select></div>
  <div><label>Season year (spring = grad year of seniors)</label><input type="number" id="season" placeholder="auto from title"></div></div>
  <button id="add">Add meet(s)</button><button class="alt" id="clear">Clear all</button>
@@ -63,88 +63,12 @@ function normEvent(e) {
   return e.replace(/^(Shot Put|Discus|Javelin|Hammer)\s*-\s*[\d.]+\s*(?:lbs?|kg)\s*$/i, '$1');
 }
 
-// Reads a typed date or date range: "5/27", "5/27/26", "5/21-5/23", "5/21-23/26", "6/7-6/8/26"
+// Reads dates, ranges ("5/21-5/23/26"), or split days ("5/27 & 5/29/26")
 function parseDateText(txt, defYear) {
-  const m = String(txt || '').replace(/[\u2013\u2014]|\bto\b/gi, '-').match(/^\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?:\s*-\s*(?:(\d{1,2})\/)?(\d{1,2})(?:\/(\d{2,4}))?)?\s*$/);
-  if (!m) return { err: 'Type the date like 5/27/26, or a range like 5/21-5/23/26.' };
-  if (m[4] && !m[6] && (+m[4] > 12 || +m[5] > 31)) { m[6] = m[5]; m[5] = m[4]; m[4] = undefined; }
-  let y = m[3] || m[6] || defYear; if (!y) return { err: 'Add the year to the date (like 5/27/26).' };
-  y = +y; if (y < 100) y += 2000;
-  const mk = (yy, mo, d) => { const dt = new Date(Date.UTC(yy, mo - 1, d)); return (yy >= 2000 && yy <= 2100 && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d) ? dt.toISOString().slice(0, 10) : null; };
-  const start = mk(y, +m[1], +m[2]);
-  const end = m[5] ? mk(y, m[4] ? +m[4] : +m[1], +m[5]) : '';
-  if (!start || end === null) return { err: 'That date doesn\'t look right. Please check it.' };
-  if (end && end < start) return { err: 'The last day is before the first day. Please check the dates.' };
-  if (end && (new Date(end) - new Date(start)) / 864e5 > 7) return { err: 'Those dates are more than a week apart. Please check them.' };
-  return { start, end: end && end !== start ? end : '' };
-}
+  let str = String(txt || '').trim();
+  if (!str) return { err: 'Type the date like 5/27/26, 5/21-5/23/26, or 5/27 & 5/29/26.' };
 
-function flip(n) { const i = n.indexOf(','); return i < 0 ? n.trim() : (n.slice(i + 1).trim() + ' ' + n.slice(0, i).trim()); }
+  // Convert & or "and" or commas separating two dates into a hyphen format
+  str = str.replace(/\s*(?:&|\band\b|,)\s*/gi, '-');
 
-function parseHytek(text, opt) {
-  const lines = text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').split(/\r?\n/);
-  const meet = (lines.find(l => l.trim()) || '').trim();
-  const season = opt.season || (meet.match(/(20\d\d)/) || [])[1] || '';
-  const key = (opt.school || '').toLowerCase();
-  const gr = y => { const u = String(y).toUpperCase(); return GRADE[u] || (/^\d{1,2}$/.test(u) ? +u : ''); };
-  const out = []; let ev = null, heat = '', team = null;
-  for (let i = 0; i < lines.length; i++) {
-    const L = lines[i], t = L.trim();
-    const h = t.match(/^(Girls|Boys|Women|Men)\s+(.+)$/);
-    if (h && /^=+$/.test((lines[i + 1] || '').trim())) {
-      const rd = h[2].match(/\s+(Prelims?|Semis?|Semifinals?|Quarterfinals?)$/i);
-      ev = { gender: /^(Girls|Women)$/.test(h[1]) ? 'Girls' : 'Boys', event: normEvent(h[2].replace(/\s+(Prelims?\vert{}Semis?\vert{}Semifinals?\vert{}Quarterfinals?)$/i, '')),
-        round: rd ? (/^semi/i.test(rd[1]) ? 'Semis' : /^quarter/i.test(rd[1]) ? 'Quarters' : 'Prelims') : 'Finals' };
-      ev.field = FIELD.test(h[2]); ev.relay = /relay/i.test(ev.event); ev.skip = /^-/.test(ev.event) || /team/i.test(ev.event); heat = ''; team = null; continue;
-    }
-    if (!ev || ev.skip) continue;
-    const ht = t.match(/^--\s*Heat\s+(\d+)/i); if (ht) { heat = ht[1]; continue; }
-    if (/^\d\)\s/.test(t)) {
-      if (team) t.split(/\s+(?=\d\)\s)/).forEach(c => {
-        const m = c.match(/^(\d)\)\s*(.+?)\s+(FR|SO|JR|SR|\d{1,2})\s*$/i);
-        if (m) team.legs.push({ leg: +m[1], name: flip(m[2]), grade: gr(m[3]) });
-      });
-      continue;
-    }
-    const tail = '\\s{2,}(\\S+)(?:\\s+\\(([^)]*)\\))?(?:\\s+(\\S+))?\\s*$';
-    const m = ev.relay ? L.match(new RegExp('^\\s*(\\S+)\\s+()()(.+?)' + tail))
-                       : L.match(new RegExp('^\\s*(\\S+)\\s+(.+?)\\s+(FR|SO|JR|SR|\\d{1,2})\\s+(.+?)' + tail, 'i'));
-    team = null;
-    if (!m || !/^(\d+|--)$/.test(m[1])) continue;
-    const school = m[4].trim(); if (!school.toLowerCase().includes(key)) continue;
-    const cleanM = cleanMark(m[5]);
-    const base = { Season: season, Meet: meet, Date: opt.date || '', EndDate: opt.endDate && opt.endDate !== opt.date ? opt.endDate : '', Gender: ev.gender, Event: ev.event, Round: ev.round, Heat: heat,
-      Place: m[1] === '--' ? '' : m[1], School: school, Mark: cleanM, Wind: m[6] || '', Points: m[7] ? String(+(parseFloat(m[7]) * (opt.pointsFactor || 1)).toFixed(2)) : '',
-      _v: markValue(cleanM, ev.field), _field: ev.field, _relay: ev.relay };
-    if (ev.relay) { team = { base, legs: [] }; out.push(team); }
-    else { const g = gr(m[3]); out.push(Object.assign(base, { Athlete: flip(m[2]), Grade: g, GradYear: g && season ? +season + 12 - g : '', Leg: '' })); }
-  }
-  const rows = [];
-  out.forEach(r => {
-    if (!r.legs) { rows.push(r); return; }
-    const legs = r.legs.length ? r.legs : [{ leg: '', name: '(relay)', grade: '' }];
-    const names = legs.map(l => l.name).join(' / ');
-    const tp = parseFloat(r.base.Points), share = isNaN(tp) ? '' : String(+(tp / legs.length).toFixed(4));
-    legs.forEach(l => rows.push(Object.assign({}, r.base, { Points: share, TeamPoints: isNaN(tp) ? '' : r.base.Points, Athlete: l.name, Grade: l.grade, GradYear: l.grade && season ? +season + 12 - l.grade : '', Leg: l.leg, _team: names })));
-  });
-  return rows;
-}
-
-function bests(rows) {
-  const best = new Map();
-  rows.filter(r => !r._relay && r._v != null).forEach(r => {
-    const k = [r.Gender, r.Event, r.Athlete].join('|'), b = best.get(k);
-    if (!b || (r._field ? r._v > b._v : r._v < b._v)) best.set(k, r);
-  });
-  const teams = new Map();
-  rows.filter(r => r._relay && r._v != null).forEach(r => {
-    const k = [r.Meet, r.Gender, r.Event, r.Round, r.Place, r.Mark].join('|');
-    if (!teams.has(k)) teams.set(k, r);
-  });
-  const order = []; rows.forEach(r => { const k = r.Gender + '|' + r.Event; if (!order.includes(k)) order.push(k); });
-  const res = [];
-  order.forEach(k => {
-    const list = [...best.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._field ? b._v - a._v : a._v - b._v);
-    list.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r.Athlete, Grade: r.Grade, Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r.EndDate }));
-    const tl = [...teams.values()].filter(r => r.Gender + '|' + r.Event === k).sort((a, b) => a._v - b._v).slice(0, 5);
-    tl.forEach((r, i) => res.push({ Gender: r.Gender, Event: r.Event, Rank: i + 1, Athlete: r._team || '(relay)', Grade: '', Mark: r.Mark, Meet: r.Meet, Date: r.Date, EndDate: r
+  const m = str.replace(/[\u2013\u2014]|\bto\b
