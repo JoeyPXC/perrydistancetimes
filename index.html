@@ -7399,7 +7399,7 @@
             const parts = [];
             if (m.resultsLive) parts.push(btn(m.resultsLive, '🔴 Live Results'));
             if (m.resultsFull) parts.push(btn(m.resultsFull, m.resultsFullLabel || '📊 Full Results'));
-            if (m.resultsGeneric) parts.push(btn(m.resultsGeneric, m.resultsGenericLabel || 'Results'));
+            if (m.resultsGeneric) parts.push(btn(m.resultsGeneric, m.resultsGenericLabel || '📊 Results'));
             if (!parts.length) return '';
             return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">${parts.join('')}</div>`;
         }
