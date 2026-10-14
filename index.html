@@ -7240,14 +7240,33 @@
         function parseScheduleCSV(text) {
             const rows = parseCSVText(text);
             if (!rows.length) return [];
-            const head = rows[0].map(h => h.trim().toLowerCase());
-            const col = name => head.findIndex(h => h === name || h.startsWith(name));
-            const ix = {
-                sport: col('sport'), date: col('date'), meet: col('meet'), location: col('location'),
-                badge: col('badge'), all: col('all races'), boys: col('boys races'), girls: col('girls races'),
-                address: col('address'), results: col('results link')
+
+            // Normalize headers so BOMs, extra spaces, punctuation, and capitalization
+            // don't prevent the results columns from being found.
+            const normHeader = h => String(h || '').replace(/^\uFEFF/, '').trim().toLowerCase()
+                .replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+            const head = rows[0].map(normHeader);
+            const findCol = aliases => {
+                for (const alias of aliases) {
+                    const exact = head.findIndex(h => h === alias);
+                    if (exact >= 0) return exact;
+                }
+                for (const alias of aliases) {
+                    const prefix = head.findIndex(h => h.startsWith(alias + ' '));
+                    if (prefix >= 0) return prefix;
+                }
+                return -1;
             };
-            const get = (r, i) => (i < 0 ? '' : (r[i] || '').trim());
+            const ix = {
+                sport: findCol(['sport']), date: findCol(['date']), meet: findCol(['meet']),
+                location: findCol(['location']), badge: findCol(['badge']),
+                all: findCol(['all races']), boys: findCol(['boys races']), girls: findCol(['girls races']),
+                address: findCol(['address']),
+                live: findCol(['live results', 'live result']),
+                full: findCol(['full results', 'final results']),
+                results: findCol(['results', 'result'])
+            };
+            const get = (r, i) => (i < 0 ? '' : String(r[i] == null ? '' : r[i]).trim());
             const meets = [];
             rows.slice(1).forEach(r => {
                 const dateVal = normalizeMeetDate(get(r, ix.date));
@@ -7256,24 +7275,40 @@
                 const all = parseRaces(get(r, ix.all));
                 const boys = parseRaces(get(r, ix.boys));
                 const girls = parseRaces(get(r, ix.girls));
-                // What to show: "All Races" (or identical / single-team times) as one
-                // unlabeled row; otherwise separate Boys and Girls rows.
                 let groups;
                 if (all.length) groups = [{ label: '', races: all }];
                 else if (boys.length && girls.length && JSON.stringify(boys) !== JSON.stringify(girls))
                     groups = [{ label: 'Boys', races: boys }, { label: 'Girls', races: girls }]
-                        // list whichever team races first at the top (Boys first if tied)
                         .sort((a, b) => Math.min(...a.races.map(x => raceMinutes(x.time))) - Math.min(...b.races.map(x => raceMinutes(x.time))) || 0);
                 else if (boys.length || girls.length) groups = [{ label: '', races: boys.length ? boys : girls }];
                 else groups = [];
-                const link = get(r, ix.results);
+
+                const isUrl = u => /^https?:\/\/\S+/i.test(u) ? u : '';
+                let liveLink = isUrl(get(r, ix.live));
+                let fullLink = isUrl(get(r, ix.full));
+                const genericLink = isUrl(get(r, ix.results));
+
+                // Backward compatibility: a sheet with only a generic Results column
+                // continues to show that link. If Live Results is also present, a
+                // generic Results column is treated as the separate final/results link.
+                let resultsLinkUrl = '';
+                let resultsLabel = 'Results';
+                let fullLabel = '📊 Full Results';
+                if (genericLink) {
+                    if (liveLink || fullLink) {
+                        if (!fullLink) { fullLink = genericLink; fullLabel = 'Results'; }
+                        else { resultsLinkUrl = genericLink; }
+                    } else {
+                        resultsLinkUrl = genericLink;
+                    }
+                }
                 meets.push({
                     sport: get(r, ix.sport).toLowerCase() === 'track' ? 'track' : 'xc',
                     dateVal, date: formatMeetDate(dateVal), meet,
-                    location: get(r, ix.location),
-                    badge: get(r, ix.badge),
+                    location: get(r, ix.location), badge: get(r, ix.badge),
                     address: get(r, ix.address),
-                    results: /^https?:\/\//i.test(link) ? link : '',
+                    resultsLive: liveLink, resultsFull: fullLink, resultsFullLabel: fullLabel,
+                    resultsGeneric: resultsLinkUrl, resultsGenericLabel: resultsLabel,
                     groups
                 });
             });
@@ -7356,11 +7391,17 @@
             return 'In ' + days + ' days';
         }
 
-        // Optional "Live Results" button. Paste a link in the Results Link column of any
-        // meet row in the schedule Sheet and this appears on its cards.
+        // Optional results buttons. In the schedule Sheet, paste a link in "Live Results Link"
+        // (timing company, live while the meet runs) and/or "Full Results Link" (complete final
+        // results, added when they're posted). Each button only shows when its link is filled in.
         function resultsLink(m) {
-            if (!m.results) return '';
-            return `<a href="${homeEsc(m.results)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:8px;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">📊 Results ↗</a>`;
+            const btn = (url, label) => `<a href="${homeEsc(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">${label} ↗</a>`;
+            const parts = [];
+            if (m.resultsLive) parts.push(btn(m.resultsLive, '🔴 Live Results'));
+            if (m.resultsFull) parts.push(btn(m.resultsFull, m.resultsFullLabel || '📊 Full Results'));
+            if (m.resultsGeneric) parts.push(btn(m.resultsGeneric, m.resultsGenericLabel || 'Results'));
+            if (!parts.length) return '';
+            return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">${parts.join('')}</div>`;
         }
 
         function openHome() {
@@ -8063,7 +8104,7 @@
                     <div class="sched-meet-name">${homeEsc(m.meet)}</div>
                     <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div>
                     ${racesHtml}
-                    ${m.results ? `<div style="padding:0 14px 10px;">${resultsLink(m)}</div>` : ''}
+                    ${(m.resultsLive || m.resultsFull || m.resultsGeneric) ? `<div style="padding:0 14px 10px;">${resultsLink(m)}</div>` : ''}
                 </div>`;
             });
 
