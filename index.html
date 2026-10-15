@@ -1575,8 +1575,11 @@
         // Fetches and parses one set of season tabs (year -> CSV URL) into
         // { lookupKey: { originalName, seasons: { year: [{meet, ...events}] } } }.
         // Used for both the boys and girls season-tab sets.
-        // Years whose points come from the new Results log, not the old tabs' Points block.
-        const OLD_POINTS_SKIP_YEARS = ['2026'];
+        // Season points for years up to this one come from the old tabs' Points block (it covers the whole
+        // team, field events included). For these years that total REPLACES the points from the new
+        // Results log. From the next year on, points come from the Results log only.
+        const OLD_POINTS_THROUGH_YEAR = 2026;
+        const oldSeasonTotals = {};   // 'athletekey|year' -> season points from the old Points block
         async function fetchTrackHistorySeasons(urlsMap) {
             let parsed = {};
 
@@ -1672,7 +1675,7 @@
                 // at the end of each meet cell. The total goes on the athlete's first
                 // meet entry as _pts, so the season badge picks it up. Years that the
                 // new Results log covers are skipped so points are never counted twice.
-                if (!OLD_POINTS_SKIP_YEARS.includes(String(year)) && markerIdx < rows.length) {
+                if (parseInt(year, 10) <= OLD_POINTS_THROUGH_YEAR && markerIdx < rows.length) {
                     const NUM = '(\\d*\\.?\\d+)';
                     const trailingPts = (c) => { const m = new RegExp('\\(\\s*' + NUM + '\\s*\\)\\s*$').exec(String(c == null ? '' : c).trim()); return m ? parseFloat(m[1]) : 0; };
                     const hasPtsCol = /points/i.test(String((rows[markerIdx] || [])[1] || ''));
@@ -1688,6 +1691,7 @@
                         if (isNaN(total) && nm) total = parseFloat(nm[2]);
                         if (isNaN(total)) { total = 0; for (let c = hasPtsCol ? 2 : 1; c < row.length; c++) total += trailingPts(row[c]); }
                         if (!(total > 0)) continue;
+                        oldSeasonTotals[key + '|' + year] = total;
                         const list = parsed[key] && parsed[key].seasons[year];
                         if (list && list.length) { list[0]._pts = total; continue; }
                         // On the team but no meet results in the times section (everyone on the boys team
@@ -3409,7 +3413,7 @@
             `;
         }
 
-        function buildTrackSeasonHtml(athleteName, year, meetEntries) {
+        function buildTrackSeasonHtml(athleteName, year, meetEntries, ptsOverride) {
             let meetElementsHtml = "";
 
             // Season-best badges for every track/field event this athlete has data for (XC excluded)
@@ -3495,6 +3499,7 @@
                 `;
             }
 
+            if (ptsOverride > 0) seasonPts = ptsOverride;   // old Points-block total replaces the log's points
             if (meetElementsHtml === "") {
                 // Points-only season: no meet results to list, but there is a season total to show (header only).
                 if (!(SHOW_SEASON_POINTS && seasonPts > 0)) return null;
@@ -3725,7 +3730,9 @@
 
             let compiledGridHtml = "";
             sortedYears.forEach(y => {
-                let trackHtml = buildTrackSeasonHtml(athleteName, String(y), trackSeasons[String(y)]);
+                // Years covered by the old Points block use that season total instead of the Results log's points
+                const oldTotal = (y <= OLD_POINTS_THROUGH_YEAR) ? lookupKeys.map(k => oldSeasonTotals[k + '|' + y]).find(v => v > 0) : undefined;
+                let trackHtml = buildTrackSeasonHtml(athleteName, String(y), trackSeasons[String(y)], oldTotal);
                 if (trackHtml) compiledGridHtml += trackHtml;
 
                 let xcHtml = buildXCSeasonHtml(athleteName, String(y - 1), xcSeasons[String(y - 1)]);
