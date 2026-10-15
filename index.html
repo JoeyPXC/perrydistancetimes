@@ -3481,8 +3481,8 @@
         // One row per performance, pasted in from the Results Importer after
         // each meet. Read by column NAME, so extra/missing columns are fine.
         // New seasons come from here; older seasons still use the year tabs.
-        // Season points badge on profiles. Off for now; set to true to turn it on (e.g. next track season).
-        const SHOW_SEASON_POINTS = false;
+        // Season points badge on profiles. Set to false to hide it again.
+        const SHOW_SEASON_POINTS = true;
         const RESULTS_LOG_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQsmKDHPBTxeLcwUapWr6_U9AQdNp0SuhLmadutLCuaw9IeHPFUvM8I28TnI39nK6Ab1zvzhIS9aKzl/pub?gid=0&single=true&output=csv';
         let resultsLogPromise = null;
         function getResultsLog() {
@@ -3500,10 +3500,10 @@
         // Older entries have no real date, so we read a leading "5/21" from the
         // meet name; an entry without one stays right after the one before it.
         // When a meet is in both an old tab and the Results log:
-        //   'old'  = show what was typed in the old tab (keeps hand-entered splits)   <- current
-        //   'new'  = show the Results log version (places, rounds, relay legs)
+        //   'old'  = show what was typed in the old tab (keeps hand-entered splits)
+        //   'new'  = show the Results log version (places, rounds, relay legs, points)   <- current
         //   'both' = show both
-        const DUPLICATE_MEETS = 'old';
+        const DUPLICATE_MEETS = 'new';
         function mergeSeasonEntries(year, oldE, newE) {
             const LEVEL = /\b(district|regional|state|county|federal)\b/gi;
             const levels = t => new Set((String(t).match(LEVEL) || []).map(x => x.toLowerCase()));
