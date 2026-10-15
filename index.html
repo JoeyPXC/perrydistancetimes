@@ -3464,13 +3464,17 @@
 
             if (meetElementsHtml === "") return null;
 
-            if (SHOW_SEASON_POINTS && seasonPts > 0) prBadges += `<span style="background:#ffffff;color:#000000;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:4px;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`;
+            // Points: white pill on the top row of the header, pushed to the right. PR badges get their own row beneath.
+            const ptsBadge = (SHOW_SEASON_POINTS && seasonPts > 0)
+                ? `<span style="background:#ffffff;color:#000000;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:auto;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`
+                : '';
 
             return `
                 <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);overflow:hidden;">
                     <div style="background:var(--primary);color:var(--accent);padding:5px 10px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
                         <span>📅 ${year} Track Season</span>
-                        <span>${prBadges}</span>
+                        ${ptsBadge}
+                        ${prBadges ? `<span style="flex-basis:100%;text-align:right;">${prBadges}</span>` : ''}
                     </div>
                     <div>${meetElementsHtml}</div>
                 </div>
