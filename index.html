@@ -1575,6 +1575,8 @@
         // Fetches and parses one set of season tabs (year -> CSV URL) into
         // { lookupKey: { originalName, seasons: { year: [{meet, ...events}] } } }.
         // Used for both the boys and girls season-tab sets.
+        // Years whose points come from the new Results log, not the old tabs' Points block.
+        const OLD_POINTS_SKIP_YEARS = ['2026'];
         async function fetchTrackHistorySeasons(urlsMap) {
             let parsed = {};
 
@@ -1661,6 +1663,33 @@
                         if (entry) {
                             parsed[lookupKey].seasons[year].push(entry);
                         }
+                    }
+                }
+
+                // ── Season points from the lower "Points" block of the old tabs ──
+                // Newer tabs have a Points column (col B); older ones put the total in
+                // the name, like "Name (23.5)". If neither exists, add up the (points)
+                // at the end of each meet cell. The total goes on the athlete's first
+                // meet entry as _pts, so the season badge picks it up. Years that the
+                // new Results log covers are skipped so points are never counted twice.
+                if (!OLD_POINTS_SKIP_YEARS.includes(String(year)) && markerIdx < rows.length) {
+                    const NUM = '(\\d*\\.?\\d+)';
+                    const trailingPts = (c) => { const m = new RegExp('\\(\\s*' + NUM + '\\s*\\)\\s*$').exec(String(c == null ? '' : c).trim()); return m ? parseFloat(m[1]) : 0; };
+                    const hasPtsCol = /points/i.test(String((rows[markerIdx] || [])[1] || ''));
+                    for (let i = markerIdx + 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row) continue;
+                        const full = String(row[0] || '').replace(/\s+/g, ' ').trim();
+                        if (!full) continue;
+                        const nm = new RegExp('^(.*?)\\s*\\(\\s*' + NUM + '\\s*\\)\\s*$').exec(full);
+                        const key = (nm ? nm[1] : full).toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const list = parsed[key] && parsed[key].seasons[year];
+                        if (!list || !list.length) continue;
+                        let total = NaN;
+                        if (hasPtsCol) total = parseFloat(row[1]);
+                        if (isNaN(total) && nm) total = parseFloat(nm[2]);
+                        if (isNaN(total)) { total = 0; for (let c = hasPtsCol ? 2 : 1; c < row.length; c++) total += trailingPts(row[c]); }
+                        if (total > 0) list[0]._pts = total;
                     }
                 }
             });
