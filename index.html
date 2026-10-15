@@ -1683,13 +1683,17 @@
                         if (!full) continue;
                         const nm = new RegExp('^(.*?)\\s*\\(\\s*' + NUM + '\\s*\\)\\s*$').exec(full);
                         const key = (nm ? nm[1] : full).toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const list = parsed[key] && parsed[key].seasons[year];
-                        if (!list || !list.length) continue;
                         let total = NaN;
                         if (hasPtsCol) total = parseFloat(row[1]);
                         if (isNaN(total) && nm) total = parseFloat(nm[2]);
                         if (isNaN(total)) { total = 0; for (let c = hasPtsCol ? 2 : 1; c < row.length; c++) total += trailingPts(row[c]); }
-                        if (total > 0) list[0]._pts = total;
+                        if (!(total > 0)) continue;
+                        const list = parsed[key] && parsed[key].seasons[year];
+                        if (list && list.length) { list[0]._pts = total; continue; }
+                        // On the team but no meet results in the times section (everyone on the boys team
+                        // is in the Points block from about 2021): keep a points-only season for the badge.
+                        if (!parsed[key]) parsed[key] = { originalName: (nm ? nm[1] : full).trim(), seasons: {} };
+                        parsed[key].seasons[year] = [{ meet: 'Season points', _pts: total, _pointsOnly: true }];
                     }
                 }
             });
@@ -3473,8 +3477,8 @@
                     let val = entry[key];
                     if (val && !/^(DNR|DNF|DNS|--?|0(\.0+)?)$/i.test(val)) eventParts.push({ label, time: val });
                 });
-                if (eventParts.length === 0) continue;
                 seasonPts += entry._pts || 0;
+                if (eventParts.length === 0) continue;
 
                 let rowBg = meetRowIdx % 2 === 0 ? 'var(--card-bg)' : 'var(--bg)';
                 meetRowIdx++;
@@ -3491,7 +3495,10 @@
                 `;
             }
 
-            if (meetElementsHtml === "") return null;
+            if (meetElementsHtml === "") {
+                // Points-only season: no meet results to list, but there is a season total to show (header only).
+                if (!(SHOW_SEASON_POINTS && seasonPts > 0)) return null;
+            }
 
             // Points: white pill on the top row of the header, pushed to the right. PR badges get their own row beneath.
             const ptsBadge = (SHOW_SEASON_POINTS && seasonPts > 0)
