@@ -56,13 +56,19 @@ function cleanMark(m, isField) {
   return s.replace(/^0+:0*/, '');
 }
 
-// Tidies event names: "Shot Put - 12lb" -> "Shot Put", "100 Meter - Wheelchair" -> "Seated 100m"
+// Tidies event names: "Shot Put - 12lb" -> "Shot Put", "100 Meter - Wheelchair" -> "Seated 100m",
+// "100 Meter Dash" -> "100m", "1600 Meter Run" -> "1600m", "4x400 Meter Relay" -> "4x400m Relay",
+// "300 Meter Hurdles" -> "300m Hurdles"
 function normEvent(e) {
   e = e.trim();
   if (/wheelchair|seated/i.test(e)) {
     const d = e.match(/^(\d+)\s*(?:Meter|m)\b/i); if (d) return 'Seated ' + d[1] + 'm';
     const f = e.match(/^(Shot Put|Discus|Javelin|Club)/i); if (f) return 'Seated ' + f[1];
   }
+  let m;
+  if (m = e.match(/^(\d+)\s*(?:Meter\s*)?Hurdles$/i)) return m[1] + 'm Hurdles';
+  if (m = e.match(/^(\d+)\s*[xX]\s*(\d+)\s*(?:Meter\s*)?Relay$/i)) return m[1] + 'x' + m[2] + 'm Relay';
+  if (m = e.match(/^(\d+)\s*Meter\s+(?:Dash|Run)$/i)) return m[1] + 'm';
   return e.replace(/^(Shot Put|Discus|Javelin|Hammer)\s*-\s*[\d.]+\s*(?:lbs?|kg)\s*$/i, '$1');
 }
 
