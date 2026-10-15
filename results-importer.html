@@ -38,6 +38,9 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 // PARSE_START
 const GRADE = { FR: 9, SO: 10, JR: 11, SR: 12 };
 const FIELD = /jump|vault|put|discus|javelin|hammer/i;
+// Team/relay-style events: the literal word "relay" doesn't always appear
+// (Shuttle Hurdles, and SMR/DMR when abbreviated), so check those too.
+const RELAY = /relay|shuttle|medley|\bSMR\b|\bDMR\b/i;
 
 function markValue(m, field) {
   if (!/\d/.test(m)) return null;
@@ -113,7 +116,7 @@ function parseHytek(text, opt) {
       const rd = h[2].match(/\s+(Prelims?|Semis?|Semifinals?|Quarterfinals?)$/i);
       ev = { gender: /^(Girls|Women)$/.test(h[1]) ? 'Girls' : 'Boys', event: normEvent(h[2].replace(/\s+(Prelims?\vert{}Semis?\vert{}Semifinals?\vert{}Quarterfinals?)$/i, '')),
         round: rd ? (/^semi/i.test(rd[1]) ? 'Semis' : /^quarter/i.test(rd[1]) ? 'Quarters' : 'Prelims') : 'Finals' };
-      ev.field = FIELD.test(h[2]); ev.relay = /relay/i.test(ev.event); ev.skip = /^-/.test(ev.event) || /team/i.test(ev.event); heat = ''; team = null; continue;
+      ev.field = FIELD.test(h[2]); ev.relay = RELAY.test(ev.event); ev.skip = /^-/.test(ev.event) || /team/i.test(ev.event); heat = ''; team = null; continue;
     }
     if (!ev || ev.skip) continue;
     const ht = t.match(/^--\s*Heat\s+(\d+)/i); if (ht) { heat = ht[1]; continue; }
