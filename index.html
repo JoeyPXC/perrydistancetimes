@@ -606,6 +606,12 @@
         .ap-name small { display:block; font-size:11px; font-weight:600; color:var(--text-muted); }
         .ap-mark { font-family:monospace; font-weight:800; font-size:15px; color:var(--primary); white-space:nowrap; }
         body.dark-mode .ap-mark { color:var(--accent); }
+        .sb-wrap { overflow-x:auto; margin:6px 8px 20px; border:1px solid var(--border); border-radius:10px; background:var(--card-bg); }
+        .sb-table { border-collapse:collapse; font-size:12px; white-space:nowrap; }
+        .sb-table th { position:sticky; top:0; background:var(--primary); color:var(--accent); font-weight:800; padding:7px 10px; text-align:left; z-index:1; }
+        .sb-table td { padding:6px 10px; border-top:1px solid var(--border); color:var(--text); }
+        .sb-table td.sb-name { font-weight:700; position:sticky; left:0; background:var(--card-bg); }
+        .sb-table td.sb-mark { font-family:monospace; font-weight:700; }
         .ap-empty { text-align:center; padding:30px 16px; color:var(--text-muted); font-weight:600; }
         .accomp-section { margin-bottom:18px; }
         .accomp-gender-divider { font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px; color:var(--text); padding:4px 2px 10px; margin-bottom:10px; border-bottom:3px solid var(--accent); }
@@ -1179,6 +1185,17 @@
         </div>
         <div id="pointsControls" class="ap-controls"></div>
         <div class="nav-body" id="pointsBody"></div>
+    </div>
+
+    <!-- ── Season Bests export (hidden page: only reachable at  yoursite/#seasonbests ) ── -->
+    <div class="nav-overlay" id="seasonBestsOverlay">
+        <div class="nav-header">
+            <div class="nav-back-btn" onclick="closeSeasonBestsOverlay()">← 🏃</div>
+            <span class="nav-header-title">⏱ Season Bests</span>
+            <button class="nav-close-btn" onclick="closeSeasonBestsOverlay()">✕ Close</button>
+        </div>
+        <div id="sbControls" class="ap-controls"></div>
+        <div class="nav-body" id="sbBody" style="padding:0;"></div>
     </div>
 
     <!-- ── Year by Year / Accomplishments Overlay ───────────────── -->
@@ -7569,6 +7586,8 @@
             if (location.hash === '#roster') openRosterOverlay();
             // Hidden Season Points export: only opens for the direct link  yoursite/#points
             if (location.hash === '#points') openPointsOverlay();
+            // Hidden Season Bests export: only opens for the direct link  yoursite/#seasonbests
+            if (location.hash === '#seasonbests') openSeasonBestsOverlay();
         });
 
         // ── Back gesture handling (Android swipe / browser back button) ──
@@ -7588,6 +7607,8 @@
                 closeStateQualifiersOverlay();
             } else if (document.getElementById('afterPerryOverlay').classList.contains('open')) {
                 closeAfterPerryOverlay();
+            } else if (document.getElementById('seasonBestsOverlay').classList.contains('open')) {
+                closeSeasonBestsOverlay();
             } else if (document.getElementById('pointsOverlay').classList.contains('open')) {
                 closePointsOverlay();
             } else if (document.getElementById('rosterOverlay').classList.contains('open')) {
@@ -7953,13 +7974,21 @@
         }
 
         function pointsDownload(gender) {
-            const rows = pointsList(pointsState.data, pointsState.year, gender);
+            const both = gender === 'BOTH';
             const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-            const csv = ['Rank,Name,Grad Year,Points'].concat(rows.map(r => [r.rank, q(r.name), r.gradYear, r.pts].join(','))).join('\r\n');
+            let csv;
+            if (both) {
+                // one file: boys first, then girls, each ranked within their own gender
+                const line = (g, label) => pointsList(pointsState.data, pointsState.year, g).map(r => [label, r.rank, q(r.name), r.gradYear, r.pts].join(','));
+                csv = ['Gender,Rank,Name,Grad Year,Points'].concat(line('M', 'Boys'), line('F', 'Girls')).join('\r\n');
+            } else {
+                const rows = pointsList(pointsState.data, pointsState.year, gender);
+                csv = ['Rank,Name,Grad Year,Points'].concat(rows.map(r => [r.rank, q(r.name), r.gradYear, r.pts].join(','))).join('\r\n');
+            }
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `perry_${gender === 'F' ? 'girls' : 'boys'}_points_${pointsState.year === 'ALL' ? 'career' : pointsState.year}.csv`;
+            a.download = `perry_${both ? 'all' : gender === 'F' ? 'girls' : 'boys'}_points_${pointsState.year === 'ALL' ? 'career' : pointsState.year}.csv`;
             document.body.appendChild(a); a.click(); a.remove();
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }
@@ -7976,7 +8005,7 @@
             const opts = years.map(y => `<option value="${y}"${y === pointsState.year ? ' selected' : ''}>${y} season</option>`).join('')
                 + `<option value="ALL"${pointsState.year === 'ALL' ? ' selected' : ''}>All seasons (career totals)</option>`;
             controls.innerHTML = `<select class="ap-select" onchange="pointsSetYear(this.value)">${opts}</select>`
-                + `<div class="ap-toggle"><button class="ap-toggle-btn" onclick="pointsDownload('M')">⬇ Boys CSV</button><button class="ap-toggle-btn" onclick="pointsDownload('F')">⬇ Girls CSV</button></div>`;
+                + `<div class="ap-toggle"><button class="ap-toggle-btn" onclick="pointsDownload('M')">⬇ Boys CSV</button><button class="ap-toggle-btn" onclick="pointsDownload('F')">⬇ Girls CSV</button><button class="ap-toggle-btn" onclick="pointsDownload('BOTH')">⬇ Both</button></div>`;
             let html = '';
             [['M', 'Boys'], ['F', 'Girls']].forEach(([g, label]) => {
                 const rows = pointsList(people, pointsState.year, g);
@@ -8005,6 +8034,129 @@
             document.getElementById('pointsOverlay').classList.remove('open');
         }
         window.addEventListener('hashchange', () => { if (location.hash === '#points') openPointsOverlay(); });
+
+
+        // ── Season Bests export (hidden; open it with  yoursite/#seasonbests ) ──
+        // Two views of the same data, for a chosen season (or all-time bests):
+        //   By Athlete: everyone alphabetical by last name, one column per event they ran/threw.
+        //   By Event:   one column per event, each listing "Name  mark" best to worst.
+        // A season best is the athlete's best mark in that event among marks tagged with that
+        // year (same rule as the season PR badges on profiles). XC is left out.
+        let sbState = { year: null, gender: 'M', view: 'athlete' };
+
+        function sbEvents() {
+            return allEventKeys().filter(k => { const d = eventDef(k); return !/^xc\b|cross\s*country/i.test(k + ' ' + (d ? d.label : '')); });
+        }
+        function sbBest(a, ev, year) {
+            const evData = a[ev];
+            if (!evData || typeof evData !== 'object') return null;
+            let best = null, bs = Infinity;
+            (year === 'ALL' ? ['PR', '9th', '10th', '11th', '12th'] : ['9th', '10th', '11th', '12th']).forEach(g => {
+                const v = evData[g];
+                if (!v || typeof v !== 'string') return;
+                if (year !== 'ALL' && extractYearFromTimeValue(v) !== year) return;
+                const secs = cleanTimeToSeconds(v, ev);
+                if (secs < bs) { bs = secs; best = v.split('(')[0].trim(); }
+            });
+            return best ? { mark: best, secs: bs } : null;
+        }
+        function sbYears() {
+            const ys = new Set();
+            const evs = sbEvents();
+            Object.values(athletes || {}).forEach(a => {
+                if (!a || !a.name) return;
+                evs.forEach(ev => {
+                    const d = a[ev]; if (!d || typeof d !== 'object') return;
+                    ['9th', '10th', '11th', '12th'].forEach(g => { const y = typeof d[g] === 'string' ? extractYearFromTimeValue(d[g]) : null; if (y) ys.add(y); });
+                });
+            });
+            return Array.from(ys).sort((x, y) => y - x);
+        }
+        // -> { rows: [{ name, gender, gradYear, marks: {ev: {mark, secs}} }] (alphabetical by last name), events: [ev...] }
+        function sbCollect(year, gender) {
+            const evs = sbEvents(), rows = [], used = new Set();
+            Object.values(athletes || {}).forEach(a => {
+                if (!a || !a.name) return;
+                const g = a.gender === 'F' ? 'F' : 'M';
+                if (gender !== 'ALL' && g !== gender) return;
+                const marks = {};
+                evs.forEach(ev => { const b = sbBest(a, ev, year); if (b) { marks[ev] = b; used.add(ev); } });
+                if (Object.keys(marks).length) rows.push({ name: displayName(a.name), gender: g, gradYear: a.gradYear || '', marks });
+            });
+            rows.sort((x, y) => getLastName(x.name).localeCompare(getLastName(y.name)) || x.name.localeCompare(y.name));
+            return { rows, events: evs.filter(ev => used.has(ev)) };
+        }
+        const sbLabel = ev => { const d = eventDef(ev); return /^\d+m$/i.test(ev) || !d ? ev : ev; };
+
+        // Table as an array of rows of display strings (shared by the page and the CSV)
+        function sbTable() {
+            const { rows, events } = sbCollect(sbState.year, sbState.gender);
+            const both = sbState.gender === 'ALL';
+            if (sbState.view === 'athlete') {
+                const head = ['Name'].concat(both ? ['Gender'] : [], ['Grad Year'], events.map(sbLabel));
+                const body = rows.map(r => [r.name].concat(both ? [r.gender === 'F' ? 'Girls' : 'Boys'] : [], [r.gradYear], events.map(ev => r.marks[ev] ? r.marks[ev].mark : '')));
+                return { head, body, markFrom: 1 + (both ? 1 : 0) + 1, count: rows.length };
+            }
+            const cols = [];
+            events.forEach(ev => (both ? [['M', 'Boys'], ['F', 'Girls']] : [[sbState.gender, '']]).forEach(([g, gl]) => {
+                const list = rows.filter(r => r.gender === g && r.marks[ev]).sort((x, y) => x.marks[ev].secs - y.marks[ev].secs || x.name.localeCompare(y.name));
+                if (list.length) cols.push({ title: sbLabel(ev) + (gl ? ` (${gl})` : ''), cells: list.map(r => `${r.name} ${r.marks[ev].mark}`) });
+            }));
+            const n = cols.reduce((m, c) => Math.max(m, c.cells.length), 0);
+            const body = [];
+            for (let i = 0; i < n; i++) body.push(cols.map(c => c.cells[i] || ''));
+            return { head: cols.map(c => c.title), body, markFrom: -1, count: rows.length };
+        }
+
+        function sbDownload() {
+            const t = sbTable();
+            const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            // Marks are written as ="4:55.45" so Excel keeps times and field marks like 5-8 as text instead of turning them into dates
+            const cell = (v, i) => (t.markFrom >= 0 && i >= t.markFrom && v !== '') ? '="' + String(v).replace(/"/g, '""') + '"' : q(v);
+            const csv = [t.head.map(q).join(',')].concat(t.body.map(r => r.map(cell).join(','))).join('\r\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const g = { M: 'boys', F: 'girls', ALL: 'all' }[sbState.gender];
+            a.download = `perry_season_bests_by_${sbState.view}_${sbState.year === 'ALL' ? 'alltime' : sbState.year}_${g}.csv`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+
+        function sbSet(k, v) { sbState[k] = v; sbDraw(); }
+
+        function sbDraw() {
+            const controls = document.getElementById('sbControls'), body = document.getElementById('sbBody');
+            const years = sbYears();
+            if (!years.length) { controls.innerHTML = ''; body.innerHTML = '<div class="ap-empty">No season marks found yet.</div>'; return; }
+            if (sbState.year !== 'ALL' && !years.includes(sbState.year)) sbState.year = years[0];
+            const opts = years.map(y => `<option value="${y}"${y === sbState.year ? ' selected' : ''}>${y} season</option>`).join('')
+                + `<option value="ALL"${sbState.year === 'ALL' ? ' selected' : ''}>All-time bests</option>`;
+            const tg = (k, val, label) => `<button class="ap-toggle-btn${sbState[k] === val ? ' active' : ''}" onclick="sbSet('${k}','${val}')">${label}</button>`;
+            controls.innerHTML = `<select class="ap-select" onchange="sbSet('year',this.value)">${opts}</select>`
+                + `<div class="ap-toggle">${tg('view', 'athlete', 'By Athlete')}${tg('view', 'event', 'By Event')}</div>`
+                + `<div class="ap-toggle">${tg('gender', 'M', 'Boys')}${tg('gender', 'F', 'Girls')}${tg('gender', 'ALL', 'Both')}</div>`
+                + `<div class="ap-toggle"><button class="ap-toggle-btn" onclick="sbDownload()">⬇ Download CSV</button></div>`;
+            const t = sbTable();
+            if (!t.body.length) { body.innerHTML = '<div class="ap-empty">No marks for this selection.</div>'; return; }
+            const th = t.head.map(h => `<th>${apEsc(h)}</th>`).join('');
+            const tr = t.body.map(r => '<tr>' + r.map((c, i) => `<td class="${sbState.view === 'athlete' ? (i === 0 ? 'sb-name' : (i >= t.markFrom ? 'sb-mark' : '')) : ''}">${apEsc(c)}</td>`).join('') + '</tr>').join('');
+            body.innerHTML = `<div class="ap-title" style="margin:10px 12px 0;">${t.count} athlete${t.count === 1 ? '' : 's'} · ${t.head.length} column${t.head.length === 1 ? '' : 's'}</div><div class="sb-wrap"><table class="sb-table"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
+        }
+
+        async function openSeasonBestsOverlay() {
+            if (document.getElementById('seasonBestsOverlay').classList.contains('open')) return;
+            history.pushState({ overlay: 'seasonbests' }, '');
+            document.getElementById('seasonBestsOverlay').classList.add('open');
+            document.getElementById('sbControls').innerHTML = '';
+            document.getElementById('sbBody').innerHTML = '<div class="ap-empty">Loading…</div>';
+            await Promise.race([rosterFullyLoaded, new Promise(r => setTimeout(r, 25000))]);
+            sbDraw();
+        }
+        function closeSeasonBestsOverlay() {
+            document.getElementById('seasonBestsOverlay').classList.remove('open');
+        }
+        window.addEventListener('hashchange', () => { if (location.hash === '#seasonbests') openSeasonBestsOverlay(); });
 
         // ── Coaches page (hidden; open it with  yoursite/#coaches ) ──────
         // Reads the published coaches Sheet: Name, XC, Track, Position, Bio.
