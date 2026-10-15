@@ -3555,9 +3555,25 @@
             }
             const short = e => e.replace(/^(\d+) Meter (?:Dash|Run)$/i, '$1').replace(/^(\d+) Meter Hurdles$/i, '$1H').replace(/^(4x\d+) Relay$/i, '$1');
             const ord = n => { n = +n; const sfx = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]); };
+            // Dates come in from a hand-edited Google Sheet, so formats vary by
+            // whoever typed them in: zero-padded ISO ("2026-04-08"), US slash
+            // dates with or without zero-padding ("4/8/2026", "04/08/26"), or
+            // just month/day with no year ("4/8"). Parse all of them into a
+            // real {y,m,d} so sorting (sortKey below) never falls back to
+            // comparing the raw text, which is what let unpadded days like
+            // "4/8" or "5/8" sort after "4/30"/"5/13" as plain strings.
+            const parseAnyDate = (x, yearHint) => {
+                x = (x || '').trim();
+                let m;
+                if (m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(x)) return { y: +m[1], m: +m[2], d: +m[3] };
+                if (m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(x)) return { y: +m[3], m: +m[1], d: +m[2] };
+                if (m = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/.exec(x)) return { y: 2000 + (+m[3]), m: +m[1], d: +m[2] };
+                if (m = /^(\d{1,2})\/(\d{1,2})$/.exec(x)) return { y: +yearHint || 0, m: +m[1], d: +m[2] };
+                return null;
+            };
+            const sortKey = (o) => o ? `${String(o.y).padStart(4, '0')}-${String(o.m).padStart(2, '0')}-${String(o.d).padStart(2, '0')}` : '';
             const dlabel = (d, e) => {
-                const p = x => { const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(x || ''); return m ? { y: m[1].slice(2), m: +m[2], d: +m[3] } : null; };
-                const a = p(d), b = p(e); if (!a) return '';
+                const a = parseAnyDate(d), b = parseAnyDate(e); if (!a) return '';
                 return b && (b.m !== a.m || b.d !== a.d) ? `${a.m}/${a.d}\u2013${b.m}/${b.d}` : `${a.m}/${a.d}`;
             };
             // group: athlete -> year -> meet
@@ -3585,7 +3601,9 @@
                         return { label, time };
                     });
                     const f = list[0];
-                    ((out[k] = out[k] || {})[yr] = out[k][yr] || []).push({ meet: f.meet, _dateLabel: dlabel(f.date, f.end), _sort: f.date, _end: f.end || f.date, _parts: parts, _pts: pts });
+                    const startKey = sortKey(parseAnyDate(f.date, yr));
+                    const endKey = f.end ? sortKey(parseAnyDate(f.end, yr)) : '';
+                    ((out[k] = out[k] || {})[yr] = out[k][yr] || []).push({ meet: f.meet, _dateLabel: dlabel(f.date, f.end), _sort: startKey, _end: endKey || startKey, _parts: parts, _pts: pts });
                 });
                 out[k][yr].sort((a, b) => (a._sort || '').localeCompare(b._sort || ''));
             }));
