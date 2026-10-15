@@ -69,7 +69,7 @@ function normEvent(e) {
   if (m = e.match(/^(\d+)\s*(?:Meter\s*)?Hurdles$/i)) return m[1] + 'm Hurdles';
   if (m = e.match(/^(\d+)\s*[xX]\s*(\d+)\s*(?:Meter\s*)?Relay$/i)) return m[1] + 'x' + m[2] + 'm Relay';
   if (m = e.match(/^(\d+)\s*Meter\s+(?:Dash|Run)$/i)) return m[1] + 'm';
-  return e.replace(/^(Shot Put|Discus|Javelin|Hammer)\s*-\s*[\d.]+\s*(?:lbs?|kg)\s*$/i, '$1');
+  return e.replace(/^(Shot Put|Discus|Javelin|Hammer)\s*[-\u2013]?\s*[\d.]+\s*(?:lbs?|kgs?|k|g|grams?)\b\s*$/i, '$1');
 }
 
 // Reads dates, ranges ("5/21-5/23/26"), or split days ("5/27 & 5/29/26")
