@@ -3537,7 +3537,7 @@
 
             // Points: white pill on the top row of the header, pushed to the right. PR badges get their own row beneath.
             const ptsBadge = (SHOW_SEASON_POINTS && seasonPts > 0)
-                ? `<span style="background:#ffffff;color:#000000;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:auto;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(2)} pts</span>`
+                ? `<span style="background:#ffffff;color:#000000;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:auto;white-space:nowrap;display:inline-block;">${+seasonPts.toFixed(4)} pts</span>`
                 : '';
 
             return `
@@ -7965,7 +7965,7 @@
             people.forEach(p => {
                 if (p.gender !== gender) return;
                 const pts = year === 'ALL' ? Object.values(p.years).reduce((a, b) => a + b, 0) : (p.years[year] || 0);
-                if (pts > 0) rows.push({ name: p.name, gradYear: p.gradYear, pts: +pts.toFixed(2) });
+                if (pts > 0) rows.push({ name: p.name, gradYear: p.gradYear, pts: +pts.toFixed(4) });
             });
             rows.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
             let rank = 0, prev = null;
