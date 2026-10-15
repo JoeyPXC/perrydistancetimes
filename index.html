@@ -8089,10 +8089,11 @@
         const sbLabel = ev => { const d = eventDef(ev); return /^\d+m$/i.test(ev) || !d ? ev : ev; };
 
         // Table as an array of rows of display strings (shared by the page and the CSV)
-        function sbTable() {
+        function sbTable(view) {
+            view = view || sbState.view;
             const { rows, events } = sbCollect(sbState.year, sbState.gender);
             const both = sbState.gender === 'ALL';
-            if (sbState.view === 'athlete') {
+            if (view === 'athlete') {
                 const head = ['Name'].concat(both ? ['Gender'] : [], ['Grad Year'], events.map(sbLabel));
                 const body = rows.map(r => [r.name].concat(both ? [r.gender === 'F' ? 'Girls' : 'Boys'] : [], [r.gradYear], events.map(ev => r.marks[ev] ? r.marks[ev].mark : '')));
                 return { head, body, markFrom: 1 + (both ? 1 : 0) + 1, count: rows.length };
@@ -8123,6 +8124,72 @@
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }
 
+
+        // ── Minimal .xlsx writer (no libraries): sheets = [{ name, head: [...], body: [[...]] }] ──
+        function sbMakeXlsx(sheets) {
+            const enc = new TextEncoder();
+            const esc = v => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const col = n => { let t = ''; n++; while (n > 0) { const m = (n - 1) % 26; t = String.fromCharCode(65 + m) + t; n = Math.floor((n - 1) / 26); } return t; };
+            const sheetXml = (sh) => {
+                const widths = sh.head.map((h, i) => Math.min(40, Math.max(String(h).length, ...sh.body.map(r => String(r[i] == null ? '' : r[i]).length)) + 2));
+                let x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                    + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+                    + '<cols>' + widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols><sheetData>';
+                const row = (cells, r, style) => {
+                    x += `<row r="${r}">` + cells.map((v, i) => {
+                        if (v === '' || v == null) return '';
+                        const ref = col(i) + r;
+                        if (!style && sh.head[i] === 'Grad Year' && /^\d+$/.test(String(v))) return `<c r="${ref}"><v>${v}</v></c>`;
+                        return `<c r="${ref}" t="inlineStr"${style ? ' s="1"' : ''}><is><t>${esc(v)}</t></is></c>`;
+                    }).join('') + '</row>';
+                };
+                row(sh.head, 1, true);
+                sh.body.forEach((r, i) => row(r, i + 2, false));
+                return x + '</sheetData></worksheet>';
+            };
+            const files = [
+                ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>'],
+                ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+                ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((sh, i) => `<sheet name="${esc(sh.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>'],
+                ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+                ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']
+            ].concat(sheets.map((sh, i) => ['xl/worksheets/sheet' + (i + 1) + '.xml', sheetXml(sh)]));
+
+            // store-only zip
+            const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+            const crc = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+            const parts = [], central = [];
+            let offset = 0;
+            files.forEach(([name, text]) => {
+                const nb = enc.encode(name), db = enc.encode(text), cr = crc(db);
+                const lh = new DataView(new ArrayBuffer(30));
+                lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+                lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, cr, true); lh.setUint32(18, db.length, true); lh.setUint32(22, db.length, true);
+                lh.setUint16(26, nb.length, true); lh.setUint16(28, 0, true);
+                parts.push(new Uint8Array(lh.buffer), nb, db);
+                const ch = new DataView(new ArrayBuffer(46));
+                ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+                ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, cr, true); ch.setUint32(20, db.length, true); ch.setUint32(24, db.length, true);
+                ch.setUint16(28, nb.length, true); ch.setUint32(42, offset, true);
+                central.push(new Uint8Array(ch.buffer), nb);
+                offset += 30 + nb.length + db.length;
+            });
+            const cSize = central.reduce((n, b) => n + b.length, 0);
+            const end = new DataView(new ArrayBuffer(22));
+            end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cSize, true); end.setUint32(16, offset, true);
+            return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        }
+        function sbDownloadExcel() {
+            const a = sbTable('athlete'), e = sbTable('event');
+            const blob = sbMakeXlsx([{ name: 'By Athlete', head: a.head, body: a.body }, { name: 'By Event', head: e.head, body: e.body }]);
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            const g = { M: 'boys', F: 'girls', ALL: 'all' }[sbState.gender];
+            link.download = `perry_season_bests_${sbState.year === 'ALL' ? 'alltime' : sbState.year}_${g}.xlsx`;
+            document.body.appendChild(link); link.click(); link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        }
+
         function sbSet(k, v) { sbState[k] = v; sbDraw(); }
 
         function sbDraw() {
@@ -8136,7 +8203,7 @@
             controls.innerHTML = `<select class="ap-select" onchange="sbSet('year',this.value)">${opts}</select>`
                 + `<div class="ap-toggle">${tg('view', 'athlete', 'By Athlete')}${tg('view', 'event', 'By Event')}</div>`
                 + `<div class="ap-toggle">${tg('gender', 'M', 'Boys')}${tg('gender', 'F', 'Girls')}${tg('gender', 'ALL', 'Both')}</div>`
-                + `<div class="ap-toggle"><button class="ap-toggle-btn" onclick="sbDownload()">⬇ Download CSV</button></div>`;
+                + `<div class="ap-toggle"><button class="ap-toggle-btn" onclick="sbDownloadExcel()">⬇ Excel (both views)</button><button class="ap-toggle-btn" onclick="sbDownload()">⬇ CSV (this view)</button></div>`;
             const t = sbTable();
             if (!t.body.length) { body.innerHTML = '<div class="ap-empty">No marks for this selection.</div>'; return; }
             const th = t.head.map(h => `<th>${apEsc(h)}</th>`).join('');
