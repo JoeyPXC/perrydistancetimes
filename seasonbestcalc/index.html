@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perry Season Bests Export</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#000; --panel:#0e0e0e; --border:#2a2a2a; --text:#f2f2f2; --muted:#9aa0a6;
+    --accent:#3b82f6; --accent2:#60a5fa;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    margin:0; padding:20px;
+  }
+  .wrap{max-width:1040px; margin:0 auto;}
+  h1{font-size:1.4rem; margin-bottom:2px;}
+  p.sub{color:var(--muted); font-size:.85rem; margin-top:0; margin-bottom:20px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:16px; margin-bottom:16px;
+  }
+  .card h2{font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent2); margin:0 0 10px 0;}
+  label{display:block; font-size:.75rem; color:var(--muted); margin-bottom:4px; font-weight:600;}
+  input[type=text], select, textarea{
+    width:100%; background:#000; border:1px solid #444; border-radius:8px; color:var(--text);
+    padding:8px 10px; font-size:.85rem; font-family:inherit;
+  }
+  input[type=file]{font-size:.8rem; color:var(--muted);}
+  textarea{font-family:ui-monospace,monospace; font-size:.75rem; resize:vertical;}
+  .row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;}
+  @media(max-width:700px){.row{grid-template-columns:1fr;}}
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 14px;
+    font-weight:700; font-size:.85rem; cursor:pointer; text-transform:uppercase; letter-spacing:.04em;
+  }
+  button:hover{background:var(--accent2);}
+  button.secondary{background:#1f1f1f; border:1px solid #444;}
+  button.secondary:hover{background:#2a2a2a;}
+  button.danger{background:#3a1212; border:1px solid #732;}
+  button.danger:hover{background:#5a1a1a;}
+  .btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+  table{width:100%; border-collapse:collapse; font-size:.8rem;}
+  th,td{text-align:left; padding:6px 8px; border-bottom:1px solid #222;}
+  th{color:var(--muted); text-transform:uppercase; font-size:.65rem; letter-spacing:.06em;}
+  .pill{display:inline-block; background:#1a2a44; color:#9ec3ff; border-radius:999px; padding:1px 8px; font-size:.7rem; margin-left:6px;}
+  .badge{display:inline-block; border-radius:5px; padding:0 6px; font-size:.68rem; font-weight:700;}
+  .badge.new{background:#2a1f44; color:#c4a9ff;}
+  .badge.improved{background:#0f2a1a; color:#7bdc9a;}
+  .empty{color:var(--muted); font-size:.8rem; font-style:italic;}
+  .note{font-size:.72rem; color:var(--muted); margin-top:8px; line-height:1.4;}
+  .remove{color:#f87171; cursor:pointer; font-size:.75rem;}
+  .statline{font-size:.78rem; color:var(--muted);}
+  .statline b{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏆 Season Bests Export</h1>
+  <p class="sub">Upload your current season-bests CSV, paste in a new meet's results, and get back every athlete who either set a new season best or ran/threw an event for the first time this year.</p>
+
+  <div class="card">
+    <h2>1. Upload current season bests (optional, but recommended)</h2>
+    <label>Season Bests CSV — from your site's <code>#seasonbests</code> export, "By Athlete" view</label>
+    <input type="file" id="sbCsvFile" accept=".csv" onchange="handleSeasonBestsUpload(event)">
+    <div id="sbStatus" class="statline" style="margin-top:8px;"></div>
+    <div class="btnrow">
+      <button class="secondary" onclick="clearSeasonBests()">Clear loaded season bests</button>
+    </div>
+    <p class="note">Export this from your PWA at <code>yoursite/#seasonbests</code> → pick the current season → "By Athlete" → download CSV. Re-upload any time you want to refresh the baseline (e.g. after entering last week's marks).</p>
+  </div>
+
+  <div class="card">
+    <h2>2. Add a meet's results</h2>
+    <div class="row">
+      <div>
+        <label>School (filter)</label>
+        <input type="text" id="schoolInput" placeholder="e.g. Perry">
+      </div>
+      <div>
+        <label>Meet Name</label>
+        <input type="text" id="meetNameInput" placeholder="e.g. Stark County Championships">
+      </div>
+      <div>
+        <label>Year of Meet</label>
+        <input type="text" id="meetYearInput" placeholder="e.g. 2026">
+      </div>
+    </div>
+    <label>Paste raw results (Athletic.net, MileSplit, or AthleticLIVE text)</label>
+    <textarea id="rawResults" rows="8" placeholder="Paste results here..."></textarea>
+    <div class="btnrow" style="margin-top:6px; margin-bottom:0;">
+      <label style="display:flex; align-items:center; gap:6px; font-weight:400; margin:0;">
+        <input type="checkbox" id="includeAllCheckbox" style="width:auto;">
+        Include every result for this school, not just new/improved
+      </label>
+    </div>
+    <p class="note" style="margin-top:4px;">Useful for the first meet of the season when nobody's in the database yet, or whenever you just want a full roster of times regardless of whether it beat anything.</p>
+    <div class="btnrow">
+      <button onclick="addMeet()">Process this meet</button>
+      <span class="note" id="modeNote" style="align-self:center;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. Season-best database <span class="pill" id="totalCount">0 entries</span></h2>
+    <div id="dbSummary"><p class="empty">Nothing added yet.</p></div>
+    <div class="btnrow">
+      <button class="secondary" onclick="exportExcel()">Export to Excel (.xlsx)</button>
+      <button class="danger" onclick="clearDatabase()">Clear database</button>
+    </div>
+    <p class="note">Data is saved in this browser (localStorage) so you can keep adding meets throughout the season before exporting. <span class="badge new">NEW</span> = first result on record this year for that athlete/event. <span class="badge improved">IMPROVED</span> = beat their previously loaded season best.</p>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "pr_roster_db_v2";
+const SB_STORAGE_KEY = "season_bests_csv_v1";
+let prDatabase = loadDatabase();
+let seasonBests = loadSeasonBests(); // null, or { byAthlete: {normName: {name, grade, events: {normEvent: markStr}}}, meta: {filename, uploadedAt, count} }
+
+renderSummary();
+renderSeasonBestsStatus();
+renderModeNote();
+
+// ---------- storage ----------
+function loadDatabase(){
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; } catch(e){ return {}; }
+}
+function saveDatabase(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prDatabase)); } catch(e){} }
+
+function loadSeasonBests(){
+  try { const raw = localStorage.getItem(SB_STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+}
+function saveSeasonBests(){ try { localStorage.setItem(SB_STORAGE_KEY, JSON.stringify(seasonBests)); } catch(e){} }
+
+// ---------- CSV parsing (handles quoted fields) ----------
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ','){ row.push(field); field = ''; }
+      else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c !== ''));
+}
+// The site's season-bests export writes mark cells as ="2:03.99" so Excel keeps them as text
+// instead of turning them into dates/numbers. Strip that leading "=" (and stray quotes) back off.
+function cleanCsvCell(v){
+  return (v || '').replace(/^=/, '').replace(/^"|"$/g, '').trim();
+}
+
+function handleSeasonBestsUpload(evt){
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      // Strip a leading UTF-8 BOM (common in Excel/Sheets exports) so "Name" matches cleanly
+      const text = e.target.result.replace(/^\uFEFF/, '');
+      const rows = parseCSV(text);
+      if (rows.length < 2) { alert('That CSV looks empty.'); return; }
+      const header = rows[0].map(h => cleanCsvCell(h));
+      const nameIdx = header.findIndex(h => /^name$/i.test(h));
+      if (nameIdx === -1) { alert('Could not find a "Name" column in that CSV — make sure you exported the "By Athlete" view.'); return; }
+      const gradeIdx = header.findIndex(h => /grad\s*year/i.test(h));
+      const eventCols = header.map((h, i) => ({h, i})).filter(({h, i}) => i !== nameIdx && i !== gradeIdx && !/^gender$/i.test(h));
+
+      const byAthlete = {};
+      for (let r = 1; r < rows.length; r++){
+        const row = rows[r];
+        const name = cleanCsvCell(row[nameIdx]);
+        if (!name) continue;
+        const key = normalizeName(name);
+        const events = {};
+        eventCols.forEach(({h, i}) => {
+          const v = cleanCsvCell(row[i]);
+          if (v) events[normalizeEvent(h)] = v;
+        });
+        byAthlete[key] = { name, grade: gradeIdx !== -1 ? cleanCsvCell(row[gradeIdx]) : '', events };
+      }
+      seasonBests = { byAthlete, meta: { filename: file.name, uploadedAt: new Date().toISOString(), count: Object.keys(byAthlete).length } };
+      saveSeasonBests();
+      renderSeasonBestsStatus();
+      renderModeNote();
+    } catch(err){
+      alert('Could not read that CSV: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearSeasonBests(){
+  if (!confirm("Clear the loaded season bests? New meets will go back to using Athletic.net's own PR/PB/SB tags only.")) return;
+  seasonBests = null;
+  localStorage.removeItem(SB_STORAGE_KEY);
+  document.getElementById('sbCsvFile').value = '';
+  renderSeasonBestsStatus();
+  renderModeNote();
+}
+
+function renderSeasonBestsStatus(){
+  const el = document.getElementById('sbStatus');
+  if (!seasonBests) {
+    el.innerHTML = 'No season bests loaded yet — without this, the tool falls back to only pulling results Athletic.net itself tagged PR/PB/SB (its all-time best, not season-to-date).';
+    return;
+  }
+  el.innerHTML = `Loaded <b>${seasonBests.meta.count}</b> athletes from <b>${escHtml(seasonBests.meta.filename)}</b> (uploaded ${new Date(seasonBests.meta.uploadedAt).toLocaleString()}).`;
+}
+
+function renderModeNote(){
+  const el = document.getElementById('modeNote');
+  el.textContent = seasonBests
+    ? "Comparison mode: every result for your school is checked against the loaded season bests — new events and improvements are captured, not just Athletic.net's own PB tag."
+    : "Legacy mode: only lines Athletic.net itself flags PR / PB / SB will be pulled in (its all-time best, not season-to-date). Upload a season-bests CSV above for accurate season tracking.";
+}
+
+// ---------- name / event normalization ----------
+function normalizeName(name){
+  return name.toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+function normalizeEvent(str){
+  let s = str.toLowerCase();
+  // Seated/Wheelchair is a different event from the open version of the same distance —
+  // capture that BEFORE stripping the word, so "Seated 800m" and "800m" don't collide.
+  const isSeated = /\bseated\b|\bwheelchair\b/.test(s);
+  s = s.replace(/-\s*\d+(\.\d+)?["']?\s*\/\s*[\d.]+\s*m\b/gi, ''); // cut full hurdle-height spec like `- 39" / 0.991m`
+  s = s.replace(/["'].*$/, '');                                   // fallback: cut at any remaining stray quote
+  s = s.replace(/-\s*\d+(\.\d+)?\s*(lb|kg)\b.*$/i, '');            // cut shot/discus weight specs
+  s = s.replace(/\b(boys|girls|varsity|finals|prelims|results|wheelchair|series|seated)\b/gi, '');
+  s = s.replace(/meters?/gi, 'm');
+  s = s.replace(/(\d)\s+m\b/g, '$1m');
+  s = s.replace(/[^a-z0-9]+/g, '');
+  return (isSeated ? 'seated' : '') + s;
+}
+function escHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---------- mark comparison ----------
+function isFieldEvent(eventLabel){
+  return /shot|discus|javelin|jump|vault|put/i.test(eventLabel);
+}
+function timeToSeconds(mark){
+  const m = String(mark).replace(/[^\d:.]/g, '');
+  const parts = m.split(':');
+  if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+  return parseFloat(parts[0]);
+}
+function feetInchesToInches(mark){
+  const m = String(mark).replace(/[^\d.\-]/g, '');
+  const parts = m.split('-');
+  const ft = parseFloat(parts[0]) || 0, inch = parseFloat(parts[1]) || 0;
+  return ft * 12 + inch;
+}
+// returns true if newMark is better than oldMark for this event
+function isBetter(newMark, oldMark, eventLabel){
+  if (isFieldEvent(eventLabel)) return feetInchesToInches(newMark) > feetInchesToInches(oldMark);
+  return timeToSeconds(newMark) < timeToSeconds(oldMark);
+}
+
+// ---------- result-line parsing (Athletic.net style paste) ----------
+const MARK_RE = /(\d{1,2}:\d{2}(?:\.\d+)?|\d+-\d{1,2}(?:\.\d+)?|\d+\.\d+)/;
+const PR_FLAG_RE = /(PR|PB|SB)(?!\w)/i;
+const GRADE_RE = /^(9|10|11|12)\s+/;
+
+function cleanPerformanceMark(mark){ return mark ? mark.replace(/[^\d:.\-]/g, '').trim() : ''; }
+function cleanEventTitle(raw){
+  return raw.replace(/\bResults\b/gi, '').replace(/\bPrelims\b/gi, '').replace(/\bVarsity\b/gi, '')
+    .replace(/\s{2,}/g, ' ').trim();
+}
+
+// requirePRTag: legacy mode only pulls PR/PB/SB-flagged lines; comparison mode pulls every result row
+function parseResults(rawText, targetSchool, requirePRTag){
+  const found = [];
+  const schoolRegex = targetSchool ? new RegExp(targetSchool.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i') : null;
+  const lines = rawText.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+
+  let currentGender = '';
+  let currentEvent = "Unknown Event";
+  const eventLineRe = /\d+m\b|\bmeters?\b|dash|hurdles|relay|\brun\b|shot ?put|discus|\bvault\b|\bjump\b|javelin|steeple/i;
+  const rankPrefixRe = /^\d+[\.\)]/;
+  const timePrefixRe = /^\d{1,2}[:.]\d{2}/;
+  const skipHeader = /^(results|prelims|entries|start lists|records|schedule|official|finals|division|type|live|events|follow|teams|athletes|scores|home|winners|mvp|location|search|features|about|contact|timers|field series|splits)$/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    if (!line) continue;
+
+    if (/^mens results$/i.test(line)) { currentGender = 'Boys'; continue; }
+    if (/^womens results$/i.test(line)) { currentGender = 'Girls'; continue; }
+
+    if (eventLineRe.test(line) && !rankPrefixRe.test(line) && !timePrefixRe.test(line)
+        && !skipHeader.test(line) && !PR_FLAG_RE.test(line)) {
+      currentEvent = cleanEventTitle((currentGender ? currentGender + ' ' : '') + line);
+      continue;
+    }
+
+    if (requirePRTag && !PR_FLAG_RE.test(line)) continue;
+    if (!rankPrefixRe.test(line)) continue;
+
+    const nextLine = lines[i + 1] || '';
+    if (schoolRegex && !schoolRegex.test(line) && !schoolRegex.test(nextLine)) continue;
+
+    let text = line.replace(rankPrefixRe, '').replace(/^\s+/, '');
+
+    let grade = '';
+    const gradeMatch = text.match(GRADE_RE);
+    if (gradeMatch) { grade = gradeMatch[1]; text = text.slice(gradeMatch[0].length); }
+
+    const markMatch = text.match(MARK_RE);
+    if (!markMatch) continue;
+    const mark = cleanPerformanceMark(markMatch[1]);
+
+    let namePart = text.slice(0, markMatch.index);
+    namePart = namePart.replace(/[\t ]+/g, ' ').replace(/[,|•·-]+$/, '').trim();
+    if (!namePart) continue;
+
+    found.push({ event: currentEvent, name: namePart, grade: grade, mark: mark });
+  }
+  return found;
+}
+
+// ---------- meet processing ----------
+function addMeet(){
+  const raw = document.getElementById('rawResults').value.trim();
+  const school = document.getElementById('schoolInput').value.trim();
+  const meetName = document.getElementById('meetNameInput').value.trim() || 'Meet';
+  const meetYear = document.getElementById('meetYearInput').value.trim() || '';
+
+  if (!raw) { alert('Paste the meet results first.'); return; }
+
+  const comparisonMode = !!seasonBests;
+  const includeAll = document.getElementById('includeAllCheckbox').checked;
+  // Only require an Athletic.net PR/PB/SB tag when we're neither comparing against season bests
+  // nor explicitly asking for everything.
+  const results = parseResults(raw, school, !comparisonMode && !includeAll);
+  if (results.length === 0) {
+    alert((comparisonMode || includeAll)
+      ? 'No result rows were found for that school. Double-check the pasted text and school name.'
+      : 'No PR / PB / SB tagged results were found (for the school filter given). Double-check the pasted text and school name, upload a season-bests CSV, or check "include every result".');
+    return;
+  }
+
+  let addedCount = 0, newCount = 0, improvedCount = 0, existingCount = 0;
+  results.forEach(r => {
+    let status, previousBest = '', markToStore = r.mark;
+    if (comparisonMode) {
+      const nameKey = normalizeName(r.name);
+      const evKey = normalizeEvent(r.event);
+      const athlete = seasonBests.byAthlete[nameKey];
+      const existing = athlete ? athlete.events[evKey] : undefined;
+      if (!existing) {
+        status = 'NEW';
+      } else if (isBetter(r.mark, existing, r.event)) {
+        status = 'IMPROVED';
+        previousBest = existing;
+      } else if (includeAll) {
+        status = 'EXISTING';
+        markToStore = existing; // the mark on record is the better one — that's the season best to report, not this meet's result
+      } else {
+        return; // not a season best, and "include all" isn't checked — skip
+      }
+    } else {
+      status = includeAll ? 'ALL' : 'TAGGED PB';
+    }
+
+    if (!prDatabase[r.event]) prDatabase[r.event] = [];
+    prDatabase[r.event].push({ name: r.name, grade: r.grade, year: meetYear, meet: meetName, mark: markToStore, status: status, previousBest: previousBest });
+    addedCount++;
+    if (status === 'NEW') newCount++;
+    if (status === 'IMPROVED') improvedCount++;
+    if (status === 'EXISTING') existingCount++;
+  });
+
+  saveDatabase();
+  renderSummary();
+  document.getElementById('rawResults').value = '';
+
+  if (addedCount === 0) {
+    alert('Parsed ' + results.length + ' result(s) for that school, but none beat an existing season best or were new this year.');
+  } else if (comparisonMode) {
+    alert(`Added ${addedCount} result(s): ${newCount} new this year, ${improvedCount} improved season bests` + (existingCount ? `, ${existingCount} unchanged.` : '.'));
+  } else {
+    alert(`Added ${addedCount} result${addedCount === 1 ? '' : 's'}.`);
+  }
+}
+
+// ---------- summary / export ----------
+function renderSummary(){
+  const container = document.getElementById('dbSummary');
+  const events = Object.keys(prDatabase).sort();
+  let total = 0;
+  events.forEach(e => total += prDatabase[e].length);
+  document.getElementById('totalCount').textContent = `${total} entr${total === 1 ? 'y' : 'ies'}`;
+
+  if (events.length === 0) {
+    container.innerHTML = '<p class="empty">Nothing added yet.</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr><th>Event</th><th>#</th><th>New</th><th>Improved</th><th></th></tr></thead><tbody>';
+  events.forEach(e => {
+    const list = prDatabase[e];
+    const nNew = list.filter(x => x.status === 'NEW').length;
+    const nImp = list.filter(x => x.status === 'IMPROVED').length;
+    html += `<tr><td>${escHtml(e)}</td><td>${list.length}</td><td>${nNew || ''}</td><td>${nImp || ''}</td><td><span class="remove" onclick="removeEvent('${e.replace(/'/g,"\\'")}')">remove</span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function removeEvent(eventName){
+  if (!confirm(`Remove all entries logged for "${eventName}"?`)) return;
+  delete prDatabase[eventName];
+  saveDatabase();
+  renderSummary();
+}
+
+function clearDatabase(){
+  if (!confirm('This clears every entry you have added. Continue?')) return;
+  prDatabase = {};
+  saveDatabase();
+  renderSummary();
+}
+
+function exportExcel(){
+  const events = Object.keys(prDatabase).sort();
+  if (events.length === 0) { alert('Nothing to export yet.'); return; }
+
+  const wb = XLSX.utils.book_new();
+  events.forEach(event => {
+    const rows = [['Name', 'Grade', 'Year of Meet', 'Time/Mark', 'Status', 'Previous Best']];
+    prDatabase[event]
+      .slice()
+      .sort((a,b) => a.name.localeCompare(b.name))
+      .forEach(r => rows.push([r.name, r.grade, r.year, r.mark, r.status, r.previousBest || '']));
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:22},{wch:8},{wch:14},{wch:12},{wch:11},{wch:14}];
+    let sheetName = event.replace(/[:\\\/\?\*\[\]]/g, '').slice(0, 31) || 'Event';
+    let base = sheetName, n = 1;
+    while (wb.SheetNames.includes(sheetName)) { sheetName = (base.slice(0,28) + '_' + n); n++; }
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  const today = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Season_Bests_${today}.xlsx`);
+}
+</script>
+</body>
+</html>
