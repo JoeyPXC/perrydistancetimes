@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+              {
+        id: "2026-10-19-girls-6th-boys-3rd-at-federal-league",
+        sport: "xc",
+        date: "2026-10-19",
+        title: "Girls 6th, Boys 3rd at Federal League",
+        body: "The girls and boys teams traveled to Jackson Middle School for the Federal League Championship Meet. The typically very fast course still had some fast times but was slowed down a bit with the rain leading up to the day's meet. The girls finished 6th overall and the boys finished 3rd in a tightly contested race just 13 points from 1st and edging out Lake by 1 point.\n\nFor the girls, Julia Thompson led the way with a 19th place finish in a season best 20:50 which earned her Honorable Mention All-Federal League. She was followed by Kiley Szakacs in 25th, Brielle Thom in 26th with as season best time of 21:30, Annamae Rogers in 34th, and Lillian Stewart in 36th. Paige Schwab and Natalie Moecia finished as the 6th and 7th Perry runners in 37th and 38th with season best times of 22:57 and 23:17. Adella Gore was the lone JV runner for the girls finishing 39th in the JV girls race.\n\nThe boys were led by Parker Simonson and Noah Dostal's 3rd and 5th place finishes which earned them 1st Team All-Federal League. Ryan Sexton finished in 14th to get 2nd Team and Justus Detter made his varsity return from a track injury to finish 18th and earn Honorable Mention. Broderick Gore was the #5 runner in 27th running a new personal best of 17:21. Michael Norris and Connor McCann were the 6th and 7th runners finishing 33rd and 36th. Andrew Ramos led the JV team to a 5th place finish with his 6th place overall finish in 17:41. Other runners to run personal best for the boys were: Ben Kahl, Damien Rivers, Gavin Keim, Blake Griffith, Jakob Heinbaugh, and Tanner Croston.\n\nThe varsity teams will compete Saturday at GlenOak in the District Meet. The JV runners will compete the following Monday at Walsh Jesuit in the Warrior Classic racing a 2 mile.\n\n[Athletic.net Full Results](https://www.athletic.net/CrossCountry/meet/288530/info)",
+        images: []
+    },
           {
         id: "2026-10-11-legends-meet-boys-3rd-girls-14th",
         sport: "xc",
