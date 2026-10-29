@@ -3611,9 +3611,11 @@
             const H = rows[0].map(h => String(h).toLowerCase().replace(/[^a-z]/g, ''));
             const c = n => H.indexOf(n);
             const ix = { date: c('date'), end: c('enddate'), meet: c('meet'), event: c('event'), round: c('round'), place: c('place'),
-                ath: c('athlete'), leg: c('leg'), mark: c('mark'), pts: c('points'), split: c('split'), teampts: c('teampoints'), season: c('season') };
+                ath: c('athlete'), leg: c('leg'), mark: c('mark'), pts: c('points'), split: [c('split'), c('splits'), c('splittime'), c('legsplit')].find(i => i >= 0) ?? -1, teampts: c('teampoints'), season: c('season') };
             if (ix.ath < 0 || ix.event < 0 || ix.mark < 0 || ix.meet < 0) return {};
             const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
+            // Relays are recognized by name, so the sheet doesn't need the word "Relay":
+            // 4x100 / 4x200 / 4x400 / 4x800 / 4x1600, SMR, DMR, Shuttle Hurdles.
             const recs = [], teamSize = {};
             for (let i = 1; i < rows.length; i++) {
                 const r = rows[i];
@@ -3621,14 +3623,19 @@
                     place: get(r, ix.place), athlete: get(r, ix.ath), leg: get(r, ix.leg), mark: get(r, ix.mark), split: get(r, ix.split),
                     pts: parseFloat(get(r, ix.pts)), teamPts: get(r, ix.teampts), season: get(r, ix.season) };
                 if (!rec.athlete || !rec.meet || !rec.event || !rec.mark || rec.athlete === '(relay)') continue;
-                rec.relay = /relay/i.test(rec.event);
+                rec.relay = RELAY_EVENT_RE.test(rec.event);
                 rec.year = (/^20\d\d/.test(rec.date) ? rec.date.slice(0, 4) : '') || (/^20\d\d$/.test(rec.season) ? rec.season : '');
                 if (!rec.year) continue;
                 rec.team = [rec.meet, rec.event, rec.round, rec.place, rec.mark].join('|');
                 if (rec.relay) teamSize[rec.team] = (teamSize[rec.team] || 0) + 1;
                 recs.push(rec);
             }
-            const short = e => e.replace(/^(\d+) Meter (?:Dash|Run)$/i, '$1').replace(/^(\d+) Meter Hurdles$/i, '$1H').replace(/^(4x\d+) Relay$/i, '$1');
+            const short = e => e
+                .replace(/^\s*(spring\s+medley(\s+relay)?|smr)\s*$/i, 'SMR')
+                .replace(/^\s*(distance\s+medley(\s+relay)?|dmr)\s*$/i, 'DMR')
+                .replace(/^\s*shuttle\s+hurdles?(\s+relay)?\s*$/i, 'Shuttle Hurdles')
+                .replace(/^\s*4\s*x\s*(\d+)\s*m?(\s+relay)?\s*$/i, '4x$1')
+                .replace(/^(\d+) Meter (?:Dash|Run)$/i, '$1').replace(/^(\d+) Meter Hurdles$/i, '$1H').replace(/^(4x\d+) Relay$/i, '$1');
             const ord = n => { n = +n; const sfx = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]); };
             // Dates come in from a hand-edited Google Sheet, so formats vary by
             // whoever typed them in: zero-padded ISO ("2026-04-08"), US slash
