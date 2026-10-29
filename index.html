@@ -3616,6 +3616,7 @@
             const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : '');
             // Relays are recognized by name, so the sheet doesn't need the word "Relay":
             // 4x100 / 4x200 / 4x400 / 4x800 / 4x1600, SMR, DMR, Shuttle Hurdles.
+            const RELAY_EVENT_RE = /relay|^\s*4\s*x\s*\d+|^\s*(smr|dmr)\b|spring\s+medley|distance\s+medley|shuttle/i;
             const recs = [], teamSize = {};
             for (let i = 1; i < rows.length; i++) {
                 const r = rows[i];
