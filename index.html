@@ -3676,7 +3676,7 @@
                         if (r.round !== 'Finals' || roundsPer[r.event].size > 1) label += ` (${r.round === 'Prelims' ? 'Prelim' : r.round === 'Finals' ? 'Final' : r.round.replace(/s$/, '')})`;
                         if (r.relay && r.leg) label += ` leg ${r.leg}`;
                         let time = r.mark;
-                        if (r.relay && r.split) time += ` \u00b7 split ${r.split}`;
+                        if (r.relay && r.split) time += ` team \u00b7 split ${r.split}`;
                         if (r.round === 'Finals' && /^\d+$/.test(r.place)) time += ` \u00b7 ${ord(r.place)}`;
                         // rows from the newer importer already hold the runner's share (TeamPoints filled in); older relay rows hold the full team score
                         if (!isNaN(r.pts)) pts += (r.relay && !r.teamPts) ? r.pts / (teamSize[r.team] || 1) : r.pts;
