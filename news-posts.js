@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-             {
+      {
+        id: "2022-11-07-boys-finish-8th-at-state-connor-reed-alex-hill-earn-all-ohio",
+        sport: "xc",
+        date: "2022-11-07",
+        title: "Boys Finish 8th at State - Connor Reed & Alex Hill Earn All-Ohio",
+        body: "OBETZ — Competing on the biggest stage at Fortress Obetz, the Perry boys cross country team capped off a memorable season with an 8th-place team finish at the 2022 OHSAA Division I State Cross Country Championships, scoring 221 points. The performance marked the program's second-best state finish in school history, trailing only the 2005 squad's 7th-place finish out of 16 teams.   Junior Connor Reed made history for the Panthers, crossing the line in 14th place overall with a time of 15:48.8 to earn All-Ohio honors. With his top-20 finish, Reed became the first Perry boy in program history to step on the state podium and the first two-time All-Ohioan in boys cross country history.   Joining Reed with All-Ohio honors was senior Alex Hill, who placed 26th overall in 16:02.9. Hill became just the third All-Ohioan in Perry boys cross country history, joining Reed and 2005 state podium finisher JD Horton.   Junior Logan Reese (59th, 16:32.7) and senior Cooper Reed (62nd, 16:33.5) provided strong pack running, while senior Owen Rair (163rd, 18:03.9), freshman Jayden Simonson (173rd, 18:27.4), and junior Hayden Giauque (177th, 18:47.7) completed the lineup for the Panthers.\n\n[Results](https://www.athletic.net/CrossCountry/meet/220753/results/883470)",
+        images: []
+    },          
+  {
         id: "2022-10-31-boys-qualify-to-state-as-regional-runner-up",
         sport: "xc",
         date: "2022-10-31",
