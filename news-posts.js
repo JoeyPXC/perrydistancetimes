@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+              {
+        id: "2026-10-30-walsh-jesuit-pat-ritchie-invitational-results",
+        sport: "xc",
+        date: "2026-10-30",
+        title: "Walsh Jesuit Pat Ritchie Invitational Results",
+        body: "CUYAHOGA FALLS — Competing at the 2025 Walsh Jesuit Pat Ritchie Invitational, the Perry girls cross country team secured a 9th-place finish out of 14 teams in the High School Girls Varsity race, scoring 223 points.   \n\nJunior Lillee Woods led the Panther girls across the line, placing 26th overall in 20:28.00. Junior Julia Thompson also finished in the top 45, taking 41st in 21:25.20. Senior Allison Reese crossed third for Perry in 44th place with a time of 21:30.80, while freshman Kiley Szakacs (66th, 23:06.00) and freshman Emmersyn Seifer (90th, 23:57.10) completed the scoring five. Sophomore Joslynn Carothers (97th, 24:46.30) and junior Paige Schwab (101st, 25:07.80) also competed in the varsity field. In the Open race, freshman Annamae Rogers placed 37th in 25:07.17, and freshman Sydney Wirick finished 82nd in 28:09.58.   \n\nOn the boys side, Perry finished 3rd overall out of 15 teams in the High School Boys Varsity race with 88 points. Junior Justus Detter paced the Panthers with a 5th-place finish in 15:59.28. Senior Jayden Simonson also earned a top-15 spot, placing 15th in 16:40.55. Sophomore Noah Dostal took 20th in 16:55.39, followed by freshman Parker Simonson in 26th (17:13.00) and junior Ryan Sexton in 32nd (17:20.96) to round out Perry's scoring five. Junior Connor McCann (36th, 17:28.89), senior Mason Frazee (40th, 17:33.96), freshman Liam Hogan (54th, 17:58.90), junior Ryan Leszynski (59th, 18:06.14), and freshman Michael Norris (85th, 18:59.93) also ran for the varsity squad. In the Open race, Perry placed 9th with 234 points, led by sophomore Broderick Gore's 4th-place finish in 18:57.03.\n\n[Results](https://oh.milesplit.com/meets/691214-walsh-jesuit-pat-ritchie-xc-invitational-2025/results?type=formatted&all=1)",
+        images: []
+    },
           {
         id: "2026-10-30-boys-finish-3rd-at-boardman-girls-17th",
         sport: "xc",
