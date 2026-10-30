@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+               {
+        id: "2022-10-17-federal-league-boys-2nd-girls-3rd",
+        sport: "xc",
+        date: "2022-10-17",
+        title: "Federal League: Boys 2nd, Girls 3rd",
+        body: "JACKSON TWP. — Powered by four top-12 individual finishes in the varsity race, the Perry boys cross country team earned a League Runner-Up finish at the 2022 Federal League Championship at Jackson Middle School, scoring 62 points. Perry finished behind league champion Jackson (53 points) while edging out Green (68 points) and GlenOak (72 points).   \n\nJunior Connor Reed led the Panthers across the line with a 3rd-place finish in 15:43.6. Senior Alex Hill placed 6th in 15:52.3. Senior Cooper Reed took 10th in 16:05.7, and junior Logan Reese ran 12th in 16:14.0 to establish a dominant front line for Perry. Senior Owen Rair (31st, 17:30.4) closed out the varsity scoring, with freshman Jayden Simonson (33rd, 17:34.8) and junior Hayden Giauque (41st, 18:14.0) completing the varsity squad. In the JV race, Perry placed 4th as a team with 163 points, led by sophomore Luke Detter's 20th-place finish (18:20.2).   \n\nIn the girls varsity race, Perry placed 4th as a team with 77 points in a tightly contested field behind Jackson (60), Lake (68), and GlenOak (70).   \n\nSophomore Chloe Dostal paced the Panther girls with a 3rd-place finish in 19:38.8, while freshman Lea Householder crossed close behind in 7th overall (19:44.9). Freshman Sarah Geschwind (14th, 20:47.8), junior Audrey Morgan (22nd, 21:00.0), and senior Emily Beck (31st, 21:42.3) rounded out the varsity scoring five. Juniors Jocelyn Wright (38th, 22:14.3) and Bella Troyer (39th, 22:26.5) completed the varsity lineup. The Perry JV girls placed 4th with 131 points, led by junior Kathryn Shoaff in 21st place (22:25.7).",
+        images: []
+    },
            {
         id: "2022-10-24-boys-finish-district-runner-up-2nd-straight-year-girls-11th-",
         sport: "xc",
