@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-             {
+      {
+        id: "2025-10-13-detter-wins-boys-federal-league-championship-boys-3rd-girls-",
+        sport: "xc",
+        date: "2025-10-13",
+        title: "Detter Wins Boys Federal League Championship - Boys 3rd, Girls 6th",
+        body: "JACKSON TWP. — Junior Justus Detter captured the individual title to earn Federal League Runner of the Year honors, leading the Perry boys cross country team to a 3rd-place finish at the 2025 Federal League Championship at Jackson Middle School with 61 points.   \n\nDetter crossed the line first overall in 15:49.3 to claim the individual championship. Senior Jayden Simonson also earned First Team honors with a 7th-place finish in 16:03.0. Freshman Parker Simonson took 16th (16:38.3) to claim Second Team honors, while junior Ryan Sexton placed 17th in 16:40.1 to earn Honorable Mention. Junior Connor McCann rounded out Perry's varsity scoring five in 20th place (16:47.0) to also earn Honorable Mention honors. Sophomore Noah Dostal (21st, 16:51.6, Honorable Mention) and junior Ryan Leszynski (30th, 17:09.4) completed the varsity lineup. In the JV race, Perry placed 5th as a team with 126 points, led by freshman Liam Hogan's 12th-place finish (17:43.9).   \n\nIn the girls varsity race, Perry placed 6th as a team with 144 points. Junior Julia Thompson earned Second Team All-Federal League honors to lead the Panther girls, placing 12th overall in 19:39.6. Seniors Allison Reese (25th, 21:08.4) and Brielle Thom (26th, 21:09.9) crossed back-to-back as Perry's second and third scoring runners. Junior Paige Schwab (40th, 22:54.9) and sophomore Natalie Moecia (41st, 23:07.0) closed out the scoring five, with freshman Emmersyn Seifer (42nd, 23:25.4) completing the varsity squad. \n\n[Results](https://www.athletic.net/CrossCountry/meet/269965/info)",
+        images: []
+    },          
+  {
         id: "2025-10-20-both-teams-qualify-to-regionals",
         sport: "xc",
         date: "2025-10-20",
