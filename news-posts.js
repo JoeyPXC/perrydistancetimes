@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-               {
+      {
+        id: "2021-10-18-boys-2nd-girls-4th-at-federal-league",
+        sport: "xc",
+        date: "2021-10-18",
+        title: "Boys 2nd, Girls 4th at Federal League",
+        body: "**JACKSON TWP.** — Edged out by just three points in a dramatic team battle, the Perry boys cross country squad earned a League Runner-Up finish at the Federal League Championships at Jackson Middle School, scoring 62 points. Jackson claimed the boys title with 59 points, while Hoover finished third with 65.\n\nSenior Kyle Woods and sophomore Connor Reed led Perry's top-ten attack, placing 4th (16:07.3) and 6th (16:14.6), respectively. Junior Alex Hill added an 11th-place finish in 16:39.6, while junior Cooper Reed placed 19th in 17:06.9. Senior Dominic Carosielli closed out the varsity scoring in 22nd place (17:20.2), followed by sophomore Logan Reese (30th, 17:43.6) and junior Austin Hammock (35th, 18:07.8).\n\nIn the boys JV race, Perry placed 3rd as a team with 93 points, led by senior Owen Tanzilli's 11th-place finish in 18:00.8.\n\nIn the girls varsity race, Perry placed 4th overall with 103 points in a competitive six-team field won by Jackson (26 points).\n\nFreshman Chloe Dostal paced the Panther girls with a standout 4th-place finish in 19:57.9. Sophomore Kylie Miller placed 14th in 20:43.0, while junior Jenna Halco ran 23rd in 21:05.7. Junior Bella Troyer took 27th (21:39.8) and senior Macey Foss crossed 36th (22:03.6) to complete the scoring lineup. In the JV race, Perry finished 5th with 119 points, led by sophomore Kathryn Shoaff in 21st place (23:47.0).\n\n[Results](https://www.athletic.net/CrossCountry/meet/204075/info)",
+        images: []
+    },            
+  {
         id: "2022-10-17-federal-league-boys-2nd-girls-3rd",
         sport: "xc",
         date: "2022-10-17",
