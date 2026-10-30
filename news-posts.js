@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+              {
+        id: "2025-09-29-stark-county-results",
+        sport: "xc",
+        date: "2025-09-29",
+        title: "Stark County Results",
+        body: "**GlenOak **— The Perry girls cross country team placed 9th overall with 236 points at the Stark County Championships. Junior Lillee Woods led the Panther girls across the line with a 25th-place finish in 20:58.75. Junior Julia Thompson took 30th in 21:15.68, followed by senior Allison Reese in 49th place with a time of 22:20.74. Freshman Emmersyn Seifer (61st, 24:08.55) and junior Paige Schwab (71st, 25:19.98) completed Perry's scoring five, while sophomore Joslynn Carothers crossed in 79th place (25:57.55).   \n\nIn the High School Varsity Boys race, Perry secured a 7th-place team finish out of 19 teams with 146 points. Junior Justus Detter paced the Panthers by placing 16th overall in 16:59.76. Senior Jayden Simonson finished close behind in 20th place with a time of 17:09.44. Freshman Parker Simonson took 31st (17:22.85), while junior Ryan Sexton (37th, 17:31.21) and sophomore Noah Dostal (42nd, 17:43.47) rounded out the scoring for Perry. Juniors Ryan Leszynski (55th, 18:01.43) and Liam Hogan (70th, 18:39.74) also represented the varsity squad. \n\n[Results](https://oh.milesplit.com/meets/656819-stark-county-xc-championship-2025/results?type=formatted)",
+        images: []
+    },
           {
         id: "2025-10-06-legends-meet-results",
         sport: "xc",
