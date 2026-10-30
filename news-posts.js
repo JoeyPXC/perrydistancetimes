@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+           {
+        id: "2022-10-24-boys-finish-district-runner-up-2nd-straight-year-girls-11th-",
+        sport: "xc",
+        date: "2022-10-24",
+        title: "Boys Finish District Runner-Up 2nd Straight year, Girls 11th with 2 Qualifiers",
+        body: "GLENOAK — Led by four top-15 individual finishes, the Perry boys cross country team earned a District Runner-Up finish at the 2022 OHSAA Division I Northeast District Meet at GlenOak High School, scoring 97 points to secure a qualifying spot to the Regional Meet. Perry finished just behind District Champion Massillon Jackson (92 points) in a 25-team field.   Junior Connor Reed led the Panthers across the line with a 5th-place finish in 16:04.1. Senior Alex Hill finished right behind in 7th place with a time of 16:10.3, while junior Logan Reese (13th, 16:24.5) and senior Cooper Reed (14th, 16:27.9) gave Perry a formidable front four. Freshman Jayden Simonson stepped up as the fifth scorer in 58th place (17:50.2), while junior Hayden Giauque (108th, 18:54.7) and senior Owen Rair (126th, 19:35.5) completed the lineup.   \n\nOn the girls side, Perry placed 11th as a team with 242 points. Sophomore Chloe Dostal and freshman Lea Householder led the Panthers, qualifying individually to the Regional Meet by finishing 13th (20:37.6) and 17th (20:47.0), respectively. Juniors Audrey Morgan (63rd, 22:31.5) and Jocelyn Wright (78th, 23:11.2), along with senior Bella Troyer (79th, 23:14.0) and junior Kathryn Shoaff (97th, 24:07.3), rounded out the scoring for Perry.\n\n[Resutls](https://www.athletic.net/CrossCountry/meet/219850/info)",
+        images: []
+    },
         {
         id: "2021-10-25-boys-finish-as-district-runner-up-girls-11th-as-chloe-dostal",
         sport: "xc",
