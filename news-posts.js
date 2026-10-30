@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+          {
+        id: "2025-10-27-girls-35th-boys-12th-at-regional-championship",
+        sport: "xc",
+        date: "2025-10-27",
+        title: "Girls 35th, Boys 12th at Regional Championship",
+        body: "BOARDMAN —  The Perry girls placed 35th at the Regional Meet in the team standings with 976 points at Boardman. Junior Julia Thompson led the Panther girls across the line, placing 106th overall in 21:05.1. Senior Allison Reese finished 222nd in 22:43.9, followed by sophomore Natalie Moecia (262nd, 23:23.0), junior Paige Schwab (265th, 23:28.7), and freshman Kiley Szakacs (288th, 24:01.4) to round out the scoring. Freshmen Emmersyn Seifer (304th, 24:43.6) and Annamae Rogers (325th, 27:40.8) completed the lineup. \n\nThe Perry boys cross country team placed 12th overall with 372 points. Senior Jayden Simonson paced the Panthers, finishing 52nd overall in 17:03.5. Sophomore Noah Dostal crossed close behind in 68th place with a time of 17:17.6. Juniors Connor McCann (83rd, 17:23.8) and Ryan Sexton (91st, 17:29.0), along with freshman Parker Simonson (110th, 17:37.6), completed Perry's scoring five. Senior Mason Frazee (241st, 18:39.3) and junior Ryan Leszynski (168th, 17:59.7) also ran for the varsity squad.  \n\n[Results](https://www.athletic.net/CrossCountry/meet/273966/info)r",
+        images: []
+    },
       {
         id: "2021-10-18-boys-2nd-girls-4th-at-federal-league",
         sport: "xc",
