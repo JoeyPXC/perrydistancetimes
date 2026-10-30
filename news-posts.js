@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-              {
+      {
+        id: "2025-09-22-strongsville-results",
+        sport: "xc",
+        date: "2025-09-22",
+        title: "Strongsville Results",
+        body: "STRONGSVILLE — Competing at the Strongsville HS Invitational, the Perry girls cross country team secured a 12th-place finish out of 17 teams in the Varsity division, scoring 304 points. Junior Lillee Woods led the Panther girls across the line, placing 31st overall in 20:36.1. Junior Julia Thompson crossed close behind in 38th place with a time of 20:54.6. Senior Allison Reese (66th, 21:58.2), freshman Emmersyn Seifer (95th, 23:11.7), and junior Paige Schwab (102nd, 23:51.5) rounded out Perry's scoring five. Sophomore Joslynn Carothers also ran in the varsity race, placing 114th in 24:48.1. In the Open race, sophomore Natalie Moecia took 66th (25:32.9) and freshman Sydney Wirick finished 88th (26:59.0).   \n\nOn the boys side, Perry placed 9th overall in a 23-team Varsity field with 229 points. Senior Jayden Simonson paced the Panthers, placing 11th overall in 16:13.1. Freshman Parker Simonson took 48th in 17:08.3, while junior Connor McCann crossed in 51st with a time of 17:14.9. Junior Ryan Sexton (55th, 17:20.9) and senior Mason Frazee (72nd, 17:37.2) completed the scoring five for Perry. Freshman Liam Hogan (85th, 17:51.2), junior Ryan Leszynski (99th, 18:13.5), and freshman Michael Norris (109th, 18:29.2) also competed in the varsity field. In the Open race, Perry placed 8th with 251 points, led by sophomore Broderick Gore's 40th-place finish (19:12.0). \n\n[Results](https://www.athletic.net/CrossCountry/meet/266987/info)",
+        images: []
+    },            
+  {
         id: "2025-09-29-stark-county-results",
         sport: "xc",
         date: "2025-09-29",
