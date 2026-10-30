@@ -1006,6 +1006,8 @@
                 <button type="button" class="sched-sub-btn" id="homeSubBtn" style="display:none;" onclick="openCalendarSubscribe()">📅 Subscribe</button>
             </div>
             <div id="homeNextMeet"></div>
+            <div class="home-section-label" id="homeLastLabel" style="display:none;">Last Meet</div>
+            <div id="homeLastMeet"></div>
             <div class="home-section-label">Latest News</div>
             <div id="homeNews"></div>
             <div class="home-section-label">Explore</div>
@@ -7497,12 +7499,13 @@
         // Optional results buttons. In the schedule Sheet, paste a link in "Live Results Link"
         // (timing company, live while the meet runs) and/or "Full Results Link" (complete final
         // results, added when they're posted). Each button only shows when its link is filled in.
-        function resultsLink(m) {
+        function resultsLink(m, extra) {
             const btn = (url, label) => `<a href="${homeEsc(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">${label} ↗</a>`;
             const parts = [];
             if (m.resultsLive) parts.push(btn(m.resultsLive, '🔴 Live Results'));
             if (m.resultsFull) parts.push(btn(m.resultsFull, m.resultsFullLabel || '📊 Full Results'));
             if (m.resultsGeneric) parts.push(btn(m.resultsGeneric, m.resultsGenericLabel || '📊 Results'));
+            if (extra) parts.push(extra);
             if (!parts.length) return '';
             return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">${parts.join('')}</div>`;
         }
@@ -7540,7 +7543,55 @@
         }
 
         // Next upcoming meet (any sport), read from the schedule Sheet.
+        // ── Last Meet card (under Next Meet on the home page) ──
+        const LAST_MEET_SHOW_DAYS = 14;   // how long after a meet the card stays on the home page
+        const RECAP_WINDOW_DAYS = 4;      // fallback: a recap dated within this many days after the meet
+
+        function daysBetween(fromVal, toVal) {
+            const [y1, m1, d1] = fromVal.split('-').map(Number);
+            const [y2, m2, d2] = toVal.split('-').map(Number);
+            return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+        }
+
+        // Finds the news post that recaps a meet. First choice: the post links to the same
+        // Athletic.net meet number as the schedule's results link. Fallback: a post for the same
+        // sport dated on the meet day or up to RECAP_WINDOW_DAYS afterward.
+        function findRecapPost(m) {
+            const posts = getAllNewsPosts().filter(p => p.sport === m.sport);
+            const ids = [m.resultsFull, m.resultsGeneric, m.resultsLive]
+                .map(u => (String(u || '').match(/\/meet\/(\d+)/) || [])[1]).filter(Boolean);
+            if (ids.length) {
+                const hit = posts.find(p => ids.some(id => new RegExp('/meet/' + id + '(?![0-9])').test(p.body || '')));
+                if (hit) return hit;
+            }
+            const near = posts.filter(p => { const d = daysBetween(m.dateVal, p.date); return d >= 0 && d <= RECAP_WINDOW_DAYS; });
+            return near.length ? near[near.length - 1] : null;   // posts are sorted newest first, so the last one is the earliest
+        }
+
+        function renderLastMeet() {
+            const el = document.getElementById('homeLastMeet');
+            const label = document.getElementById('homeLastLabel');
+            const hide = () => { el.innerHTML = ''; label.style.display = 'none'; };
+            if (!scheduleData) return hide();
+            const today = localToday();
+            const past = scheduleData.filter(x => x.dateVal < today);
+            if (!past.length) return hide();
+            const last = past.reduce((a, b) => (b.dateVal >= a.dateVal ? b : a));
+            const ago = daysBetween(last.dateVal, today);
+            if (ago > LAST_MEET_SHOW_DAYS) return hide();
+            const agoTxt = ago === 1 ? 'Yesterday' : ago + ' days ago';
+            const recap = findRecapPost(last);
+            const recapBtn = recap
+                ? `<a href="#" onclick="event.stopPropagation();event.preventDefault();openNewsOverlay();showNewsDetail('${homeEsc(recap.id)}')" style="display:inline-block;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">📰 Recap</a>`
+                : '';
+            label.style.display = '';
+            el.innerHTML = `<div class="home-card" onclick="openScheduleOverlay()">
+                <div class="home-card-top">${last.sport === 'track' ? 'Track' : 'XC'} · ${homeEsc(last.date)} · <strong>${agoTxt}</strong></div>
+                <div class="home-card-title">${homeEsc(last.meet)}</div>${resultsLink(last, recapBtn)}</div>`;
+        }
+
         function renderNextMeet() {
+            renderLastMeet();
             const el = document.getElementById('homeNextMeet');
             const label = document.getElementById('homeNextLabel');
             const card = (inner) => `<div class="home-card" onclick="openScheduleOverlay()">${inner}</div>`;
