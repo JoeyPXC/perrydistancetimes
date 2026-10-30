@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+          {
+        id: "2026-10-30-boys-finish-3rd-at-boardman-girls-17th",
+        sport: "xc",
+        date: "2026-10-30",
+        title: "Boys Finish 3rd at Boardman, Girls 17th",
+        body: "BOARDMAN — Competing at the Boardman Spartan XC Invitational, the Perry boys cross country team placed 3rd overall out of 38 teams in the Varsity Division 2 race with 210 points.  Junior Justus Detter paced the Panthers with a top-five finish, taking 5th overall in 16:22.1. Senior Jayden Simonson also earned a top-15 spot, placing 13th in 16:38.2. Freshman Parker Simonson finished 44th with a time of 17:39.2, while senior Mason Frazee (70th, 18:04.0) and junior Connor McCann (80th, 18:11.1) rounded out the scoring five for Perry. Juniors Ryan Sexton (95th, 18:22.7) and Ryan Leszynski (97th, 18:24.4) completed the varsity lineup. In the Junior Varsity Division 2 race, Perry placed 11th out of 16 teams with 297 points, led by sophomore Broderick Gore's 38th-place finish (20:24.3).   \n\nOn the girls side, Perry placed 17th overall out of 29 teams in the Varsity Division 2 field with 487 points. Junior Lillee Woods led the Panther girls across the line, placing 47th in 21:20.9. Junior Julia Thompson took 60th overall with a time of 21:37.3, followed by senior Allison Reese in 117th (23:21.4). Freshman Kiley Szakacs (141st, 24:02.0) and freshman Emmersyn Seifer (168th, 25:04.0) rounded out the varsity scoring, while junior Paige Schwab (193rd, 25:57.8) and sophomore Joslynn Carothers (200th, 26:15.3) also competed. In the JV Division 2 race, freshman Annamae Rogers led Perry in 62nd place (27:01.8). \n\n[Results](https://www.athletic.net/CrossCountry/meet/266733/info)",
+        images: []
+    },
       {
         id: "2025-09-22-strongsville-results",
         sport: "xc",
