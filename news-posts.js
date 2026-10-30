@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+          {
+        id: "2025-10-06-legends-meet-results",
+        sport: "xc",
+        date: "2025-10-06",
+        title: "Legends Meet Results",
+        body: "CORTLAND — Competing at the Trumbull County Fairgrounds, the Perry boys cross country team secured a 6th-place finish out of 22 teams in the Varsity Large Schools division at the 2025 Legends Meet, scoring 200 points.   \n\nJunior Justus Detter paced the Panthers with a 12th-place finish in 16:26.4. Senior Jayden Simonson also cracked the top 30, placing 28th in 17:00.9. Sophomore Noah Dostal took 54th in 17:32.3, followed closely by freshman Parker Simonson in 57th (17:34.6) and junior Ryan Sexton in 58th (17:35.5) to complete Perry's scoring five. Junior Ryan Leszynski (77th, 17:59.5), freshman Liam Hogan (88th, 18:13.8), and junior Connor McCann (94th, 18:24.6) also ran for the varsity squad. In the Open Large Schools race, Perry placed 12th as a team with 446 points, led by freshman Michael Norris's 20th-place finish in 19:09.7.   \n\nOn the girls side, Perry placed 15th overall in the Varsity Large Schools division with 488 points. Junior Julia Thompson led the Panther girls, placing 48th in 21:10.9. Senior Allison Reese crossed second for Perry in 92nd place with a time of 22:55.6, while freshman Emmersyn Seifer took 126th in 24:31.0. Sophomore Natalie Moecia (131st, 24:50.5) and junior Paige Schwab (138th, 25:17.6) rounded out the varsity scoring. In the Open Large Schools race, freshmen Sydney Wirick (47th, 28:06.3) and Annamae Rogers (52nd, 29:15.0) competed for Perry as individual runners. \n\n[Results](https://www.athletic.net/CrossCountry/meet/273963/info)",
+        images: []
+    },
       {
         id: "2025-10-13-detter-wins-boys-federal-league-championship-boys-3rd-girls-",
         sport: "xc",
