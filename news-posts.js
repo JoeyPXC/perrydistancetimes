@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+         {
+        id: "2025-08-25-glenoak-golden-eagle-invitational-results",
+        sport: "xc",
+        date: "2025-08-25",
+        title: "GlenOak Golden Eagle Invitational Results",
+        body: "CANTON — Competing at the GlenOak Golden Eagle Invitational to kick off the 2025 season, the Perry boys cross country team placed 3rd overall out of 24 teams in the Varsity Boys Division with 113 points.   Junior Justus Detter captured the individual title to lead the Panthers, winning the race in 16:13.47. Senior Jayden Simonson also earned a top-five finish, placing 5th in 16:27.92. Sophomore Noah Dostal finished 32nd in 17:20.77, while junior Ryan Sexton (38th, 17:37.94) and junior Connor McCann (40th, 17:40.87) rounded out the scoring five for Perry. Freshman Parker Simonson (41st, 17:41.04), junior Ryan Leszynski (66th, 18:19.62), freshman Liam Hogan (79th, 18:40.68), and senior Mason Frazee (80th, 18:41.28) also ran in the varsity race. In the Open Boys race, Perry placed 8th out of 15 teams with 241 points, paced by sophomore Broderick Gore's 27th-place finish (19:44.05).   \n\nOn the girls side, Perry placed 10th overall out of 19 teams in the Varsity Girls Division with 286 points. Junior Lillee Woods led the Panther girls across the line, placing 32nd in 21:43.64. Junior Julia Thompson took 45th overall with a time of 22:18.88, followed closely by senior Allison Reese in 58th (22:53.25). Freshman Kiley Szakacs (82nd, 24:19.02) and junior Paige Schwab (110th, 25:51.20) rounded out the varsity scoring, while sophomore Joslynn Carothers (118th, 26:15.46) and freshman Emmersyn Seifer (130th, 27:01.27) completed the varsity lineup.\n\n[Results](https://oh.milesplit.com/meets/656828-glenoak-golden-eagle-invitational-2025/results?type=formatted&all=1)",
+        images: []
+    },
       {
         id: "2025-09-01-ashland-invitational-results",
         sport: "xc",
