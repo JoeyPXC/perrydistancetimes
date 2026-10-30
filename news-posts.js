@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+             {
+        id: "2025-10-20-both-teams-qualify-to-regionals",
+        sport: "xc",
+        date: "2025-10-20",
+        title: "Both Teams Qualify to Regionals",
+        body: "GLENOAK — Both the Perry boys and girls cross country teams successfully extended their postseason runs, securing qualifying spots at the 2025 OHSAA Division II District Meet at GlenOak High School to advance to the Regional Meet.   \n\nThe Perry boys placed 8th overall in a 25-team field with 235 points. Senior Jayden Simonson paced the Panthers, finishing 23rd overall in 17:38.5. Freshman Parker Simonson crossed second for Perry in 39th place (17:54.8), followed closely by juniors Ryan Sexton (53rd, 18:10.8) and Ryan Leszynski (57th, 18:19.3). Sophomore Noah Dostal rounded out the scoring five in 63rd place (18:32.5), while senior Mason Frazee (67th, 18:44.0) and junior Connor McCann (71st, 18:48.9) completed the varsity squad.   \n\nOn the girls side, Perry secured an 11th-place team finish with 283 points to punch their ticket to Boardman. Junior Julia Thompson led the Panther girls, placing 27th overall in 21:29.7. Junior Brielle Thom crossed next in 43rd place with a time of 22:25.7, while senior Allison Reese took 61st in 23:25.1. Junior Paige Schwab (75th, 24:04.4) and freshman Emmersyn Seifer (80th, 24:22.6) scored as the fourth and fifth runners. Sophomore Natalie Moecia (86th, 24:52.2) and sophomore Joslynn Carothers (96th, 26:09.4) also ran for the Panthers.  \n\n[Results](https://www.athletic.net/CrossCountry/meet/270399/info)",
+        images: []
+    },
           {
         id: "2025-10-27-girls-35th-boys-12th-at-regional-championship",
         sport: "xc",
