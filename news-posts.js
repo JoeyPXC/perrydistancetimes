@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+          {
+        id: "2021-11-08-state-meet-wrap-up",
+        sport: "xc",
+        date: "2021-11-08",
+        title: "State Meet Wrap-up",
+        body: "OBETZ — Competing at Fortress Obetz, the Perry boys cross country team capped off their 2021 campaign with a 16th-place team finish at the OHSAA Division I State Cross Country Championships, scoring 319 points. Perry tied with both Springboro and Centerville at 319 team points, but fell to 16th after losing the 6th-man tiebreaker to both squads.   Sophomore Connor Reed delivered a standout performance to lead Perry, crossing the line in 27th place overall with a personal-best time of 15:51.8 to earn All-Ohio honors. Reed became just the second boy in Perry cross country history to earn All-Ohio accolades, joining JD Horton from the 2005 state team.   Senior Kyle Woods narrowly missed All-Ohio status, finishing 40th overall with a season-best time of 15:58.7. Junior Alex Hill placed 95th in 16:36.3, while sophomores Logan Reese (147th, 17:11.4) and Cooper Reed (148th, 17:11.8) rounded out the scoring five. Seniors Owen Tanzilli (158th, 17:33.2) and Dominic Carosielli (167th, 17:42.9) completed the lineup for Perry.   On the girls side, freshman Chloe Dostal represented Perry as an individual state qualifier, running a strong race in the Division I field to place 149th with a time of 20:24.7. \n\n[Results](https://www.athletic.net/CrossCountry/meet/205549/info)",
+        images: []
+    },
       {
         id: "2022-11-07-boys-finish-8th-at-state-connor-reed-alex-hill-earn-all-ohio",
         sport: "xc",
