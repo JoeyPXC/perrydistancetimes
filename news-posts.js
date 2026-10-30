@@ -15,7 +15,7 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-      {
+          {
         id: "2026-06-01-regional-track-results",
         sport: "track",
         date: "2026-06-01",
