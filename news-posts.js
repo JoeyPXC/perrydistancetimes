@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+              {
+        id: "2026-05-22-girls-win-district-championship",
+        sport: "track",
+        date: "2026-05-22",
+        title: "Girls Win District Championship!",
+        body: "AUSTINTOWN — Powered by dominant sprint performances and key field event qualifications, the Perry girls track and field team captured the Division 2 District Championship at Greenwood Chevrolet Falcon Stadium, accumulating 94.5 team points to beat out Boardman (86.5). Top-four finishers in each event earned a qualifying berth to the Regional Meet at North Royalton.   Senior Emerson Karrenbauer put on a show by qualifying for Regionals in four separate events, sweeping district titles in the 100m (11.91) and 200m (25.09) while anchoring both the 4x100m and 4x200m relay squads to 1st-place victories.   Joining Karrenbauer as four-event Regional qualifiers were Mya Patton, Baileigh Brown, and Allison Reese. Patton (100m - 4th, 12.50) and Brown (200m - 2nd, 25.68) earned individual state-path berths alongside their two winning relay legs (4x100 and 4x200) and a Regional qualification in the 4x400 relay (2nd, 4:07.41). Reese ran legs on all three qualifying relays (4x100, 4x200, 4x400).   Also punching Regional tickets were Melaina Knop with a 2nd-place finish in the 800m (2:24.04), Joslynn Klever with a District Championship in the Pole Vault (9-00.00), and Elaine Laubacher with a 3rd-place tie in the High Jump (4-10.00).  \n\n[Athletic.net Results](https://www.athletic.net/TrackAndField/meet/649860/results)",
+        images: []
+    },
           {
         id: "2026-06-01-regional-track-results",
         sport: "track",
