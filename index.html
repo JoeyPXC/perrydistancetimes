@@ -7545,6 +7545,8 @@
         // Next upcoming meet (any sport), read from the schedule Sheet.
         // ── Last Meet card (under Next Meet on the home page) ──
         const LAST_MEET_SHOW_DAYS = 14;   // how long after a meet the card stays on the home page
+        const LAST_MEET_RECENT_DAYS = 3;  // meets this recent all get a card (up to LAST_MEET_MAX_CARDS)
+        const LAST_MEET_MAX_CARDS = 3;
         const RECAP_WINDOW_DAYS = 4;      // fallback: a recap dated within this many days after the meet
 
         function daysBetween(fromVal, toVal) {
@@ -7568,26 +7570,38 @@
             return near.length ? near[near.length - 1] : null;   // posts are sorted newest first, so the last one is the earliest
         }
 
+        // The "📰 Recap" pill for a meet, or '' when no news post covers it
+        function recapPillHtml(m) {
+            const recap = findRecapPost(m);
+            return recap
+                ? `<a href="#" onclick="event.stopPropagation();event.preventDefault();openNewsOverlay();showNewsDetail('${homeEsc(recap.id)}')" style="display:inline-block;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">📰 Recap</a>`
+                : '';
+        }
+
         function renderLastMeet() {
             const el = document.getElementById('homeLastMeet');
             const label = document.getElementById('homeLastLabel');
             const hide = () => { el.innerHTML = ''; label.style.display = 'none'; };
             if (!scheduleData) return hide();
             const today = localToday();
-            const past = scheduleData.filter(x => x.dateVal < today);
+            // Newest first
+            const past = scheduleData.filter(x => x.dateVal < today).sort((a, b) => b.dateVal.localeCompare(a.dateVal));
             if (!past.length) return hide();
-            const last = past.reduce((a, b) => (b.dateVal >= a.dateVal ? b : a));
-            const ago = daysBetween(last.dateVal, today);
-            if (ago > LAST_MEET_SHOW_DAYS) return hide();
-            const agoTxt = ago === 1 ? 'Yesterday' : ago + ' days ago';
-            const recap = findRecapPost(last);
-            const recapBtn = recap
-                ? `<a href="#" onclick="event.stopPropagation();event.preventDefault();openNewsOverlay();showNewsDetail('${homeEsc(recap.id)}')" style="display:inline-block;padding:5px 12px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-decoration:none;">📰 Recap</a>`
-                : '';
+            // Every meet from the last few days (e.g. a Saturday meet plus a Monday JV meet, or
+            // Tuesday and Friday track meets), otherwise just the most recent one within the show window.
+            let shown = past.filter(x => daysBetween(x.dateVal, today) <= LAST_MEET_RECENT_DAYS).slice(0, LAST_MEET_MAX_CARDS);
+            if (!shown.length && daysBetween(past[0].dateVal, today) <= LAST_MEET_SHOW_DAYS) shown = [past[0]];
+            if (!shown.length) return hide();
+            label.textContent = shown.length > 1 ? 'Recent Meets' : 'Last Meet';
             label.style.display = '';
-            el.innerHTML = `<div class="home-card" onclick="openScheduleOverlay()">
-                <div class="home-card-top">${last.sport === 'track' ? 'Track' : 'XC'} · ${homeEsc(last.date)} · <strong>${agoTxt}</strong></div>
-                <div class="home-card-title">${homeEsc(last.meet)}</div>${resultsLink(last, recapBtn)}</div>`;
+            el.innerHTML = shown.map(last => {
+                const ago = daysBetween(last.dateVal, today);
+                const agoTxt = ago === 1 ? 'Yesterday' : ago + ' days ago';
+                const recapBtn = recapPillHtml(last);
+                return `<div class="home-card" onclick="openScheduleOverlay()">
+                    <div class="home-card-top">${last.sport === 'track' ? 'Track' : 'XC'} · ${homeEsc(last.date)} · <strong>${agoTxt}</strong></div>
+                    <div class="home-card-title">${homeEsc(last.meet)}</div>${resultsLink(last, recapBtn)}</div>`;
+            }).join('');
         }
 
         function renderNextMeet() {
@@ -8558,6 +8572,7 @@
             meets.forEach((m, i) => {
                 const isPast = m.dateVal < today;
                 const isNext = i === nextIdx;
+                const recapBtn = recapPillHtml(m);
                 const racesHtml = m.groups.map(g =>
                     `<div class="sched-races">
                         ${g.label ? `<span class="sched-race-team">${g.label}</span>` : ''}
@@ -8577,7 +8592,7 @@
                     <div class="sched-meet-name">${homeEsc(m.meet)}</div>
                     <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div>
                     ${racesHtml}
-                    ${(m.resultsLive || m.resultsFull || m.resultsGeneric) ? `<div style="padding:0 14px 10px;">${resultsLink(m)}</div>` : ''}
+                    ${(m.resultsLive || m.resultsFull || m.resultsGeneric || recapBtn) ? `<div style="padding:0 14px 10px;">${resultsLink(m, recapBtn)}</div>` : ''}
                 </div>`;
             });
 
