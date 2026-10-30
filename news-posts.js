@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+             {
+        id: "2021-10-25-boys-finish-as-district-runner-up-girls-11th-as-chloe-dostal",
+        sport: "xc",
+        date: "2021-10-25",
+        title: "Boys Finish as District Runner-up, Girls - 11th as Chloe Dostal Qualifies to Regional",
+        body: "GLENOAK — Driven by five top-40 overall individual finishes, the Perry boys cross country team captured a District Runner-Up finish at the 2021 OHSAA Division I Northeast District Meet at GlenOak High School, scoring 121 points to earn a qualifying spot to the Regional Meet. Perry finished 2nd overall in the 24-team field behind District Champion Louisville (82 points).   Sophomore Connor Reed led the Panthers across the line with a 13th-place finish in 16:15.5. Senior Kyle Woods placed 16th in 16:16.5, followed closely by junior Alex Hill in 25th (16:33.3) and junior Cooper Reed in 28th (16:34.8). Senior Dominic Carosielli rounded out Perry's scoring five in 39th place with a time of 16:56.7. Sophomore Logan Reese (60th, 17:25.0) and senior Owen Tanzilli (82nd, 17:58.9) completed the varsity lineup for the Panthers.   \n\nOn the girls side, Perry placed 11th as a team with 316 points. Freshman Chloe Dostal paced the Panthers by placing 7th overall with a season-best time of 19:26.5 to punch her ticket to the Regional Meet as an individual state-path qualifier. Junior Jenna Halco (55th, 21:10.0), sophomore Kylie Miller (63rd, 21:30.4), junior Bella Troyer (85th, 22:06.3), and senior Macey Foss (107th, 23:01.6) also competed for Perry.\n\n[Results](https://www.athletic.net/CrossCountry/meet/204482/info)",
+        images: []
+    },
           {
         id: "2021-11-08-state-meet-wrap-up",
         sport: "xc",
