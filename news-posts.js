@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+             {
+        id: "2022-10-31-boys-qualify-to-state-as-regional-runner-up",
+        sport: "xc",
+        date: "2022-10-31",
+        title: "Boys Qualify to State as Regional Runner-up",
+        body: "BOARDMAN — Led by three top-15 individual finishes, the Massillon Perry boys cross country team earned a Regional Runner-Up finish at the 2022 OHSAA Youngstown Regional Meet at Boardman High School, punching their ticket to the State Meet. The Panthers scored 152 points to finish 2nd overall behind Regional Champion Massillon Jackson (124 points).   Junior Connor Reed led the charge for Perry, placing 5th overall in 16:03.0. Senior Alex Hill (13th, 16:17.9) and junior Logan Reese (14th, 16:17.9) followed closely behind, with all three runners securing individual state-qualifying spots by placing inside the top 28. Senior Cooper Reed finished 31st (16:42.8), while senior Owen Rair (131st, 18:05.8), freshman Jayden Simonson (144th, 18:14.6), and junior Hayden Giauque (176th, 18:54.2) rounded out the varsity lineup to seal the team's state berth.   On the girls side, sophomore Chloe Dostal and freshman Lea Householder represented Perry as individual regional qualifiers. Dostal paced the Panthers with a 35th-place finish in 20:11.8, while Householder crossed the line in 81st with a time of 20:59.5. \n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/220297/info)",
+        images: []
+    },
           {
         id: "2026-04-27-both-teams-win-stark-county-championship",
         sport: "track",
