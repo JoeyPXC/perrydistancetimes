@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-              {
+      {
+        id: "2025-09-01-ashland-invitational-results",
+        sport: "xc",
+        date: "2025-09-01",
+        title: "Ashland Invitational Results",
+        body: "ASHLAND — The Perry girls cross country team secured a 7th-place team finish out of 14 teams in the Girls HS Division 1/2 race, scoring 195 points at the Ashland Arrows Cross Country Invitational.  Junior Brielle Thom paced the Panther girls across the line, placing 25th overall in 20:28.9. Junior Julia Thompson finished close behind in 27th place with a time of 20:32.7, while junior Lillee Woods made it three Panthers in the top 30 by placing 28th in 20:33.7. Senior Allison Reese crossed fourth for Perry in 45th place (21:40.3), and freshman Kiley Szakacs completed the scoring five in 94th place with a time of 23:21.8. Freshman Emmersyn Seifer (105th, 23:53.0), junior Paige Schwab (112th, 24:10.1), sophomore Joslynn Carothers (120th, 24:27.4), freshman Annamae Rogers (170th, 27:06.9), and freshman Sydney Wirick (177th, 27:28.2) also competed for the varsity team.   \n\nOn the boys side, Perry earned a runner-up team finish, taking 2nd place overall out of 18 teams in the Boys HS Division 1/2 field with 76 points. Junior Justus Detter led the Panthers with a 3rd-place finish in 15:50.2. Senior Jayden Simonson also secured a top-10 spot, placing 8th in 16:14.3. Sophomore Noah Dostal placed 17th in 16:49.0, followed by junior Connor McCann in 23rd (17:07.1) and junior Ryan Sexton in 26th (17:14.1) to round out Perry's scoring five. Freshman Parker Simonson (27th, 17:15.4), freshman Liam Hogan (34th, 17:36.6), junior Ryan Leszynski (37th, 17:42.3), senior Mason Frazee (49th, 17:54.1), freshman Michael Norris (79th, 18:23.4), sophomore Broderick Gore (125th, 19:36.5), sophomore Ben Kahl (168th, 20:20.9), senior Michael Jenkins (169th, 20:21.7), freshman Brandon Bailey (233rd, 21:56.7), sophomore Kennith Hofer (254th, 22:42.4), and sophomore Tyler James (291st, 26:47.4) also ran for Perry.\n\n[Results](https://www.athletic.net/CrossCountry/meet/264311/info)",
+        images: []
+    },          
+  {
         id: "2026-10-30-walsh-jesuit-pat-ritchie-invitational-results",
         sport: "xc",
         date: "2025-09-08",
