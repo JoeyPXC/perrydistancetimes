@@ -643,6 +643,11 @@
         .badge-county-champ { background:#92400e; color:#fff; }
         .badge-all-county   { background:#b45309; color:#fff; }
         .badge-all-ohio     { background:#4a1d96; color:#fff; }
+        /* Team accomplishments (from the team rosters sheet) — outlined so they read differently from individual honors */
+        .badge-team-state   { background:#dcfce7; color:#166534; box-shadow:inset 0 0 0 1.5px #166534; }
+        .badge-team-dist    { background:#ccfbf1; color:#0f766e; box-shadow:inset 0 0 0 1.5px #0f766e; }
+        .badge-team-fed     { background:#fee2e2; color:#991b1b; box-shadow:inset 0 0 0 1.5px #991b1b; }
+        .badge-team-county  { background:#fef3c7; color:#92400e; box-shadow:inset 0 0 0 1.5px #92400e; }
         .badge-t-state-champ  { background:#14532d; color:#fbbf24; }
         .badge-t-runner-up    { background:#166534; color:#d1fae5; }
         .badge-t-all-ohio     { background:#3b0764; color:#e9d5ff; }
@@ -4478,7 +4483,8 @@
         const PRCARD_HONOR_ORDER = ['Track State Champion', 'Track State Runner-Up', 'XC All-Ohio', 'Track All-Ohio',
             'XC State Qualifier', 'Track State Qualifier', 'XC District Champion', 'Track Regional Champ', 'Track District Champ',
             'XC Regional Qualifier', 'Track Regional Qual', 'XC 1st Team All-Federal', 'XC FL Champion', 'Track FL Champion',
-            'XC 1st Team All-County', 'XC County Champion', 'Track County Champ'];
+            'XC 1st Team All-County', 'XC County Champion', 'Track County Champ',
+            'XC State Team', 'XC District Champion Team', 'XC FL Champion Team', 'XC County Champion Team'];
         function prCardSetupHonors(athlete) {
             const opt = document.getElementById('prCardHonorsOpt');
             const box = document.getElementById('prCardHonors');
@@ -4911,6 +4917,8 @@
                 ['XC All-Ohio', h.allOhio], ['XC State Qualifier', h.stateQual], ['XC District Champion', h.distChamp],
                 ['XC FL Champion', h.fedChamp], ['XC County Champion', h.countyChamp], ['XC Regional Qualifier', h.regQual],
                 ['XC 1st Team All-Federal', h.allFed], ['XC 1st Team All-County', h.allCounty],
+                ['XC State Team', h.teamState], ['XC District Champion Team', h.teamDist],
+                ['XC FL Champion Team', h.teamFed], ['XC County Champion Team', h.teamCounty],
             ].filter(r => r[1] && r[1].length).map(r => ({ label: r[0], count: r[1].length, years: r[1].slice().sort((a, b) => a - b).join(', ') }));
             const tr = [
                 ['Track State Champion', t.tStateChamp], ['Track State Runner-Up', t.tStateRunnerUp], ['Track All-Ohio', t.tAllOhio],
@@ -5123,6 +5131,29 @@
                     }
                     processSheet(boysText);
                     processSheet(girlsText);
+
+                    // Team accomplishments (State team, District / Federal League / Stark County
+                    // champion teams) come from the team rosters sheet: every athlete listed on
+                    // a team that year earns the team badge. Runner-up ("-RU") rows are skipped.
+                    try {
+                        const rosters = await getTeamRostersMap();
+                        const TEAM_FIELDS = { state: 'teamState', district: 'teamDist', fl: 'teamFed', county: 'teamCounty' };
+                        Object.entries(rosters || {}).forEach(([k, names]) => {
+                            const m = k.match(/^[A-Za-z]+-(.+)-(\d{4})$/);
+                            if (!m) return;
+                            const field = TEAM_FIELDS[m[1].trim().toLowerCase()];
+                            if (!field) return;
+                            const yr = parseInt(m[2]);
+                            names.forEach(name => {
+                                const key = (name || '').toLowerCase().trim();
+                                if (!key) return;
+                                if (!map[key]) map[key] = { fedChamp:[], allFed:[], countyChamp:[], allCounty:[], distChamp:[], regQual:[], allOhio:[], stateQual:[] };
+                                if (!map[key][field]) map[key][field] = [];
+                                if (!map[key][field].includes(yr)) map[key][field].push(yr);
+                            });
+                        });
+                    } catch (e) { console.error('Team honors merge error:', e); }
+
                     xcHonorsCache = map;
                     return map;
                 } catch(e) {
@@ -5152,6 +5183,11 @@
             if (h.regQual && h.regQual.length)     badges += `<span class="card-honor-badge badge-regional">XC Regional${xN(h.regQual)}</span>`;
             if (h.allFed && h.allFed.length)      badges += `<span class="card-honor-badge badge-all-federal">XC All-Federal${xN(h.allFed)}</span>`;
             if (h.allCounty && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">XC All-County${xN(h.allCounty)}</span>`;
+            // XC team accomplishments
+            if (h.teamState && h.teamState.length)   badges += `<span class="card-honor-badge badge-team-state">XC State Team${xN(h.teamState)}</span>`;
+            if (h.teamDist && h.teamDist.length)     badges += `<span class="card-honor-badge badge-team-dist">XC District Team${xN(h.teamDist)}</span>`;
+            if (h.teamFed && h.teamFed.length)       badges += `<span class="card-honor-badge badge-team-fed">XC FL Team Champs${xN(h.teamFed)}</span>`;
+            if (h.teamCounty && h.teamCounty.length) badges += `<span class="card-honor-badge badge-team-county">XC County Team Champs${xN(h.teamCounty)}</span>`;
             // Track honors
             if (t.tStateChamp && t.tStateChamp.length)  badges += `<span class="card-honor-badge badge-t-state-champ">Track State Champ${xN(t.tStateChamp)}</span>`;
             if (t.tStateRunnerUp && t.tStateRunnerUp.length) badges += `<span class="card-honor-badge badge-t-runner-up">Track Runner-Up${xN(t.tStateRunnerUp)}</span>`;
@@ -5181,6 +5217,10 @@
                 { label: 'XC Regional Qualifier', years: h.regQual,     cls: 'badge-regional' },
                 { label: 'XC 1st Team All-Federal',  years: h.allFed,      cls: 'badge-all-federal' },
                 { label: 'XC 1st Team All-County',   years: h.allCounty,   cls: 'badge-all-county' },
+                { label: 'XC State Team',            years: h.teamState,   cls: 'badge-team-state' },
+                { label: 'XC District Champion Team', years: h.teamDist,   cls: 'badge-team-dist' },
+                { label: 'XC Federal League Champion Team', years: h.teamFed, cls: 'badge-team-fed' },
+                { label: 'XC Stark County Champion Team', years: h.teamCounty, cls: 'badge-team-county' },
             ].filter(r => r.years && r.years.length);
 
             const trackRows = [
@@ -6665,6 +6705,10 @@
                             { label:'XC Regional',        cls:'badge-regional',       years: h.regQual },
                             { label:'XC All-Federal',     cls:'badge-all-federal',    years: h.allFed },
                             { label:'XC All-County',      cls:'badge-all-county',     years: h.allCounty },
+                            { label:'XC State Team',      cls:'badge-team-state',     years: h.teamState },
+                            { label:'XC District Team',   cls:'badge-team-dist',      years: h.teamDist },
+                            { label:'XC FL Team Champs',  cls:'badge-team-fed',       years: h.teamFed },
+                            { label:'XC County Team Champs', cls:'badge-team-county', years: h.teamCounty },
                             { label:'Track State Champ',  cls:'badge-t-state-champ',  years: t.tStateChamp },
                             { label:'Track Runner-Up',    cls:'badge-t-runner-up',    years: t.tStateRunnerUp },
                             { label:'Track All-Ohio',     cls:'badge-t-all-ohio',     years: t.tAllOhio },
@@ -8970,14 +9014,7 @@
         async function renderAccomplishmentsPage(container) {
             if (navCache.accomplishments[genderFilter]) { container.innerHTML = navCache.accomplishments[genderFilter]; return; }
 
-            const rostersMap = Object.assign({}, await getTeamRostersMap());
-
-            // 2026 boys team rosters (state qualifying team + regional runner-up).
-            // Set here so they show even before the rosters Google Sheet is updated.
-            const BOYS_2026_TEAM = ['Parker Simonson', 'Noah Dostal', 'Justus Detter', 'Ryan Sexton',
-                                    'Connor McCann', 'Andrew Ramos', 'Broderick Gore', 'Michael Norris'];
-            rostersMap['M-State-2026']       = BOYS_2026_TEAM.slice();
-            rostersMap['M-Regional-RU-2026'] = BOYS_2026_TEAM.slice();
+            const rostersMap = await getTeamRostersMap();
 
             const OHSAA_IMG    = 'ohsaa.png';
             const REGIONAL_IMG = 'ohsaa.png';
