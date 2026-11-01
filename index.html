@@ -5185,7 +5185,7 @@
             if (h.allCounty && h.allCounty.length)   badges += `<span class="card-honor-badge badge-all-county">XC All-County${xN(h.allCounty)}</span>`;
             // XC team accomplishments
             if (h.teamState && h.teamState.length)   badges += `<span class="card-honor-badge badge-team-state">XC State Team${xN(h.teamState)}</span>`;
-            if (h.teamDist && h.teamDist.length)     badges += `<span class="card-honor-badge badge-team-dist">XC District Team${xN(h.teamDist)}</span>`;
+            if (h.teamDist && h.teamDist.length)     badges += `<span class="card-honor-badge badge-team-dist">XC District Team Champs${xN(h.teamDist)}</span>`;
             if (h.teamFed && h.teamFed.length)       badges += `<span class="card-honor-badge badge-team-fed">XC FL Team Champs${xN(h.teamFed)}</span>`;
             if (h.teamCounty && h.teamCounty.length) badges += `<span class="card-honor-badge badge-team-county">XC County Team Champs${xN(h.teamCounty)}</span>`;
             // Track honors
@@ -6706,7 +6706,7 @@
                             { label:'XC All-Federal',     cls:'badge-all-federal',    years: h.allFed },
                             { label:'XC All-County',      cls:'badge-all-county',     years: h.allCounty },
                             { label:'XC State Team',      cls:'badge-team-state',     years: h.teamState },
-                            { label:'XC District Team',   cls:'badge-team-dist',      years: h.teamDist },
+                            { label:'XC District Team Champs', cls:'badge-team-dist',      years: h.teamDist },
                             { label:'XC FL Team Champs',  cls:'badge-team-fed',       years: h.teamFed },
                             { label:'XC County Team Champs', cls:'badge-team-county', years: h.teamCounty },
                             { label:'Track State Champ',  cls:'badge-t-state-champ',  years: t.tStateChamp },
