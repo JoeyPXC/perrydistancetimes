@@ -15,6 +15,14 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
+             {
+        id: "2026-11-02-boys-qualify-to-state-girls-run-best-meet-of-the-season",
+        sport: "xc",
+        date: "2026-11-02",
+        title: "Boys Qualify to State, Girls Run Best Meet of the Season",
+        body: "BOARDMAN — The Perry boys cross country team punched its ticket to the OHSAA State Championship for the 8th time in program history, placing as the Regional Runner-up in the Division 2 race at Boardman High School with 212 points. The historic performance joins previous state-qualifying teams from 1988, 1993, 1999, 2001, 2005, 2021, and 2022, while marking Perry's 4th Regional Runner-up finish alongside 1993, 2005, and 2022. Sophomore Parker Simonson led the Panthers across the line with a top-20 finish, placing 17th overall in 16:17.6. Junior Noah Dostal (25th, 16:25.8) and senior Justus Detter (27th, 16:29.5) finished close behind, while senior Ryan Sexton (62nd, 16:53.6) and senior Connor McCann (89th, 17:13.0) completed the scoring five to secure Perry's spot at state. Junior Broderick Gore (214th, 18:07.3) also competed in the varsity lineup.  Junior Andrew Ramos wasn't included in the results but he ran a great race as the #6 running 17:31 even with a fall in the first mile where his bib got ripped off his jersey.\n\nOn the girls side, the Panther squad delivered its best performance of the season, far outperforming expectations in the Division 2 field with a 27th-place team finish (666 points) behind several personal and season bests. Senior Julia Thompson paced Perry in 108th place with a time of 20:50.1, followed by sophomore Annamae Rogers in 119th (21:00.2) and senior Brielle Thom in 136th (21:16.0). Senior Lillee Woods (147th, 21:23.2) and sophomore Kiley Szakacs (201st, 22:08.5) rounded out the team's scoring five, while freshman Lillian Stewart (213th, 22:20.8) and senior Paige Schwab (261st, 23:31.4) completed the strong team effort.   \n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/287234/info)",
+        images: ["20261031_134551.jpg"]
+    },
          {
         id: "2025-08-25-glenoak-golden-eagle-invitational-results",
         sport: "xc",
