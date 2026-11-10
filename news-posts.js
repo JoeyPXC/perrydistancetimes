@@ -15,7 +15,15 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-             {
+      {
+        id: "2026-11-07-boys-finish-7th-at-state",
+        sport: "xc",
+        date: "2026-11-07",
+        title: "Boys Finish 7th at State",
+        body: "OBETZ — Competing at the 2026 OHSAA Cross Country State Championships at Fortress Obetz, the Perry boys team placed 7th overall in Division 2 with 255 points, tying the program's best state finish in school history set in 2005.\n\nSophomore Parker Simonson led the Panthers across the finish line with a 52nd-place finish in 16:15.9. Senior Justus Detter followed closely behind, crossing the line 54th overall in 16:17.1. Junior Noah Dostal earned 61st place in 16:22.7, while senior Ryan Sexton completed the course in 98th place in 16:42.2. Junior Andrew Ramos delivered a standout performance to complete the team's scoring five, crushing his personal record by 20 seconds to finish 139th in 17:06.7. Senior Connor McCann (176th, 17:30.4) and sophomore Michael Norris (194th, 17:44.3) also competed for the state-qualifying Panthers. Michael ran most of the race with just one shoe as he lost his left spike about 600 meters in.\n\nThis caps off an outstanding season for the boys. \n\n[Live Results](https://live.seotiming.com/meets/79034/events/xc/2941740)\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/275513/info)\n[Official OHSAA Final Results](https://ohsaaweb.blob.core.windows.net/files/Sports/Cross%20Country/2026/bd2.pdf)",
+        images: ["2026StateWithAlumni.jpg"]
+    },          
+  {
         id: "2026-11-02-boys-qualify-to-state-girls-run-best-meet-of-the-season",
         sport: "xc",
         date: "2026-11-02",
