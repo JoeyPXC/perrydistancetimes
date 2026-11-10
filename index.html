@@ -9036,6 +9036,22 @@
             if (lb) lb.classList.remove('open');
         }
 
+        // Reusable photo block (one photo = full width, 2+ = thumbnail strip).
+        // Tapping any photo opens the same full-screen viewer as news posts.
+        const photoSets = [];
+        function buildPhotoSetHtml(urls) {
+            if (!urls || !urls.length) return '';
+            const id = photoSets.push(urls) - 1;
+            if (urls.length === 1) {
+                return `<img class="news-article-img" style="cursor:pointer;max-height:320px;object-fit:contain;background:var(--bg);" src="${urls[0]}" alt="" onclick="openPhotoSet(${id},0)" onerror="this.remove()">`;
+            }
+            return `<div class="news-thumb-strip">${urls.map((u, i) => `<img src="${u}" alt="" onclick="openPhotoSet(${id},${i})" onerror="this.remove()">`).join('')}</div>`;
+        }
+        function openPhotoSet(id, i) {
+            newsLightboxImages = photoSets[id] || [];
+            if (newsLightboxImages.length) openNewsLightbox(i);
+        }
+
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
@@ -9595,6 +9611,7 @@
             const stateQualIndCol  = headers.findIndex(h => h.toLowerCase().includes('individual') && h.toLowerCase().includes('state'));
             const stateTeamPlaceCol = headers.findIndex(h => h.toLowerCase().includes('state team') || (h.toLowerCase().includes('state') && h.toLowerCase().includes('place')));
             const notesCol   = col('note') !== -1 ? col('note') : col('accomplishment') !== -1 ? col('accomplishment') : col('honors');
+            const photoCol   = col('photo') !== -1 ? col('photo') : col('picture') !== -1 ? col('picture') : col('image');
 
             const dataRows = rows.slice(1).filter(r => r[yearCol] && r[yearCol].trim() && /\d{4}/.test(r[yearCol]));
             // Sort descending
@@ -9671,7 +9688,12 @@
                         </div>`;
                 }
 
-                if (!rowsHtml) return;
+                const photoUrls = photoCol !== -1
+                    ? String(row[photoCol] || '').split(/[\n;|,]+/).map(u => u.trim()).filter(u => u && !/["'<>]/.test(u))
+                    : [];
+                const photosHtml = buildPhotoSetHtml(photoUrls);
+
+                if (!rowsHtml && !photosHtml) return;
 
                 const meetResultsHtml = buildMeetResultsHtml(teamMeetsByYear[year]);
 
@@ -9684,7 +9706,7 @@
                                 <svg class="ybyr-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
                             </span>
                         </div>
-                        <div class="ybyr-body">${rowsHtml}${meetResultsHtml}</div>
+                        <div class="ybyr-body">${photosHtml}${rowsHtml}${meetResultsHtml}</div>
                     </div>`;
             });
 
