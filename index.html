@@ -563,6 +563,17 @@
         .news-article-title { font-size:19px; font-weight:900; color:var(--text); line-height:1.25; margin-bottom:4px; }
         .news-article-date { font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:14px; }
         .news-article-img { width:100%; border-radius:10px; margin-bottom:12px; display:block; }
+        .news-thumb-strip { display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+        .news-thumb-strip img { height:84px; width:auto; flex:0 0 auto; border-radius:8px; cursor:pointer; border:2px solid var(--border); background:var(--bg); }
+        .news-thumb-strip img:hover { border-color:var(--accent); }
+        .news-lightbox { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.92); display:none; align-items:center; justify-content:center; touch-action:pan-y; }
+        .news-lightbox.open { display:flex; }
+        .news-lightbox img { max-width:100%; max-height:100%; object-fit:contain; }
+        .news-lightbox button { position:absolute; background:rgba(255,255,255,0.15); color:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:22px; font-weight:800; cursor:pointer; }
+        .news-lightbox .lb-close { top:max(12px, env(safe-area-inset-top)); right:12px; }
+        .news-lightbox .lb-prev { left:10px; top:50%; transform:translateY(-50%); }
+        .news-lightbox .lb-next { right:10px; top:50%; transform:translateY(-50%); }
+        .news-lightbox .lb-count { position:absolute; bottom:max(14px, env(safe-area-inset-bottom)); left:0; right:0; text-align:center; color:#fff; font-size:12px; font-weight:700; }
         .news-body-list { margin:6px 0 14px 18px; padding:0; }
         .news-body-list li { font-size:14px; line-height:1.6; color:var(--text); margin-bottom:4px; }
         .news-article-body p { font-size:14px; line-height:1.7; color:var(--text); margin:0 0 14px; }
@@ -8918,6 +8929,56 @@
             });
         }
 
+        // ---- Photo viewer for posts with multiple pictures ----
+        let newsLightboxImages = [];
+        let newsLightboxIndex = 0;
+        function openNewsLightbox(i) {
+            let lb = document.getElementById('newsLightbox');
+            if (!lb) {
+                lb = document.createElement('div');
+                lb.id = 'newsLightbox';
+                lb.className = 'news-lightbox';
+                lb.innerHTML = '<img alt=""><button class="lb-close" aria-label="Close">&times;</button><button class="lb-prev" aria-label="Previous">&#8249;</button><button class="lb-next" aria-label="Next">&#8250;</button><div class="lb-count"></div>';
+                document.body.appendChild(lb);
+                lb.querySelector('.lb-close').onclick = closeNewsLightbox;
+                lb.querySelector('.lb-prev').onclick = e => { e.stopPropagation(); stepNewsLightbox(-1); };
+                lb.querySelector('.lb-next').onclick = e => { e.stopPropagation(); stepNewsLightbox(1); };
+                lb.onclick = e => { if (e.target === lb) closeNewsLightbox(); };
+                let sx = null;
+                lb.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+                lb.addEventListener('touchend', e => {
+                    if (sx === null) return;
+                    const dx = e.changedTouches[0].clientX - sx; sx = null;
+                    if (Math.abs(dx) > 50) stepNewsLightbox(dx < 0 ? 1 : -1);
+                }, { passive: true });
+                document.addEventListener('keydown', e => {
+                    if (!lb.classList.contains('open')) return;
+                    if (e.key === 'Escape') closeNewsLightbox();
+                    else if (e.key === 'ArrowLeft') stepNewsLightbox(-1);
+                    else if (e.key === 'ArrowRight') stepNewsLightbox(1);
+                });
+            }
+            newsLightboxIndex = i;
+            showNewsLightboxImage();
+            lb.classList.add('open');
+        }
+        function showNewsLightboxImage() {
+            const lb = document.getElementById('newsLightbox');
+            const n = newsLightboxImages.length;
+            lb.querySelector('img').src = newsLightboxImages[newsLightboxIndex];
+            lb.querySelector('.lb-count').textContent = (newsLightboxIndex + 1) + ' / ' + n;
+            lb.querySelector('.lb-prev').style.display = lb.querySelector('.lb-next').style.display = n > 1 ? '' : 'none';
+        }
+        function stepNewsLightbox(d) {
+            const n = newsLightboxImages.length;
+            newsLightboxIndex = (newsLightboxIndex + d + n) % n;
+            showNewsLightboxImage();
+        }
+        function closeNewsLightbox() {
+            const lb = document.getElementById('newsLightbox');
+            if (lb) lb.classList.remove('open');
+        }
+
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
@@ -8928,9 +8989,11 @@
             const badgeClass = post.sport === 'track' ? 'track' : 'xc';
             const badgeLabel = post.sport === 'track' ? 'Track' : 'XC';
             const dateLabel = new Date(post.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-            const imagesHtml = (post.images || [])
-                .map(src => `<img class="news-article-img" src="${src}" alt="" onerror="this.remove()">`)
-                .join('');
+            const postImages = post.images || [];
+            const imagesHtml = postImages.length > 1
+                ? `<div class="news-thumb-strip">${postImages.map((src, i) => `<img src="${src}" alt="" onclick="openNewsLightbox(${i})" onerror="this.remove()">`).join('')}</div>`
+                : postImages.map(src => `<img class="news-article-img" src="${src}" alt="" onerror="this.remove()">`).join('');
+            newsLightboxImages = postImages;
             const archivedNote = post.archived
                 ? '<div class="news-archived-note">📦 Archived post from the original Perry XC/Track website. Some links and photos may no longer work as the original site is no longer online.</div>'
                 : '';
