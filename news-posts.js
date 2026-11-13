@@ -80,7 +80,7 @@ const NEWS_POSTS = [
         images: []
     },
           {
-        id: "2026-11-07-boys-finish-7th-at-state",
+        id: "2026-11-07-boys-finish-7th-at-state - Tied with 2005 for Best Finish",
         sport: "xc",
         date: "2026-11-07",
         title: "Boys Finish 7th at State",
