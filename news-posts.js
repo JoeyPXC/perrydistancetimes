@@ -15,66 +15,66 @@
 //   blank line = new paragraph
 
 const NEWS_POSTS = [    
-              {
-        id: "2026-11-13-season-bests-at-state-for-chloe-dostal-and-justus-detter",
+                  {
+        id: "2024-11-02-season-bests-at-state-for-chloe-dostal-and-justus-detter",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2024-11-02",
         title: "Season Bests at State for Chloe Dostal and Justus Detter.",
         body: "OBETZ — Representing Perry as individual qualifiers at the OHSAA Division 1 Cross Country State Championships at Fortress Obetz, senior Chloe Dostal and sophomore Justus Detter both delivered season-best performances on the state's biggest stage.\n\nIn the Division 1 girls 5,000-meter race, Dostal capped off her senior campaign by placing 38th overall with a season-best time of 18:39.73. On the boys side, Detter competed in the Division 1 boys race and crossed the line in 54th place overall, clocking a season-best mark of 15:53.84.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/252681/info)",
         images: []
     },
     {
-        id: "2026-11-13-regional-results-chloe-dostal-justus-detter-qualify-to-state",
+        id: "2024-10-28-regional-results-chloe-dostal-justus-detter-qualify-to-state",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2024-10-28",
         title: "Regional Results: Chloe Dostal & Justus Detter Qualify to State",
         body: "BOARDMAN — Perry punched two individual tickets to the OHSAA Division 1 State Championship at the Boardman Regional, led by top-25 performances from senior Chloe Dostal and sophomore Justus Detter.\n\nIn the Division 1 girls race, Dostal paced the Panthers with a 5th-place overall finish in 19:03.36 to advance to the state meet. Sophomore Sophia Post finished 51st in 20:17.58, followed by sophomore Julia Thompson in 90th (20:54.84) and junior Allison Reese in 136th (21:46.39), helping Perry place 17th as a team with 387 points. On the boys side, Detter secured his state berth by placing 22nd overall in 16:18.45, while senior Luke Detter finished 43rd in 16:43.94. Freshman Noah Dostal (127th, 17:44.82), senior Logan Erickson (144th, 17:57.07), and Ryan Sexton (147th, 17:58.15) rounded out the Panthers' scoring five to place 17th overall with 393 points.\n\n[Athletic.net Results](https://www.athletic.net/CrossCountry/meet/252268/info)",
         images: []
     },
     {
-        id: "2026-11-13-district-results-both-teams-advance-to-regionals",
+        id: "2024-10-21-district-results-both-teams-advance-to-regionals",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2024-10-21",
         title: "District Results: Both Teams Advance to Regionals",
         body: "GLENOAK — Both Perry cross country squads punched their tickets to the regional tournament at the OHSAA Division 1 GlenOak District Meet, with each team placing 8th overall behind top-11 individual finishes from senior Chloe Dostal and sophomore Justus Detter.   \n\nIn the Division 1 girls race, Dostal led the Panthers with a 5th-place finish in 19:24.3, followed by sophomore Julia Thompson (28th, 20:37.7) and sophomore Sophia Post (33rd, 20:52.7). Junior Allison Reese (67th, 22:07.9) and sophomore Lillee Woods (78th, 22:37.0) rounded out Perry's scoring five to secure 8th place with 207 points.   Chloe and Julia qualified to regionals individually as well.\n\nOn the boys side, Detter crossed the line 11th overall in 16:17.4 and senior Luke Detter placed 17th in 16:32.7. Senior Logan Erickson (50th, 17:20.1), freshman Noah Dostal (60th, 17:34.4), and sophomore Ryan Sexton (72nd, 17:54.9) completed the Panthers' top five to claim 8th place with 210 points and advance to the regional round.  Justus and Luke both qualified individually to regionals.\n\n[Results](https://www.athletic.net/CrossCountry/meet/252208/info)",
         images: []
     },
     {
-        id: "2026-11-13-federal-league-results",
+        id: "2024-10-14-federal-league-results",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2024-10-14",
         title: "Federal League Results",
         body: "MASSILLON — Perry turned in strong team performances at the Federal League Championship at Jackson Middle School, highlighted by multiple All-Federal League honors.  \n\nIn the varsity girls race, Perry placed 3rd overall with 92 points behind senior Chloe Dostal's runner-up finish in 18:50.8 to earn 1st Team All-Federal League honors. Sophomore Julia Thompson earned 2nd Team All-Federal League recognition with a 9th-place finish in 19:32.4, and sophomore Sophia Post claimed Honorable Mention All-Federal League by placing 17th in 20:02.0. Junior Allison Reese (27th, 20:47.6) and sophomore Lillee Woods (37th, 21:26.3) rounded out the Panthers' scoring five.   \n\nOn the boys side, sophomore Justus Detter earned 1st Team All-Federal League honors by placing 7th overall in 15:54.1, while senior Luke Detter garnered 2nd Team All-Federal League recognition in 10th place (16:05.4). Freshman Noah Dostal (25th, 17:12.6), senior Logan Erickson (30th, 17:29.4), and sophomore Ryan Sexton (33rd, 17:33.9) completed the top five to guide Perry to a 4th-place team finish with 105 points. \n\n[Results](https://www.athletic.net/CrossCountry/meet/273957/info)",
         images: []
     },
     {
-        id: "2026-11-13-federal-league-results",
+        id: "2023-10-16-federal-league-results",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2023-10-16",
         title: "Federal League Results",
         body: "MASSILLON — Both Perry cross country squads turned in strong podium finishes at the Federal League Championship at Jackson Middle School, highlighted by nine All-Federal League honors across the varsity lineups.   \n\nIn the varsity girls race, Perry finished as team runner-up with 62 points, led by two 1st Team All-Federal League performances from junior Chloe Dostal (3rd, 18:55.3) and sophomore Alyssa Palosi (6th, 19:25.4). Sophomore Lea Householder earned 2nd Team All-Federal League honors with a 9th-place finish in 19:43.8, while sophomore Allison Reese (21st, 20:51.2) and freshman Julia Thompson (23rd, 20:56.3) both collected Honorable Mention All-Federal League recognition to complete the Panthers' scoring five.   \n\nOn the boys side, senior Connor Reed (3rd, 15:39.9) and senior Logan Reese (5th, 15:50.8) earned 1st Team All-Federal League honors, while freshman Justus Detter (14th, 16:25.2) and sophomore Jayden Simonson (16th, 16:26.1) claimed 2nd Team All-Federal League recognition. Junior Luke Detter (30th, 17:17.1) rounded out the Panthers' top five to guide Perry to a 3rd-place team finish with 68 points.\n\n[Results](https://www.athletic.net/CrossCountry/meet/273956/info)",
         images: []
     },
     {
-        id: "2026-11-13-both-teams-advance-to-regionals",
+        id: "2023-10-23-both-teams-advance-to-regionals",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2023-10-23",
         title: "Both Teams Advance to Regionals",
         body: "GLENOAK — Both Perry cross country squads punched their tickets to the regional tournament with top-four team finishes at the OHSAA Division 1 GlenOak District Meet, led by top-10 individual performances from senior Connor Reed, junior Chloe Dostal, and senior Logan Reese.   \n\nIn the Division 1 girls race, Dostal powered the Panthers with a 6th-place overall finish in 19:12.9, followed closely by sophomore Alyssa Palosi in 11th (19:36.8) and sophomore Lea Householder in 25th (20:23.2), with all three earning individual regional qualifying spots by finishing in the top 32. Freshman Julia Thompson (42nd, 21:05.8) and sophomore Allison Reese (43rd, 21:08.7) rounded out Perry's scoring five to secure 3rd place overall with 127 points.   \n\nOn the boys side, Reed claimed 3rd place overall in 15:39.2, Reese crossed the line 9th in 16:07.3, and freshman Justus Detter placed 27th in 16:31.6 to earn individual top-32 qualifying spots. Sophomore Jayden Simonson (52nd, 17:05.5) and junior Luke Detter (63rd, 17:22.2) completed the Panthers' top five to guide Perry to a 4th-place team finish with 154 points and advance to the regional round. \n\n[Results](https://www.athletic.net/CrossCountry/meet/234540/info)f",
         images: []
     },
     {
-        id: "2026-11-13-reed-reese-dostal-qualify-to-state-boys-miss-out-by-3-points",
+        id: "2023-10-30-reed-reese-dostal-qualify-to-state-boys-miss-out-by-3-points",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2023-10-30",
         title: "Reed, Reese, Dostal Qualify to State, Boys Miss Out by 3 Points",
         body: "BOARDMAN — Perry punched three individual tickets to the OHSAA Division 1 State Championship at the Boardman Regional, led by top-16 finishes from senior Connor Reed, senior Logan Reese, and junior Chloe Dostal.   \n\nIn the Division 1 boys race, Reed powered the Panthers with a 4th-place overall finish in 15:40.8 to secure his third career state berth, while Reese crossed the line 14th in 16:03.7 to qualify individually for the second time and earn his third overall trip to state (having also competed with Perry's state-qualifying squad as a sophomore). Freshman Justus Detter (60th, 16:48.9), sophomore Jayden Simonson (71st, 16:59.2), and junior Luke Detter (113th, 17:24.3) rounded out the scoring five as Perry finished 9th as a team with 222 points, narrowly missing the top-seven team cutoff by just 3 points.\n\nOn the girls side, Dostal paced Perry with a 16th-place finish in 19:12.5 to punch her second straight ticket to the state meet. Sophomore Alyssa Palosi (47th, 19:59.4), sophomore Lea Householder (111th, 21:10.8), freshman Sophia Post (118th, 21:14.6), and freshman Julia Thompson (140th, 21:34.1) completed the Panthers' top five to place 15th overall with 390 points. \n\n[Results](https://www.athletic.net/CrossCountry/meet/235141/info)",
         images: []
     },
     {
-        id: "2026-11-13-state-results-reed-finishes-7th-overall-in-school-record-tim",
+        id: "2023-11-06-state-results-reed-finishes-7th-overall-in-school-record-tim",
         sport: "xc",
-        date: "2026-11-13",
+        date: "2023-11-06",
         title: "State Results: Reed Finishes 7th Overall in School Record Time",
         body: "OBETZ — Representing Perry as individual qualifiers at the OHSAA Division 1 State Cross Country Championships at Fortress Obetz, senior Connor Reed capped off a historic career with a 7th-place finish in personal best and school record time of 15:23.8. The performance earned Reed his third straight All-Ohio honor and improved upon his 14th-place finish from the previous season to set the highest individual state finish in Perry boys program history.   \n\nAlso competing for the Panthers in the Division 1 boys race, senior Logan Reese crossed the line 45th overall in 16:06.3 in his third career state appearance. In the Division 1 girls race, junior Chloe Dostal placed 86th overall with a time of 19:50.4. \n\n[Results](https://www.athletic.net/CrossCountry/meet/235539/info)r",
         images: []
