@@ -9830,7 +9830,7 @@
         async function renderYearByYearPage(container) {
             if (navCache.yearbyyear[genderFilter]) {
                 container.innerHTML = navCache.yearbyyear[genderFilter];
-                linkAthleteNamesIn(container, '.ybyr-row-value');
+                linkAthleteNamesIn(container, '.ybyr-row-value, .ybyr-meet-athlete');
                 return;
             }
             container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading year by year data…</p>';
@@ -9860,7 +9860,7 @@
 
                 navCache.yearbyyear[genderFilter] = html;
                 container.innerHTML = html;
-                linkAthleteNamesIn(container, '.ybyr-row-value');
+                linkAthleteNamesIn(container, '.ybyr-row-value, .ybyr-meet-athlete');
             } catch(e) {
                 renderLoadError(container, 'year by year data', e);
             }
