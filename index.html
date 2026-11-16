@@ -585,6 +585,7 @@
         .news-article-body a { color:var(--perry-gray); text-decoration:underline; }
         .drawer-overlay.over-nav { z-index: 700; }
         .drawer-overlay.over-nav .drawer-content { z-index: 701; }
+        a.athlete-link { color:inherit; text-decoration:none; font-weight:inherit; cursor:pointer; }
         .news-article-body a.news-athlete { text-decoration:none; font-weight:700; border-bottom:1px dotted currentColor; cursor:pointer; }
         body.dark-mode .news-article-body a { color:var(--accent); }
         .news-archived-note { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:18px; padding-top:12px; border-top:1px solid var(--border); }
@@ -8976,6 +8977,56 @@
             });
         }
 
+        // ── Clickable athlete names on the State Qualifiers and Year by Year pages ──
+        // Uses the same name matching as news posts (full names only, and names shared by two
+        // athletes stay plain text). The profile opens on top of the page, so closing it returns
+        // to the same spot.
+        function linkAthleteNamesIn(root, selector) {
+            try {
+                if (!root || typeof athletes === 'undefined') return;
+                const { map, re } = getNewsNameLookup();
+                if (!re) return;
+                root.querySelectorAll(selector).forEach(el => {
+                    const texts = [];
+                    (function walk(node) {
+                        node.childNodes.forEach(ch => {
+                            if (ch.nodeType === 3) texts.push(ch);
+                            else if (ch.nodeType === 1 && ch.nodeName !== 'A') walk(ch);
+                        });
+                    })(el);
+                    texts.forEach(t => {
+                        const str = t.nodeValue;
+                        re.lastIndex = 0;
+                        let m, last = 0, frag = null;
+                        while ((m = re.exec(str))) {
+                            const canon = map.get(m[0].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' '));
+                            if (!canon) continue;
+                            if (!frag) frag = document.createDocumentFragment();
+                            if (m.index > last) frag.appendChild(document.createTextNode(str.slice(last, m.index)));
+                            const a = document.createElement('a');
+                            a.className = 'athlete-link'; a.dataset.athlete = canon;
+                            try { a.href = getAthleteShareUrl(canon); } catch (err) { a.href = '#'; }
+                            a.textContent = m[0];
+                            frag.appendChild(a);
+                            last = m.index + m[0].length;
+                        }
+                        if (frag) {
+                            if (last < str.length) frag.appendChild(document.createTextNode(str.slice(last)));
+                            t.parentNode.replaceChild(frag, t);
+                        }
+                    });
+                });
+            } catch (e) { console.error('athlete name links:', e); }
+        }
+        document.addEventListener('click', e => {
+            const a = e.target.closest && e.target.closest('a.athlete-link');
+            if (!a) return;
+            e.preventDefault();
+            document.getElementById('drawerOverlay').classList.add('over-nav');
+            pendingShareAthleteName = a.dataset.athlete;
+            tryOpenAthleteFromUrl();
+        });
+
         // ---- Photo viewer for posts with multiple pictures ----
         let newsLightboxImages = [];
         let newsLightboxIndex = 0;
@@ -9779,6 +9830,7 @@
         async function renderYearByYearPage(container) {
             if (navCache.yearbyyear[genderFilter]) {
                 container.innerHTML = navCache.yearbyyear[genderFilter];
+                linkAthleteNamesIn(container, '.ybyr-row-value');
                 return;
             }
             container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading year by year data…</p>';
@@ -9808,6 +9860,7 @@
 
                 navCache.yearbyyear[genderFilter] = html;
                 container.innerHTML = html;
+                linkAthleteNamesIn(container, '.ybyr-row-value');
             } catch(e) {
                 renderLoadError(container, 'year by year data', e);
             }
@@ -9929,6 +9982,7 @@
         async function renderStateQualifiersPage(container) {
             if (navCache.statequalifiers[genderFilter]) {
                 container.innerHTML = navCache.statequalifiers[genderFilter];
+                linkAthleteNamesIn(container, '.records-name-line');
                 return;
             }
             container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--text-muted);font-weight:600;">⏳ Loading state qualifiers…</p>';
@@ -9948,6 +10002,7 @@
 
                 navCache.statequalifiers[genderFilter] = inner;
                 container.innerHTML = inner;
+                linkAthleteNamesIn(container, '.records-name-line');
             } catch(e) {
                 renderLoadError(container, 'state qualifiers', e);
             }
