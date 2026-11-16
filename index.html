@@ -466,7 +466,8 @@
 
         /* Schedule cards */
         .sched-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .sched-card.sched-past { opacity: 0.55; }
+        .sched-card.sched-past { opacity: 0.78; }
+        .sched-card.sched-past .sched-date-bar { filter: grayscale(0.6); }
         .sched-card.sched-next { border: 2px solid var(--accent); box-shadow: 0 0 0 3px rgba(255,221,0,0.15); }
         .sched-date-bar { background: var(--primary); color: white; padding: 7px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
         .sched-date-bar .sched-next-badge { background: var(--accent); color: var(--primary); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
@@ -8634,7 +8635,8 @@
             if (!meets.length) html += '<div style="padding:20px 0;color:var(--text-muted);font-weight:700;">No meets listed.</div>';
 
             meets.forEach((m, i) => {
-                const isPast = m.dateVal < today;
+                // Only dim finished meets in the current season; a past school year is an archive, so leave it at full strength.
+                const isPast = m.dateVal < today && !isPastYear;
                 const isNext = i === nextIdx;
                 const recapBtn = recapPillHtml(m);
                 const racesHtml = m.groups.map(g =>
