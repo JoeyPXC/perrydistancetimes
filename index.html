@@ -566,6 +566,8 @@
         .news-thumb-strip { display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
         .news-thumb-strip img { height:120px; width:auto; flex:0 0 auto; border-radius:8px; cursor:pointer; border:2px solid var(--border); background:var(--bg); }
         .news-thumb-strip img:hover { border-color:var(--accent); }
+        .news-share-btn { margin-left:auto; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:14px; padding:4px 12px; font-size:12px; font-weight:800; cursor:pointer; }
+        .news-share-btn:hover { border-color:var(--accent); }
         .photo-gallery-thumbs img { height:64px; opacity:0.7; }
         .photo-gallery-thumbs img.active { border-color:var(--accent); opacity:1; }
         .news-lightbox { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.92); display:none; align-items:center; justify-content:center; touch-action:none; overflow:hidden; }
@@ -7720,7 +7722,10 @@
             if (location.hash === '#points') openPointsOverlay();
             // Hidden Season Bests export: only opens for the direct link  yoursite/#seasonbests
             if (location.hash === '#seasonbests') openSeasonBestsOverlay();
+            // Shareable news links:  yoursite/#news  or  yoursite/#news/<post-id>
+            openNewsFromHash();
         });
+        window.addEventListener('hashchange', openNewsFromHash);
 
         // ── Back gesture handling (Android swipe / browser back button) ──
         // Each overlay open pushes a history entry. Swiping back pops it,
@@ -8751,7 +8756,7 @@
         }
 
         function openNewsOverlay() {
-            history.pushState({ overlay: 'news' }, '');
+            history.pushState({ overlay: 'news' }, '', '#news');
             document.getElementById('newsOverlay').classList.add('open');
             document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
@@ -8760,6 +8765,7 @@
         }
 
         function closeNewsOverlay() {
+            if (/^#news/.test(location.hash)) { try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {} }
             document.getElementById('newsOverlay').classList.remove('open');
             document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
@@ -8810,6 +8816,42 @@
         }
 
         let newsInDetailView = false;
+        let newsCurrentPost = null;
+
+        function getNewsShareUrl(id) {
+            return location.origin + location.pathname + '#news/' + encodeURIComponent(id);
+        }
+
+        // Native share sheet on phones, copy-to-clipboard fallback on desktop.
+        async function shareNewsPost() {
+            const post = newsCurrentPost;
+            if (!post) return;
+            const url = getNewsShareUrl(post.id);
+            const title = String(post.title || '').replace(/<[^>]*>/g, '');
+            if (navigator.share) {
+                try { await navigator.share({ title: title + ' — Perry XC/Track', url }); } catch (e) {}
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(url);
+                showMessage('Link copied!');
+            } catch (e) {
+                window.prompt('Copy this link:', url);
+            }
+        }
+
+        // Opens #news or #news/<id> links (page load, or the hash being edited).
+        function openNewsFromHash() {
+            const m = location.hash.match(/^#news(?:\/(.+))?$/);
+            if (!m) return;
+            if (document.getElementById('newsOverlay').classList.contains('open')) return;
+            let id = null;
+            try { id = m[1] ? decodeURIComponent(m[1]) : null; } catch (e) {}
+            // Start from a clean URL so back/close behave like a normal open.
+            try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+            openNewsOverlay();
+            if (id && getAllNewsPosts().some(p => p.id === id)) showNewsDetail(id);
+        }
 
         (function() {
             const body = document.getElementById('newsBody');
@@ -8825,6 +8867,7 @@
 
         function renderNewsList() {
             newsInDetailView = false;
+            if (/^#news\//.test(location.hash)) { try { history.replaceState(history.state, '', location.pathname + location.search + '#news'); } catch (e) {} }
             document.getElementById('newsFilterRow').style.display = 'flex';
             const query = (document.getElementById('newsSearchInput').value || '').toLowerCase().trim();
             const all = getAllNewsPosts();
@@ -9071,7 +9114,8 @@
         function showNewsDetail(id) {
             const post = getAllNewsPosts().find(p => p.id === id);
             if (!post) return;
-            history.pushState({ overlay: 'newsdetail' }, '');
+            history.pushState({ overlay: 'newsdetail' }, '', '#news/' + encodeURIComponent(post.id));
+            newsCurrentPost = post;
             newsInDetailView = true;
             document.getElementById('newsFilterRow').style.display = 'none';
             const container = document.getElementById('newsBody');
@@ -9088,8 +9132,9 @@
                 : '';
             container.innerHTML = `
                 <button class="news-back-link" onclick="renderNewsList()">← All Updates</button>
-                <div class="news-article-badges">
+                <div class="news-article-badges" style="align-items:center;">
                     <span class="news-badge ${badgeClass}">${badgeLabel}</span>
+                    <button class="news-share-btn" onclick="shareNewsPost()">🔗 Share</button>
                 </div>
                 <div class="news-article-title">${post.title}</div>
                 <div class="news-article-date">${dateLabel}</div>
