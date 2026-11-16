@@ -566,6 +566,8 @@
         .news-thumb-strip { display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
         .news-thumb-strip img { height:120px; width:auto; flex:0 0 auto; border-radius:8px; cursor:pointer; border:2px solid var(--border); background:var(--bg); }
         .news-thumb-strip img:hover { border-color:var(--accent); }
+        .photo-gallery-thumbs img { height:64px; opacity:0.7; }
+        .photo-gallery-thumbs img.active { border-color:var(--accent); opacity:1; }
         .news-lightbox { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.92); display:none; align-items:center; justify-content:center; touch-action:none; overflow:hidden; }
         .news-lightbox.open { display:flex; }
         .news-lightbox img { max-width:100%; max-height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; transition:transform 0.08s ease-out; }
@@ -9045,7 +9047,21 @@
             if (urls.length === 1) {
                 return `<img class="news-article-img" style="cursor:pointer;max-height:320px;object-fit:contain;background:var(--bg);" src="${urls[0]}" alt="" onclick="openPhotoSet(${id},0)" onerror="this.remove()">`;
             }
-            return `<div class="news-thumb-strip">${urls.map((u, i) => `<img src="${u}" alt="" onclick="openPhotoSet(${id},${i})" onerror="this.remove()">`).join('')}</div>`;
+            // 2+ photos: one primary photo (same size as a lone photo) with
+            // thumbnails below that swap it. Tapping the primary opens the viewer.
+            return `<div class="photo-gallery" data-set="${id}" data-idx="0">
+                <img class="news-article-img photo-gallery-main" style="cursor:pointer;max-height:320px;object-fit:contain;background:var(--bg);margin-bottom:8px;" src="${urls[0]}" alt="" onclick="openPhotoSet(${id},+this.parentElement.dataset.idx)" onerror="this.remove()">
+                <div class="news-thumb-strip photo-gallery-thumbs">${urls.map((u, i) => `<img class="${i === 0 ? 'active' : ''}" src="${u}" alt="" onclick="selectGalleryPhoto(this,${i})" onerror="this.remove()">`).join('')}</div>
+            </div>`;
+        }
+        function selectGalleryPhoto(thumb, i) {
+            const g = thumb.closest('.photo-gallery');
+            if (!g) return;
+            const urls = photoSets[+g.dataset.set] || [];
+            if (!urls[i]) return;
+            g.dataset.idx = i;
+            g.querySelector('.photo-gallery-main').src = urls[i];
+            g.querySelectorAll('.photo-gallery-thumbs img').forEach((el, n) => el.classList.toggle('active', n === i));
         }
         function openPhotoSet(id, i) {
             newsLightboxImages = photoSets[id] || [];
@@ -9683,7 +9699,7 @@
                 if (top5Data) {
                     rowsHtml += `
                         <div class="ybyr-row">
-                            <span class="ybyr-row-label">Top 5 Avg</span>
+                            <span class="ybyr-row-label">Best Top 5 Avg</span>
                             <span class="ybyr-row-value ybyr-highlight" title="${top5Data.names.join(', ')}">${top5Data.avg}</span>
                         </div>`;
                 }
