@@ -9262,7 +9262,7 @@
 
 
         async function renderAccomplishmentsPage(container) {
-            if (navCache.accomplishments[genderFilter]) { container.innerHTML = navCache.accomplishments[genderFilter]; return; }
+            if (navCache.accomplishments[genderFilter]) { container.innerHTML = navCache.accomplishments[genderFilter]; linkAthleteNamesIn(container, '.accomp-ind-name'); return; }
 
             const rostersMap = await getTeamRostersMap();
 
@@ -9368,7 +9368,7 @@
                     <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border);">
                         ${data.indState.map((r,i) => `
                             <div class="accomp-runner-row" style="background:${i%2===0?'var(--card-bg)':'var(--bg)'};color:var(--text);">
-                                <span style="font-weight:800;">${displayName(r.name)}</span>
+                                <span class="accomp-ind-name" style="font-weight:800;">${displayName(r.name)}</span>
                                 <span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
                                     ${r.years.map(y => `<span class="accomp-year-chip accomp-ind-chip">${y}${r.starred && r.starred.includes(y) ? ' ✦' : ''}</span>`).join('')}
                                 </span>
@@ -9408,6 +9408,7 @@
 
             navCache.accomplishments[genderFilter] = html;
             container.innerHTML = html;
+            linkAthleteNamesIn(container, '.accomp-ind-name');
         }
 
 
