@@ -8651,7 +8651,7 @@
                     <div class="sched-date-bar">
                         <span>${homeEsc(m.date)} · ${m.sport === 'track' ? 'Track' : 'XC'}</span>
                         ${isNext ? `<span class="sched-next-badge">▶ Next Up</span>` : ''}
-                        ${m.badge && !isPast ? `<span style="font-size:10px;opacity:0.9;">${homeEsc(m.badge)}</span>` : ''}
+                        ${m.badge ? `<span style="font-size:10px;opacity:0.9;">${homeEsc(m.badge)}</span>` : ''}
                     </div>
                     <div class="sched-meet-name">${homeEsc(m.meet)}</div>
                     <div class="sched-location"><a href="${mapsUrl(m)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">📍 ${homeEsc(m.location)} ↗</a></div>
